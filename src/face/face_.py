@@ -1,3 +1,4 @@
+import os
 import cv2
 import mediapipe as mp
 mp_face_detection = mp.solutions.face_detection
@@ -15,6 +16,7 @@ class FaceResult:
 
     def __iter__(self):
         data_list = [("count", self.count())
+                    , ("score", self.score())
                     , ("boxes", self.get_box_list())
                     , ("keypoints_list", self.get_keypoints())]
 
@@ -22,6 +24,9 @@ class FaceResult:
             yield data
 
     def count(self):
+        if self.result.detections is None:
+            return 0
+
         return len(self.result.detections)
 
     def score(self):
@@ -34,6 +39,9 @@ class FaceResult:
         """
 
         result_list = []
+        if self.result.detections is None:
+            return result_list
+
         for detection in self.result.detections:
             box = detection.location_data.relative_bounding_box
             result_list.append([
@@ -59,6 +67,9 @@ class FaceResult:
     def get_keypoints(self, bRelative : bool = False):
         result_list = []
 
+        if self.result.detections is None:
+            return result_list
+
         for detection in self.result.detections:
             keypoint_list = list(detection.location_data.relative_keypoints)
             result_list.append(
@@ -75,15 +86,24 @@ class FaceResult:
                 ]
 
         return result_list
+    
+    def draw_detections(self, img):
+        if self.count() == 0:
+            return
+
+        for detection in self.result.detections:
+            mp_drawing.draw_detection(img, detection)
 
     def to_dict(self):
-        return self.__iter__()
+        return dict(self.__iter__())
 
 class FaceUtil:
-    def __init__(self, model_selection = 1, min_detection_confidence = 0.5):
+    def __init__(self, model_selection : int = 1, min_detection_confidence : float = 0.5):
         self.detector = mp_face_detection.FaceDetection(
-            model_selection = 1
-            , min_detection_confidence = 0.5)
+            model_selection = model_selection
+            , min_detection_confidence = min_detection_confidence)
+
+        self.embedder = None
 
     def __del__(self):
         self.detector.close()
@@ -93,24 +113,35 @@ class FaceUtil:
         height, width, _ = img.shape
         return FaceResult((width, height), result)
 
+    def initExtractor(self):
+        self.embedder = cv2.dnn.readNetFromTorch(
+                        os.path.join(os.environ["EMBED_MODEL_PATH"]
+                        , "openface_nn4.small2.v1.t7"))
+        
+
+    def extract(self, img):
+        pass
+
+
+
 if __name__ == "__main__":
-    img = cv2.imread("C:\\th.jpg")
+
+    cap = cv2.VideoCapture(0)
     face = FaceUtil()
-    result = face.detect(img)
-    box_list = result.get_box_list()
-    for box in box_list:
-        cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
-        , (0, 255, 0), 2)
+    while cap.isOpened():
+        try:
+            success, frame = cap.read()
+            if not success:
+                continue
+            
+            result = face.detect(frame)
+            result.draw_detections(frame)
 
-    cv2.imshow("view", img)
-    cv2.waitKey()
+            cv2.imshow("view", frame)
+            cv2.waitKey(1)
+            print(result.to_dict())
+        except Exception as e:
+            print(e)
+    
     cv2.destroyAllWindows()
-    point_list = result.get_keypoints()
-    for point in point_list:
-        [cv2.circle(img, key, 2, (0, 255, 255), 2) for key in point]
-
-    cv2.imshow("view", img)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
-
-    print(result.score())
+    cap.release()
