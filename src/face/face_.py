@@ -114,7 +114,9 @@ class FaceUtil:
         return FaceResult((width, height), result)
 
     def initExtractor(self):
-        """self.embedder = cv2.dnn.readNetFromTorch(
+        """
+        #경로 제대로 설정 해야함
+        self.embedder = cv2.dnn.readNetFromTorch(
                         os.path.join(os.environ["EMBED_MODEL_PATH"]
                         , "openface_nn4.small2.v1.t7"))
         """
@@ -166,7 +168,8 @@ if __name__ == "__main__":
         cv2.destroyAllWindows()
         cap.release()
 
-    img = cv2.imread("C:\\mask2.jpg")
-    face = FaceUtil()
-    face.initExtractor()
-    result = face.extract(img)
+    def extract_test():
+        img = cv2.imread("C:\\mask2.jpg")
+        face = FaceUtil()
+        face.initExtractor()
+        result = face.extract(img)
