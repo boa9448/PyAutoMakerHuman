@@ -14,7 +14,12 @@ class FaceResult:
         pass
 
     def __iter__(self):
-        pass
+        data_list = [("count", self.count())
+                    , ("boxes", self.get_box_list())
+                    , ("keypoints_list", self.get_keypoints())]
+
+        for data in data_list:
+            yield data
 
     def count(self):
         return len(self.result.detections)
@@ -72,7 +77,7 @@ class FaceResult:
         return result_list
 
     def to_dict(self):
-        pass
+        return self.__iter__()
 
 class FaceUtil:
     def __init__(self, model_selection = 1, min_detection_confidence = 0.5):
