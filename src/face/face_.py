@@ -114,34 +114,62 @@ class FaceUtil:
         return FaceResult((width, height), result)
 
     def initExtractor(self):
-        self.embedder = cv2.dnn.readNetFromTorch(
+        """self.embedder = cv2.dnn.readNetFromTorch(
                         os.path.join(os.environ["EMBED_MODEL_PATH"]
                         , "openface_nn4.small2.v1.t7"))
+        """
+        self.embedder = cv2.dnn.readNetFromTorch("C:\\openface_nn4.small2.v1.t7")
         
 
     def extract(self, img):
-        pass
+        result = self.detect(img)
+        boxes = result.get_box_list()
+
+        vec_list = []
+        for box in boxes:
+            x, y, w, h = box
+            face = img[y:y+h, x:x+w]
+            cv2.imshow("face", face)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+            (fH, fW) = face.shape[:2]
+
+            if fW < 20 or fH < 20:
+                continue
+
+            faceBlob = cv2.dnn.blobFromImage(face, 1.0 / 255, (96, 96),
+	            (0, 0, 0), swapRB=True, crop=False)
+            self.embedder.setInput(faceBlob)
+            vec = self.embedder.forward()
+            vec_list.append((box, vec))
+
+        return vec_list
 
 
 
 if __name__ == "__main__":
+    def detect_test():
+        cap = cv2.VideoCapture(0)
+        face = FaceUtil()
+        while cap.isOpened():
+            try:
+                success, frame = cap.read()
+                if not success:
+                    continue
+                
+                result = face.detect(frame)
+                result.draw_detections(frame)
 
-    cap = cv2.VideoCapture(0)
+                cv2.imshow("view", frame)
+                cv2.waitKey(1)
+                print(result.to_dict())
+            except Exception as e:
+                print(e)
+        
+        cv2.destroyAllWindows()
+        cap.release()
+
+    img = cv2.imread("C:\\mask2.jpg")
     face = FaceUtil()
-    while cap.isOpened():
-        try:
-            success, frame = cap.read()
-            if not success:
-                continue
-            
-            result = face.detect(frame)
-            result.draw_detections(frame)
-
-            cv2.imshow("view", frame)
-            cv2.waitKey(1)
-            print(result.to_dict())
-        except Exception as e:
-            print(e)
-    
-    cv2.destroyAllWindows()
-    cap.release()
+    face.initExtractor()
+    result = face.extract(img)
