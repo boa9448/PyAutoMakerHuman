@@ -129,9 +129,6 @@ class FaceUtil:
         for box in boxes:
             x, y, w, h = box
             face = img[y:y+h, x:x+w]
-            cv2.imshow("face", face)
-            cv2.waitKey()
-            cv2.destroyAllWindows()
             (fH, fW) = face.shape[:2]
 
             if fW < 20 or fH < 20:
