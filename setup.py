@@ -11,17 +11,14 @@ with open("README.md", "rt", encoding="utf-8") as fh:
     long_description = fh.read()
 
 data_files_path = ""
-mediapipe_package = ""
 
 if sys.platform == "nt":
     data_files_path = os.path.join("lib", "site-packages")
-    mediapipe_package = "mediapipe"
 
 #라즈베리파이와 일반 데스크톱 리눅스를 지원할 수 있도록 나눌것
 elif sys.platform == "linux":
     version = "python{}.{}".format(sys.version_info[0], sys.version_info[1])
     data_files_path = os.path.join(site.USER_BASE, "lib", version, "site-packages")
-    mediapipe_package = "mediapipe-rpi4"
 
 setuptools.setup(
     name="PyAutoMakerHuman",
@@ -45,7 +42,8 @@ setuptools.setup(
     data_files=[(os.path.sep.join([data_files_path, "PyAutoMakerHuman", "models"])
                  , [file for file in glob("PyAutoMakerHuman\\models\\*.*")])],
 
-    install_requires = ["imutils", "scikit-learn", "waitress", "flask", "requests", mediapipe_package],
+    install_requires = ["imutils", "scikit-learn", "waitress", "flask", "requests"
+    , "mediapipe; platform_system == 'Windows'", "mediapipe-rpi4; platform_system == 'Linux'"],
     python_requires=">=3.6",
 )
 
