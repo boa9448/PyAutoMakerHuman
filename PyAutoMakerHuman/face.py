@@ -137,9 +137,12 @@ class FaceUtil:
 	            (0, 0, 0), swapRB=True, crop=False)
             self.embedder.setInput(faceBlob)
             vec = self.embedder.forward()
-            vec_list.append((box, vec))
+            vec_list.append((box, vec.flatten()))
 
         return vec_list
+
+    def extract_dataset(self, dataset_path, thresh = 0.8):
+        pass
 
 
 
@@ -166,7 +169,13 @@ if __name__ == "__main__":
         cap.release()
 
     def extract_test():
-        img = cv2.imread("C:\\mask2.jpg")
+        os.chdir("..")
+        os.environ["FACE_MODEL_PATH"] = os.path.join("PyAutoMakerHuman\\", "models")
+        img = cv2.imread("C:\\th.jpg")
         face = FaceUtil()
         face.initExtractor()
         result = face.extract(img)
+
+        return result
+
+    result = extract_test()
