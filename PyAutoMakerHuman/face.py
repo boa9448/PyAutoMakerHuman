@@ -114,13 +114,10 @@ class FaceUtil:
         return FaceResult((width, height), result)
 
     def initExtractor(self):
-        """
         #경로 제대로 설정 해야함
         self.embedder = cv2.dnn.readNetFromTorch(
-                        os.path.join(os.environ["EMBED_MODEL_PATH"]
+                        os.path.join(os.environ["FACE_MODEL_PATH"]
                         , "openface_nn4.small2.v1.t7"))
-        """
-        self.embedder = cv2.dnn.readNetFromTorch("C:\\openface_nn4.small2.v1.t7")
         
 
     def extract(self, img):
