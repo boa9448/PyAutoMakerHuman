@@ -141,6 +141,9 @@ class FaceUtil:
 
         return vec_list
 
+    def extract_dataset(self, dataset_path, thresh = 0.8):
+        pass
+
 
 
 if __name__ == "__main__":
