@@ -1,6 +1,8 @@
 import os
+import fnmatch
 import cv2
 import mediapipe as mp
+import imutils
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
@@ -98,7 +100,7 @@ class FaceResult:
         return dict(self.__iter__())
 
 class FaceUtil:
-    def __init__(self, model_selection : int = 1, min_detection_confidence : float = 0.5):
+    def __init__(self, model_selection : int = 1, min_detection_confidence : float = 0.8):
         self.detector = mp_face_detection.FaceDetection(
             model_selection = model_selection
             , min_detection_confidence = min_detection_confidence)
@@ -118,7 +120,6 @@ class FaceUtil:
         self.embedder = cv2.dnn.readNetFromTorch(
                         os.path.join(os.environ["FACE_MODEL_PATH"]
                         , "openface_nn4.small2.v1.t7"))
-        
 
     def extract(self, img):
         result = self.detect(img)
@@ -141,8 +142,40 @@ class FaceUtil:
 
         return vec_list
 
-    def extract_dataset(self, dataset_path, thresh = 0.8):
-        pass
+    def extract_dataset(self, dataset_path):
+        ext_list = ["*.jpg", "*.png", "*.JPG", "*.PNG"]
+        file_list = []
+        
+        for ext in ext_list:
+            for root, dirs, files in os.walk(dataset_path):
+                if not files:
+                    continue
+
+                for file in fnmatch.filter(files, ext):
+                    file_list.append(os.path.join(root, file))
+
+        print(f"[INFO] file count : {len(file_list)}")
+
+        name_list = []
+        embed_list = []
+        for idx, file in enumerate(file_list):
+            print(f"[INFO] process... {idx + 1}/{len(file_list)}")
+            name = file.split(os.path.sep)[-2]
+
+            img = cv2.imread(file)
+            img = imutils.resize(img, width=600)
+            embed = self.extract(img)
+            if not embed:
+                continue
+
+            name_list.append(name)
+            embed_list.append(embed[0][1]) #1개, 박스 정보는 제외
+
+        print("done")
+        return {"name" : name_list, "embed" : embed_list}
+
+
+
 
 
 
@@ -178,4 +211,12 @@ if __name__ == "__main__":
 
         return result
 
-    result = extract_test()
+    #result = extract_test()
+    def extract_test2():
+        os.environ["FACE_MODEL_PATH"] = os.path.join("PyAutoMakerHuman\\", "models")
+        face = FaceUtil()
+        face.initExtractor()
+        result = face.extract_dataset("dataset")
+
+        return result
+
