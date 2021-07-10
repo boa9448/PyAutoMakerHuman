@@ -7,6 +7,7 @@ os.environ["FACE_MODEL_PATH"] = os.path.join(rootDir, "models")
 sys.path.append(rootDir)
 
 from face import *
+from hand import *
 from train import *
 
 print("call!")

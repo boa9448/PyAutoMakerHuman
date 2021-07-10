@@ -1,8 +1,8 @@
 import os
 import fnmatch
+import imutils
 import cv2
 import mediapipe as mp
-import imutils
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
@@ -32,6 +32,9 @@ class FaceResult:
         return len(self.result.detections)
 
     def score(self):
+        if self.count() == 0:
+            return None
+
         return [detection.score for detection in self.result.detections]
 
     def get_box_list(self, bRelative : bool = False):
@@ -41,8 +44,8 @@ class FaceResult:
         """
 
         result_list = []
-        if self.result.detections is None:
-            return result_list
+        if self.count() == 0:
+            return None
 
         for detection in self.result.detections:
             box = detection.location_data.relative_bounding_box
@@ -69,8 +72,8 @@ class FaceResult:
     def get_keypoints(self, bRelative : bool = False):
         result_list = []
 
-        if self.result.detections is None:
-            return result_list
+        if self.count() == 0:
+            return None
 
         for detection in self.result.detections:
             keypoint_list = list(detection.location_data.relative_keypoints)
@@ -89,7 +92,7 @@ class FaceResult:
 
         return result_list
     
-    def draw_detections(self, img):
+    def draw(self, img):
         if self.count() == 0:
             return
 

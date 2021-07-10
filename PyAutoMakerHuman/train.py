@@ -37,4 +37,8 @@ class SvmUtil:
         proba = result[idx]
         name = self.le.classes_[idx]
 
-        return name, proba
+        return str(name), float(proba)
+
+class KerasUtil:
+    def __init__(self):
+        pass
