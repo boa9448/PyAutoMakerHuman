@@ -89,13 +89,29 @@ class HandResult:
             for idx in range(len(result_list)):
                 result = result_list[idx]
                 result_list[idx] = [
-                    (int(mark[0] * width), int(mark[1] * height)) for mark in result
+                    (int(mark[0] * width), int(mark[1] * height), int(mark[2] * 10000)) for mark in result
                 ]
 
         return result_list
 
     def get_box_landmark_list(self, bRelative : bool = False):
-        pass
+        box_list = self.get_box_list(False)
+        landmark_list = self.get_landmark_list(False)
+
+        new_landmark_list = []
+
+        for box, landmark in zip(box_list, landmark_list):
+            new_landmark = map(lambda landmark : (landmark[0] - box[0], landmark[1] - box[1], landmark[2]), landmark)
+            new_landmark_list.append(list(new_landmark))
+
+        if bRelative:
+            idx = 0
+            for box, landmark in zip(box_list, new_landmark_list):
+                new_landmark = map(lambda landmark : (landmark[0] / box[2], landmark[1] / box[3], landmark[2] / 10000), landmark)
+                new_landmark_list[idx] = tuple(new_landmark)
+                idx += 1
+
+        return new_landmark_list
 
 
     def draw(self, img : np.ndarray):
@@ -131,20 +147,43 @@ class HandUtil:
 
     def extract(self, img):
         result = self.detect(img)
-        boxes = result.get_box_list()
+        if result.count() == 0:
+            return None
 
-        vec_list = []
-        for box in boxes:
-            x, y, w, h = box
-            hand = img[y:y+h, x:x+w]
-            (hH, hW) = hand.shape[:2]
-            
-            vec_list.append((box, vec.flatten()))
-
-        return vec_list
+        landmark_list = result.get_box_landmark_list(True)
+        return landmark_list
 
     def extract_dataset(self, dataset_path):
-        pass
+        ext_list = ["*.jpg", "*.png", "*.JPG", "*.PNG"]
+        file_list = []
+        
+        for ext in ext_list:
+            for root, dirs, files in os.walk(dataset_path):
+                if not files:
+                    continue
+
+                for file in fnmatch.filter(files, ext):
+                    file_list.append(os.path.join(root, file))
+
+        print(f"[INFO] file count : {len(file_list)}")
+
+        name_list = []
+        data_list = []
+        for idx, file in enumerate(file_list):
+            print(f"[INFO] process... {idx + 1}/{len(file_list)}")
+            name = file.split(os.path.sep)[-2]
+
+            img = cv2.imread(file)
+            img = imutils.resize(img, width=600)
+            data = self.extract(img)
+            if not data:
+                continue
+
+            name_list.append(name)
+            data_list.append(data[0][1]) #맨 처음 등록된 1개의 정보만, 박스 정보는 제외
+
+        print("done")
+        return {"name" : name_list, "data" : data_list}
 
 
 if __name__ == "__main__":

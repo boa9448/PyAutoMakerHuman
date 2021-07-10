@@ -143,3 +143,5 @@ dataset/
 
 # Temp
 temp/
+
+test/*.jpg

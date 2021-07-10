@@ -175,7 +175,7 @@ class FaceUtil:
             embed_list.append(embed[0][1]) #1개, 박스 정보는 제외
 
         print("done")
-        return {"name" : name_list, "embed" : embed_list}
+        return {"name" : name_list, "data" : embed_list}
 
 
 

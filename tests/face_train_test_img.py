@@ -11,7 +11,7 @@ dataset_path = os.path.join("dataset", "face")
 face = pamh.FaceUtil(min_detection_confidence=0.7)
 face.initExtractor()
 data = face.extract_dataset(dataset_path)
-embed, name = data["embed"], data["name"]
+embed, name = data["data"], data["name"]
 
 trainer = pamh.SvmUtil()
 trainer.train_svm(embed, name)
