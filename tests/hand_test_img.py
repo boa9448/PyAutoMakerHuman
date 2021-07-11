@@ -21,7 +21,6 @@ for box, landmark in zip(boxes, new_landmark_list):
     height, width = hand.shape[:2]
     for mark in landmark:
         mark = (int(mark[0] * width), int(mark[1] * height), mark[2])
-        print(mark)
         cv2.circle(hand, (mark[0], mark[1]), 1, (0, 255, 0), 2)
 
     cv2.imshow("view", hand)

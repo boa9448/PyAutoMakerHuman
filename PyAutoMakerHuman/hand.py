@@ -150,8 +150,9 @@ class HandUtil:
         if result.count() == 0:
             return None
 
+        box_list = result.get_box_list(False)
         landmark_list = result.get_box_landmark_list(True)
-        return landmark_list
+        return [(box, np.asarray(landmark).flatten()) for box, landmark in zip(box_list, landmark_list)]
 
     def extract_dataset(self, dataset_path):
         ext_list = ["*.jpg", "*.png", "*.JPG", "*.PNG"]
@@ -180,7 +181,7 @@ class HandUtil:
                 continue
 
             name_list.append(name)
-            data_list.append(data[0][1]) #맨 처음 등록된 1개의 정보만, 박스 정보는 제외
+            data_list.append(np.asarray(data[0][1]).flatten()) #맨 처음 등록된 1개의 정보만, 박스 정보는 제외
 
         print("done")
         return {"name" : name_list, "data" : data_list}
