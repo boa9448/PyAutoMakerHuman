@@ -8,7 +8,6 @@ sys.path.append(rootDir)
 
 from face import *
 from hand import *
+from pose import *
 from train import *
 from utils import *
-
-print("call!")
