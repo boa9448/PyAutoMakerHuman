@@ -1,3 +1,5 @@
+import os
+import pickle
 import cv2
 import imutils
 import numpy as np
@@ -18,20 +20,27 @@ class SvmUtil:
         labels = self.le.fit_transform(label)
         
         print("[INFO] training model...")
-        self.recognizer = SVC(C=1.0, kernel="linear", probability=True)
-        self.recognizer.fit(data, labels)
+        self.model = SVC(C=1.0, kernel="linear", probability=True)
+        self.model.fit(data, labels)
         print("[INFO] train end")
 
-        return self.recognizer
+        return self.model
 
     def save_svm(self, save_path):
-        pass
+        f = open(os.path.join(save_path, "svm_model"), "wb")
+        f.write(pickle.dumps(self.model))
+        f.close()
+
+        f = open(os.path.join(save_path, "le"), "wb")
+        f.write(pickle.dumps(self.le))
+        f.close()
 
     def load_svm(self, load_path):
-        pass
+        self.model = pickle.loads(open(os.path.join(load_path, "svm_model"), "rb").read())
+        self.le = pickle.loads(open(os.path.join(load_path, "le"), "rb").read())
 
     def predict(self, data):
-        result = self.recognizer.predict_proba(data)[0]
+        result = self.model.predict_proba(data)[0]
         idx = np.argmax(result)
 
         proba = result[idx]
@@ -41,4 +50,7 @@ class SvmUtil:
 
 class KerasUtil:
     def __init__(self):
+        pass
+
+    def __del__(self):
         pass
