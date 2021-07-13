@@ -129,6 +129,9 @@ class FaceUtil:
         boxes = result.get_box_list()
 
         vec_list = []
+        if not boxes:
+            return vec_list    
+
         for box in boxes:
             x, y, w, h = box
             face = img[y:y+h, x:x+w]

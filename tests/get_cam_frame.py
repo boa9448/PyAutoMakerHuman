@@ -16,7 +16,7 @@ while cap.isOpened():
     cv2.imshow("view", frame)
     cv2.waitKey(1)
 
-    if time.time() - start > 3:
+    if time.time() - start > 20:
         break
 
 cap.release()
