@@ -45,7 +45,7 @@ while True:
                 color_dict[name] = color
 
 
-            cv2.putText(img, f"{name} : {proba:.2f}", (box[0], box[1] - 50)
+            cv2.putText(img, f"{name} : {proba:.2f}", (box[0], box[1] - 25)
                         , cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
             cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
                             , color, 2)

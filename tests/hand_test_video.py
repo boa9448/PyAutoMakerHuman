@@ -23,7 +23,9 @@ try:
         result.draw(frame)
 
         cv2.imshow("view", frame)
-        cv2.waitKey(1)
+        if cv2.waitKey(1) & 0xff == ord('q'):
+            break
+        
 except KeyboardInterrupt as k:
     pass
 
