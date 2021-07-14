@@ -17,7 +17,7 @@ trainer = pamh.SvmUtil()
 trainer.train_svm(train_data, name)
 
 color_dict = {}
-target_url = "http://172.30.1.55:8080/shot.jpg"
+target_url = "http://172.30.1.11:8080/shot.jpg"
 
 while True:
     try:
