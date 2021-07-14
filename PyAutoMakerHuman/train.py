@@ -27,13 +27,16 @@ class SvmUtil:
         return self.model
 
     def save_svm(self, save_path):
-        f = open(os.path.join(save_path, "svm_model"), "wb")
-        f.write(pickle.dumps(self.model))
-        f.close()
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
 
-        f = open(os.path.join(save_path, "le"), "wb")
-        f.write(pickle.dumps(self.le))
-        f.close()
+        with open(os.path.join(save_path, "svm_model"), "wb") as f:
+            f.write(pickle.dumps(self.model))
+            f.close()
+
+        with open(os.path.join(save_path, "le"), "wb") as f:
+            f.write(pickle.dumps(self.le))
+            f.close()
 
     def load_svm(self, load_path):
         self.model = pickle.loads(open(os.path.join(load_path, "svm_model"), "rb").read())
