@@ -1,10 +1,18 @@
 import os
+import platform
 import fnmatch
 import imutils
+import numpy as np
 import cv2
 import mediapipe as mp
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
+
+if platform.system() == "Windows":
+    import tensorflow.lite as tflite
+else:
+    import tflite_runtime.interpreter as tflite
+
 
 class FaceResult:
     def __init__(self, img_size, result):
@@ -108,8 +116,8 @@ class FaceUtil:
             model_selection = model_selection
             , min_detection_confidence = min_detection_confidence)
 
-        self.embedder = None
         self.init_extractor()
+        self.init_mask_classifier()
 
     def __del__(self):
         self.detector.close()
@@ -118,6 +126,37 @@ class FaceUtil:
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         height, width, _ = img.shape
         return FaceResult((width, height), result)
+    
+    def init_mask_classifier(self):
+        self.mask_classifier = tflite.Interpreter(os.path.join(os.environ["FACE_MODEL_PATH"]
+                                                , "mask_classifier.tflite"))
+
+        self.mask_classifier.allocate_tensors()
+
+        self.input_details = self.mask_classifier.get_input_details()
+        self.output_details = self.mask_classifier.get_output_details()
+
+        self.input_shape = self.input_details[0]['shape']
+        self.height = self.input_shape[1]
+        self.width = self.input_shape[2]
+
+    def mask_predict(self, img):
+        face = img
+        face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+        face = cv2.resize(face, (self.width, self.height))
+        face = face.astype(dtype = np.float32)
+        face /= 255.
+
+        input_data = [face]
+        self.mask_classifier.set_tensor(self.input_details[0]['index'], input_data)
+        self.mask_classifier.invoke()
+
+        (mask, withoutMask) = self.mask_classifier.get_tensor(self.output_details[0]['index'])[0]
+        mask_use = True if mask > withoutMask else False
+        proba = mask if mask > withoutMask else withoutMask
+
+        return (mask_use, proba)
+
 
     def init_extractor(self):
         #경로 제대로 설정 해야함
