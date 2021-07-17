@@ -109,6 +109,7 @@ class FaceUtil:
             , min_detection_confidence = min_detection_confidence)
 
         self.embedder = None
+        self.initExtractor()
 
     def __del__(self):
         self.detector.close()
