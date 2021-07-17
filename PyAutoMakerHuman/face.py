@@ -109,7 +109,7 @@ class FaceUtil:
             , min_detection_confidence = min_detection_confidence)
 
         self.embedder = None
-        self.initExtractor()
+        self.init_extractor()
 
     def __del__(self):
         self.detector.close()
@@ -119,7 +119,7 @@ class FaceUtil:
         height, width, _ = img.shape
         return FaceResult((width, height), result)
 
-    def initExtractor(self):
+    def init_extractor(self):
         #경로 제대로 설정 해야함
         self.embedder = cv2.dnn.readNetFromTorch(
                         os.path.join(os.environ["FACE_MODEL_PATH"]
