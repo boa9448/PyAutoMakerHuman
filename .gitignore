@@ -145,3 +145,7 @@ dataset/
 temp/
 
 test/*.jpg
+
+# 이전 테스트 코드는 제외
+tests/__init__old.py
+tests/__main__old.py
