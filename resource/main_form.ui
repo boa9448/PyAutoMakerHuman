@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>745</width>
+    <height>654</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>9</y>
+     <width>231</width>
+     <height>221</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>원본</string>
+   </property>
+   <widget class="QWidget" name="verticalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>9</x>
+      <y>19</y>
+      <width>211</width>
+      <height>191</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QLabel" name="original_img_label">
+       <property name="text">
+        <string>원본 이미지</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>10</y>
+     <width>231</width>
+     <height>221</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>랜드마크 이미지</string>
+   </property>
+   <widget class="QWidget" name="verticalLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>9</x>
+      <y>19</y>
+      <width>211</width>
+      <height>191</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_4">
+     <item>
+      <widget class="QLabel" name="result_img_label">
+       <property name="text">
+        <string>랜드마크 이미지</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_3">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>230</y>
+     <width>471</width>
+     <height>411</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>합성 이미지</string>
+   </property>
+   <widget class="QWidget" name="verticalLayoutWidget_4">
+    <property name="geometry">
+     <rect>
+      <x>9</x>
+      <y>19</y>
+      <width>451</width>
+      <height>381</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <item>
+      <widget class="QLabel" name="over_img_label">
+       <property name="text">
+        <string>합성 이미지</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="verticalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>489</x>
+     <y>19</y>
+     <width>251</width>
+     <height>621</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_6">
+      <item>
+       <widget class="QPushButton" name="train_model_button">
+        <property name="text">
+         <string>모델 학습</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="load_model_button">
+        <property name="text">
+         <string>모델 불러오기</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="model_save_button">
+        <property name="text">
+         <string>모델 저장하기</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>데이터셋 폴더 열기 : </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="train_path_find_button">
+        <property name="text">
+         <string>찾아보기</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_7">
+      <item>
+       <widget class="QListWidget" name="listWidget"/>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

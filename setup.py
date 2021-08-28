@@ -22,7 +22,7 @@ elif sys.platform == "linux":
 
 setuptools.setup(
     name="PyAutoMakerHuman",
-    version="1.0.1",
+    version="1.0.2",
     author="WDW",
     author_email="boa3465@gmail.com",
     description="얼굴, 포즈, 손의 랜드마크를 쉽게 가져오기위한 모듈",
@@ -44,7 +44,7 @@ setuptools.setup(
 
     install_requires = ["imutils", "scikit-learn", "waitress", "flask", "requests"
     , "mediapipe; platform_system == 'Windows'", "mediapipe-rpi4; platform_system == 'Linux'"
-    , "tensorflow; platform_system == 'Windows'"],
+    , "tensorflow; platform_system == 'Windows'", "PySide6"],
     python_requires=">=3.6",
 )
 
