@@ -16,7 +16,7 @@
   <property name="windowTitle">
    <string>도우미 유틸</string>
   </property>
-  <widget class="QTabWidget" name="tabWidget">
+  <widget class="QTabWidget" name="test_log_list">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -55,7 +55,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QLabel" name="original_img_label">
+        <widget class="QLabel" name="train_original_img_label">
          <property name="text">
           <string>원본 이미지</string>
          </property>
@@ -87,7 +87,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QLabel" name="result_img_label">
+        <widget class="QLabel" name="train_result_img_label">
          <property name="text">
           <string>랜드마크 이미지</string>
          </property>
@@ -136,7 +136,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox">
+            <widget class="QComboBox" name="train_type_combo">
              <property name="accessibleName">
               <string/>
              </property>
@@ -151,14 +151,14 @@
           </layout>
          </item>
          <item>
-          <widget class="QPushButton" name="train_model_button">
+          <widget class="QPushButton" name="train_model_train_button">
            <property name="text">
             <string>모델 학습 시작</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="model_save_button">
+          <widget class="QPushButton" name="train_model_save_button">
            <property name="text">
             <string>모델 저장하기</string>
            </property>
@@ -176,7 +176,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="train_path_find_button">
+          <widget class="QPushButton" name="train_dataset_path_find_button">
            <property name="text">
             <string>찾아보기</string>
            </property>
@@ -187,7 +187,7 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_7">
          <item>
-          <widget class="QListWidget" name="listWidget"/>
+          <widget class="QListWidget" name="train_dataset_list"/>
          </item>
         </layout>
        </item>
@@ -207,7 +207,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="doubleSpinBox">
+          <widget class="QDoubleSpinBox" name="train_thresh_spin_edit">
            <property name="enabled">
             <bool>true</bool>
            </property>
@@ -247,7 +247,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QListWidget" name="listWidget_2"/>
+        <widget class="QListWidget" name="train_log_list"/>
        </item>
       </layout>
      </widget>
@@ -280,7 +280,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <widget class="QLabel" name="original_img_label_2">
+        <widget class="QLabel" name="test_original_img_label">
          <property name="text">
           <string>원본 이미지</string>
          </property>
@@ -312,7 +312,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_8">
        <item>
-        <widget class="QLabel" name="result_img_label_2">
+        <widget class="QLabel" name="test_result_img_label">
          <property name="text">
           <string>랜드마크 이미지</string>
          </property>
@@ -361,7 +361,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox_2">
+            <widget class="QComboBox" name="test_type_combo">
              <property name="accessibleName">
               <string/>
              </property>
@@ -376,7 +376,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QPushButton" name="model_save_button_2">
+          <widget class="QPushButton" name="test_model_load_button">
            <property name="text">
             <string>모델 불러오기</string>
            </property>
@@ -394,7 +394,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="train_path_find_button_2">
+          <widget class="QPushButton" name="test_dataset_path_find_button">
            <property name="text">
             <string>찾아보기</string>
            </property>
@@ -405,7 +405,7 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_13">
          <item>
-          <widget class="QListWidget" name="listWidget_3"/>
+          <widget class="QListWidget" name="test_dataset_list"/>
          </item>
         </layout>
        </item>
