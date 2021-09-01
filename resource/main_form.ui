@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>792</width>
+    <width>1122</width>
     <height>661</height>
    </rect>
   </property>
@@ -21,12 +21,12 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>771</width>
+     <width>1101</width>
      <height>641</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -37,8 +37,8 @@
       <rect>
        <x>10</x>
        <y>0</y>
-       <width>231</width>
-       <height>221</height>
+       <width>391</width>
+       <height>341</height>
       </rect>
      </property>
      <property name="title">
@@ -49,8 +49,8 @@
        <rect>
         <x>9</x>
         <y>19</y>
-        <width>211</width>
-        <height>191</height>
+        <width>371</width>
+        <height>311</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -67,10 +67,10 @@
     <widget class="QGroupBox" name="groupBox_2">
      <property name="geometry">
       <rect>
-       <x>250</x>
+       <x>410</x>
        <y>0</y>
-       <width>231</width>
-       <height>221</height>
+       <width>391</width>
+       <height>341</height>
       </rect>
      </property>
      <property name="title">
@@ -81,8 +81,8 @@
        <rect>
         <x>9</x>
         <y>19</y>
-        <width>211</width>
-        <height>191</height>
+        <width>371</width>
+        <height>311</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -99,7 +99,7 @@
     <widget class="QGroupBox" name="groupBox_3">
      <property name="geometry">
       <rect>
-       <x>490</x>
+       <x>810</x>
        <y>0</y>
        <width>271</width>
        <height>601</height>
@@ -137,6 +137,9 @@
            </item>
            <item>
             <widget class="QComboBox" name="comboBox">
+             <property name="accessibleName">
+              <string/>
+             </property>
              <property name="editable">
               <bool>false</bool>
              </property>
@@ -150,14 +153,7 @@
          <item>
           <widget class="QPushButton" name="train_model_button">
            <property name="text">
-            <string>모델 학습</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="load_model_button">
-           <property name="text">
-            <string>모델 불러오기</string>
+            <string>모델 학습 시작</string>
            </property>
           </widget>
          </item>
@@ -215,6 +211,9 @@
            <property name="enabled">
             <bool>true</bool>
            </property>
+           <property name="specialValueText">
+            <string>95.0</string>
+           </property>
            <property name="decimals">
             <number>3</number>
            </property>
@@ -229,23 +228,28 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>220</y>
-       <width>471</width>
-       <height>381</height>
+       <y>340</y>
+       <width>791</width>
+       <height>261</height>
       </rect>
      </property>
      <property name="title">
       <string>작업 로그</string>
      </property>
-     <widget class="QListWidget" name="listWidget_2">
+     <widget class="QWidget" name="verticalLayoutWidget_5">
       <property name="geometry">
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>451</width>
-        <height>351</height>
+        <width>771</width>
+        <height>231</height>
        </rect>
       </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QListWidget" name="listWidget_2"/>
+       </item>
+      </layout>
      </widget>
     </widget>
    </widget>
@@ -253,6 +257,192 @@
     <attribute name="title">
      <string>모델 테스트</string>
     </attribute>
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>0</y>
+       <width>401</width>
+       <height>431</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>원본</string>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget_4">
+      <property name="geometry">
+       <rect>
+        <x>9</x>
+        <y>19</y>
+        <width>381</width>
+        <height>401</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="original_img_label_2">
+         <property name="text">
+          <string>원본 이미지</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_6">
+     <property name="geometry">
+      <rect>
+       <x>420</x>
+       <y>0</y>
+       <width>401</width>
+       <height>431</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>랜드마크 이미지</string>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget_6">
+      <property name="geometry">
+       <rect>
+        <x>9</x>
+        <y>19</y>
+        <width>381</width>
+        <height>401</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <item>
+        <widget class="QLabel" name="result_img_label_2">
+         <property name="text">
+          <string>랜드마크 이미지</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_7">
+     <property name="geometry">
+      <rect>
+       <x>830</x>
+       <y>0</y>
+       <width>251</width>
+       <height>601</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>도구</string>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget_9">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>231</width>
+        <height>571</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_11">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_12">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>타입 :   </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox_2">
+             <property name="accessibleName">
+              <string/>
+             </property>
+             <property name="editable">
+              <bool>false</bool>
+             </property>
+             <property name="placeholderText">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QPushButton" name="model_save_button_2">
+           <property name="text">
+            <string>모델 불러오기</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>테스트셋 폴더 열기 : </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="train_path_find_button_2">
+           <property name="text">
+            <string>찾아보기</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_13">
+         <item>
+          <widget class="QListWidget" name="listWidget_3"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_6"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_8">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>430</y>
+       <width>811</width>
+       <height>171</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>작업 로그</string>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget_8">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>791</width>
+        <height>141</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_10">
+       <item>
+        <widget class="QListWidget" name="listWidget_4"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
    </widget>
    <widget class="QWidget" name="tab_3">
     <attribute name="title">
