@@ -26,7 +26,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -394,7 +394,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="test_dataset_path_find_button">
+          <widget class="QPushButton" name="train_path_find_button_2">
            <property name="text">
             <string>찾아보기</string>
            </property>
@@ -405,7 +405,7 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_13">
          <item>
-          <widget class="QListWidget" name="test_dataset_list"/>
+          <widget class="QListWidget" name="listWidget_3"/>
          </item>
         </layout>
        </item>
