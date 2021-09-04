@@ -138,6 +138,11 @@ class Ui_Form(object):
 
         self.horizontalLayout_4.addWidget(self.train_thresh_spin_edit)
 
+        self.train_thresh_apply_button = QPushButton(self.verticalLayoutWidget)
+        self.train_thresh_apply_button.setObjectName(u"train_thresh_apply_button")
+
+        self.horizontalLayout_4.addWidget(self.train_thresh_apply_button)
+
 
         self.verticalLayout.addLayout(self.horizontalLayout_4)
 
@@ -296,8 +301,9 @@ class Ui_Form(object):
         self.train_model_save_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \uc800\uc7a5\ud558\uae30", None))
         self.label.setText(QCoreApplication.translate("Form", u"\ub370\uc774\ud130\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.train_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
-        self.label_3.setText(QCoreApplication.translate("Form", u"\ud559\uc2b5 \ub370\uc774\ud130 \uc784\uacc4\uc728 : ", None))
-        self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"95.0", None))
+        self.label_3.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
+        self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"85.0", None))
+        self.train_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
         self.groupBox_4.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
         self.test_log_list.setTabText(self.test_log_list.indexOf(self.tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud559\uc2b5", None))
         self.groupBox_5.setTitle(QCoreApplication.translate("Form", u"\uc6d0\ubcf8", None))

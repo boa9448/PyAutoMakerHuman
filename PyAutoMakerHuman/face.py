@@ -13,6 +13,9 @@ if platform.system() == "Windows":
 else:
     import tflite_runtime.interpreter as tflite
 
+if not ("FACE_MODEL_PATH" in os.environ):
+    import __init__
+
 
 class FaceResult:
     def __init__(self, img_size, result):

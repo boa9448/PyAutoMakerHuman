@@ -202,7 +202,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>학습 데이터 임계율 : </string>
+            <string>탐지 임계율(%) : </string>
            </property>
           </widget>
          </item>
@@ -212,10 +212,17 @@
             <bool>true</bool>
            </property>
            <property name="specialValueText">
-            <string>95.0</string>
+            <string>85.0</string>
            </property>
            <property name="decimals">
             <number>3</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="train_thresh_apply_button">
+           <property name="text">
+            <string>적용</string>
            </property>
           </widget>
          </item>
