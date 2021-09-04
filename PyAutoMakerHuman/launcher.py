@@ -89,18 +89,22 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         bg_color = QColor(*color)
         log_message_item.setBackground(bg_color)
         self.train_log_list.addItem(log_message_item)
+        self.train_log_list.scrollToBottom()
 
     def add_dataset_to_list(self, target_list, dataset_folder_path):
         print(os.path.join(dataset_folder_path, "**", "*.*"))
         dataset_file_list = glob(os.path.join(dataset_folder_path, "**", "*.*"), recursive = True)
         target_list.addItems(dataset_file_list)
+        
+        self.log(f"지정한 경로에서 총 : {len(dataset_file_list)}개의 파일을 찾았습니다")
 
     def view_original_img(self, img_path):
         pixmap = QPixmap()
         pixmap.load(img_path)
         if pixmap.isNull():
             self.messagebox("이미지를 열 수 없습니다.")
-            return
+            self.log("이미지를 열 수 없습니다", (255, 0, 0))
+            raise Exception("이미지를 열 수 없습니다")
 
         label_size = self.train_original_img_label.size()
         pixmap = pixmap.scaled(label_size, aspectMode = Qt.IgnoreAspectRatio)
@@ -110,11 +114,19 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         img = cv2.imread(img_path)
         if img is None:
             self.messagebox("이미지를 열 수 없습니다.")
-            return
+            self.log("이미지를 열 수 없습니다", (255, 0, 0))
+            raise Exception("이미지를 열 수 없습니다")
 
         result = self.detector.detect(img)
-        result.draw(img)
 
+        scores = result.score()
+        if scores is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            self.log(f"찾은 개수 : {len(scores)} ({scores})")
+
+
+        result.draw(img)
         height, width, channel = img.shape
         bytesPerLine = channel * width
         qImg = QImage(img.data, width, height, bytesPerLine
@@ -127,8 +139,13 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     def train_dataset_list_select_change_handler(self):
         item = self.train_dataset_list.currentItem()
-        self.view_original_img(item.text())
-        self.view_landmark_img(item.text())
+        try:
+            self.log(f"{item.text()} 을(를) 열기를 시도합니다")
+            self.view_original_img(item.text())
+            self.view_landmark_img(item.text())
+            self.log(f"{item.text()} 의 작업을 끝냈습니다")
+        except:
+            self.log(f"{item.text()} 의 작업을 실패했습니다", (255, 0, 0))
 
     def train_thresh_button_click_handler(self):
         cur_text = self.train_type_combo.currentText()
