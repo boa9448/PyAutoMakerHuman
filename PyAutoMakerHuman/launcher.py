@@ -110,7 +110,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pixmap = pixmap.scaled(label_size, aspectMode = Qt.IgnoreAspectRatio)
         self.train_original_img_label.setPixmap(pixmap)
 
-    def view_landmark_img(self, img_path):
+    def detect_drow(self, img_path) -> QImage:
         img = cv2.imread(img_path)
         if img is None:
             self.messagebox("이미지를 열 수 없습니다.")
@@ -131,7 +131,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         bytesPerLine = channel * width
         qImg = QImage(img.data, width, height, bytesPerLine
                         , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
+        return qImg
 
+    def view_landmark_img(self, img_path):
+        qImg = self.detect_drow(img_path)
         pixmap = QPixmap(qImg)
         label_size = self.train_result_img_label.size()
         pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
@@ -152,6 +155,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         thresh = self.train_thresh_spin_edit.text()
         thresh = float(thresh) / 100
         self.detector = self.init_detector(cur_text, thresh)
+        self.log("변경 완료")
 
     def train_type_combo_change_handler(self, idx):
         self.train_thresh_button_click_handler()
