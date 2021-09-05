@@ -122,6 +122,16 @@ class Ui_Form(object):
 
         self.verticalLayout.addLayout(self.verticalLayout_7)
 
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.two_hand_checkBox = QCheckBox(self.verticalLayoutWidget)
+        self.two_hand_checkBox.setObjectName(u"two_hand_checkBox")
+
+        self.horizontalLayout_7.addWidget(self.two_hand_checkBox)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_7)
+
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.label_3 = QLabel(self.verticalLayoutWidget)
@@ -301,6 +311,7 @@ class Ui_Form(object):
         self.train_model_save_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \uc800\uc7a5\ud558\uae30", None))
         self.label.setText(QCoreApplication.translate("Form", u"\ub370\uc774\ud130\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.train_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
+        self.two_hand_checkBox.setText(QCoreApplication.translate("Form", u"2\uac1c\uc758 \uc190\uc744 \ud559\uc2b5 \uc2dc\ud0a4\ub3c4\ub85d \uace0\uc815", None))
         self.label_3.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
         self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"85.0", None))
         self.train_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))

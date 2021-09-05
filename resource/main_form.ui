@@ -192,6 +192,17 @@
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <item>
+          <widget class="QCheckBox" name="two_hand_checkBox">
+           <property name="text">
+            <string>2개의 손을 학습 시키도록 고정</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
           <widget class="QLabel" name="label_3">
