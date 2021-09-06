@@ -2,6 +2,12 @@
 사람과 관련된 자동화 모듈
 
 
+# 주의
+이 프로젝트는 아직 개발중입니다
+내보내는 API는 언제든지 바뀔 수 있습니다
+
+
+
 # 설치
 pip install PyAutoMakerHuman
 
@@ -99,3 +105,7 @@ python setup.py install <br>
     cv2.imshow("view", img)
     cv2.waitKey()
     cv2.destroyAllWindows()
+
+
+# 추후 개발
+간단하게 모델을 학습 시킬 수 있는 GUI도구
