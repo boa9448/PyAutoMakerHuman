@@ -1,0 +1,9 @@
+imutils
+scikit-learn
+waitress
+flask
+requests
+mediapipe; platform_system == 'Windows'
+mediapipe-rpi4; platform_system == 'Linux'
+tensorflow; platform_system == 'Windows'
+PySide6
