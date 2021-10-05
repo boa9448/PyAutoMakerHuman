@@ -20,7 +20,8 @@ class HandResult:
 
     def __iter__(self):
         data_list = [("count", self.count())
-                    , ("score", self.score())
+                    , ("labels", self.labels())
+                    , ("scores", self.scores())
                     , ("boxes", self.get_box_list())
                     , ("landmarks_list", self.get_landmark_list())]
 
@@ -33,19 +34,19 @@ class HandResult:
 
         return len(self.result.multi_hand_landmarks)
 
-    def score(self):
+    def scores(self):
         if self.count() == 0:
             return None
 
         return [hand.classification[0].score for hand in self.result.multi_handedness]
 
-    def label(self):
+    def labels(self):
         if self.count() == 0:
             return None
 
         return [hand.classification[0].label for hand in self.result.multi_handedness]
 
-    def index(self):
+    def indices(self):
         if self.count() == 0:
             return None
 

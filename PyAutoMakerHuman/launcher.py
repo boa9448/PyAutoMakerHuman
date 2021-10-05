@@ -119,7 +119,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
         result = self.detector.detect(img)
 
-        scores = result.score()
+        scores = result.scores()
         if scores is None:
             self.log(f"찾은 오브젝트가 없습니다")
         else:
