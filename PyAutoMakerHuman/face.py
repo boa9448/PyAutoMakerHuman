@@ -1,6 +1,7 @@
 import os
 import platform
 import fnmatch
+from typing import Generator
 import imutils
 import numpy as np
 import cv2
@@ -27,28 +28,37 @@ class FaceResult:
     def __del__(self):
         pass
 
-    def __iter__(self):
-        data_list = [("count", self.count())
-                    , ("score", self.score())
-                    , ("boxes", self.get_box_list())
-                    , ("keypoints_list", self.get_keypoints())]
+    def __iter__(self) -> Generator:
+        data_list = []
+
+        count = self.count()
+        scores = self.score()
+        boxes = self.get_box_list()
+        keypoints_list = self.get_keypoints()
+
+        for score, box, keypoints in zip(scores, boxes, keypoints_list):
+            data_list.append({
+                "score" : score
+                , "box" : box
+                , "keypoints" : keypoints
+            })
 
         for data in data_list:
             yield data
 
-    def count(self):
+    def count(self) -> int:
         if self.result.detections is None:
             return 0
 
         return len(self.result.detections)
 
-    def score(self):
+    def score(self) -> list:
         if self.count() == 0:
             return None
 
         return [detection.score for detection in self.result.detections]
 
-    def get_box_list(self, bRelative : bool = False):
+    def get_box_list(self, bRelative : bool = False) -> list:
         """
         바운딩 박스의 리트스를 리턴하는 함수
         bRelative가 True라면 정규화된 좌표를 리턴함
@@ -80,7 +90,7 @@ class FaceResult:
 
         return result_list
 
-    def get_keypoints(self, bRelative : bool = False):
+    def get_keypoints(self, bRelative : bool = False) -> list:
         result_list = []
 
         if self.count() == 0:

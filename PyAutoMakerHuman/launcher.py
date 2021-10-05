@@ -54,6 +54,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             cur_type = self.train_type_combo.currentText()
             self.detector = self.init_detector(cur_type, thresh)
+            self.trainer = train.SvmUtil()
         init_data()
 
         self.log("프로그램 켜짐")
@@ -118,6 +119,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             raise Exception("이미지를 열 수 없습니다")
 
         result = self.detector.detect(img)
+        print(list(result))
 
         scores = result.scores()
         if scores is None:
@@ -140,6 +142,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
         self.train_result_img_label.setPixmap(pixmap)
 
+    @Slot()
     def train_dataset_list_select_change_handler(self):
         item = self.train_dataset_list.currentItem()
         try:
@@ -147,9 +150,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.view_original_img(item.text())
             self.view_landmark_img(item.text())
             self.log(f"{item.text()} 의 작업을 끝냈습니다")
-        except:
+        except Exception as e:
+            print(e)
             self.log(f"{item.text()} 의 작업을 실패했습니다", (255, 0, 0))
 
+    @Slot()
     def train_thresh_button_click_handler(self):
         cur_text = self.train_type_combo.currentText()
         thresh = self.train_thresh_spin_edit.text()
@@ -157,15 +162,29 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.detector = self.init_detector(cur_text, thresh)
         self.log("변경 완료")
 
+    @Slot()
     def train_type_combo_change_handler(self, idx):
         self.train_thresh_button_click_handler()
 
+    @Slot()
     def train_model_train_button_handler(self):
         print("train_model_train_button call")
+        dataset_folder = self.run_option.get_dataset_folder_path()
+        if dataset_folder is None:
+            self.log("데이터셋이 들어있는 폴더를 선택해주세요", (255, 0, 0))
+            return
+
+        data = self.detector.extract_dataset(dataset_folder)
+        train_data, name = data["data"], data["name"]
+
+        self.trainer.train_svm(train_data, name)
+
     
+    @Slot()
     def train_model_save_button_handler(self):
         print("train_model_save_button call")
 
+    @Slot()
     def train_dataset_path_find_button_handler(self):
         print("train_dataset_path_find_button_clicked call")
         dlg = QFileDialog(self)

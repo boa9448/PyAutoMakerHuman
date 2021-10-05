@@ -19,11 +19,23 @@ class HandResult:
         pass
 
     def __iter__(self):
-        data_list = [("count", self.count())
-                    , ("labels", self.labels())
-                    , ("scores", self.scores())
-                    , ("boxes", self.get_box_list())
-                    , ("landmarks_list", self.get_landmark_list())]
+        data_list = []
+        count = self.count()
+        if count == 0:
+            return
+
+        labels = self.labels()
+        scores = self.scores()
+        boxes = self.get_box_list()
+        landmark_list = self.get_box_landmark_list()
+
+        for label, score, box, landmark in zip(labels, scores, boxes, landmark_list):
+            data_list.append({
+                "label" : label
+                , "score" : score
+                , "box" : box
+                , "landmark" : landmark
+            })
 
         for data in data_list:
             yield data
@@ -141,6 +153,12 @@ class HandUtil:
     def __del__(self):
         self.detector.close()
 
+    def set_logger(self, logger):
+        self.logger = logger
+
+    def log(self, log : str, color : tuple = (255, 255, 255)):
+        self.logger(log, color)
+
     def detect(self, img):
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         height, width, _ = img.shape
@@ -167,12 +185,12 @@ class HandUtil:
                 for file in fnmatch.filter(files, ext):
                     file_list.append(os.path.join(root, file))
 
-        print(f"[INFO] file count : {len(file_list)}")
+        self.log(f"[INFO] file count : {len(file_list)}")
 
         name_list = []
         data_list = []
         for idx, file in enumerate(file_list):
-            print(f"[INFO] process... {idx + 1}/{len(file_list)}")
+            self.log(f"[INFO] process... {idx + 1}/{len(file_list)}")
             name = file.split(os.path.sep)[-2]
 
             img = cv2.imread(file)
@@ -184,9 +202,20 @@ class HandUtil:
             name_list.append(name)
             data_list.append(np.asarray(data[0][1]).flatten()) #맨 처음 등록된 1개의 정보만, 박스 정보는 제외
 
-        print("done")
+        self.log("done")
         return {"name" : name_list, "data" : data_list}
 
 
 if __name__ == "__main__":
-    pass
+    no_img = cv2.imread("C:\\test.jpg")
+    two_img = cv2.imread("C:\\2_hand.jpg")
+    hand = HandUtil()
+    
+    no_result = hand.detect(no_img)
+    two_result = hand.detect(two_img)
+
+    print(f"no hand count : {no_result.count()}")
+    print(f"two hand count : {two_result.count()}")
+
+    print(f"no hand scores : {no_result.scores()}")
+    print(f"two hand scores : {two_result.scores()}")
