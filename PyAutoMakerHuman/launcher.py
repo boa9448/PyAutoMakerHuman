@@ -177,6 +177,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
         data = self.detector.extract_dataset(dataset_folder)
         train_data, name = data["data"], data["name"]
+        if len(train_data) == 0 or len(name) == 0:
+            self.log("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
+            return
 
         self.trainer.train_svm(train_data, name)
 
