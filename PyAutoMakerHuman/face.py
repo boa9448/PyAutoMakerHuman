@@ -125,6 +125,7 @@ class FaceResult:
 
 class FaceUtil:
     def __init__(self, model_selection : int = 1, min_detection_confidence : float = 0.8):
+        self.logger = None
         self.detector = mp_face_detection.FaceDetection(
             model_selection = model_selection
             , min_detection_confidence = min_detection_confidence)
@@ -134,6 +135,16 @@ class FaceUtil:
 
     def __del__(self):
         self.detector.close()
+
+    def set_logger(self, logger):
+        self.logger = logger
+
+    def log(self, log : str, color : tuple = (255, 255, 255)) -> None:
+        if self.logger is None:
+            print(log)
+            return
+
+        self.logger(log, color)
 
     def detect(self, img):
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
