@@ -32,7 +32,10 @@ class FaceResult:
         data_list = []
 
         count = self.count()
-        scores = self.score()
+        if count == 0:
+            return
+
+        scores = self.scores()
         boxes = self.get_box_list()
         keypoints_list = self.get_keypoints()
 
@@ -52,7 +55,7 @@ class FaceResult:
 
         return len(self.result.detections)
 
-    def score(self) -> list:
+    def scores(self) -> list:
         if self.count() == 0:
             return None
 
