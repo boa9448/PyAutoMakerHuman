@@ -75,6 +75,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         else:
             pass
 
+        if detector is not None:
+            detector.set_logger(self.log)
+            
         return detector
 
     def messagebox(self, message, title = "확인 메시지"):
