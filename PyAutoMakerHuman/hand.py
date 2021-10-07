@@ -146,6 +146,7 @@ class HandUtil:
     def __init__(self, static_image_mode = True, max_num_hands = 2,
                 min_detection_confidence = 0.5):
 
+        self.logger = None
         self.detector = mp_hands.Hands(static_image_mode = static_image_mode,
                                         max_num_hands = max_num_hands,
                                         min_detection_confidence = min_detection_confidence)
@@ -156,7 +157,11 @@ class HandUtil:
     def set_logger(self, logger):
         self.logger = logger
 
-    def log(self, log : str, color : tuple = (255, 255, 255)):
+    def log(self, log : str, color : tuple = (255, 255, 255)) -> None:
+        if self.logger is None:
+            print(log)
+            return
+
         self.logger(log, color)
 
     def detect(self, img):
