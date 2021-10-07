@@ -123,9 +123,6 @@ class FaceResult:
         for detection in self.result.detections:
             mp_drawing.draw_detection(img, detection)
 
-    def to_dict(self):
-        return dict(self.__iter__())
-
 class FaceUtil:
     def __init__(self, model_selection : int = 1, min_detection_confidence : float = 0.8):
         self.logger = None

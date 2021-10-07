@@ -139,9 +139,6 @@ class HandResult:
             mp_drawing.draw_landmarks(
                     img, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-    def to_dict(self):
-        return dict(self.__iter__())
-
 class HandUtil:
     def __init__(self, static_image_mode = True, max_num_hands = 2,
                 min_detection_confidence = 0.5):

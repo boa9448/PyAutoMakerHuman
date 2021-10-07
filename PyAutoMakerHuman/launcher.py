@@ -122,8 +122,6 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             raise Exception("이미지를 열 수 없습니다")
 
         result = self.detector.detect(img)
-        print(list(result))
-
         scores = result.scores()
         if scores is None:
             self.log(f"찾은 오브젝트가 없습니다")
