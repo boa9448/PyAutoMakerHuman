@@ -4,6 +4,7 @@ import imutils
 import numpy as np
 import cv2
 import mediapipe as mp
+from threading import Thread, Event
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
@@ -175,7 +176,7 @@ class HandUtil:
         landmark_list = result.get_box_landmark_list(True)
         return [(box, np.asarray(landmark).flatten()) for box, landmark in zip(box_list, landmark_list)]
 
-    def extract_dataset(self, dataset_path):
+    def extract_dataset(self, dataset_path : str, exit_event : Event) -> dict:
         ext_list = ["*.jpg", "*.png", "*.JPG", "*.PNG"]
         file_list = []
         

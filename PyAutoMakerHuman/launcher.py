@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from threading import Thread, Event
 from glob import glob
 
 import cv2
@@ -10,6 +11,12 @@ from PySide6.QtGui import *
 
 from main_form import Ui_Form
 import face, hand, pose, train
+
+class LogSignal(QObject):
+    sig = Signal(str, tuple)
+
+    def __init__(self):
+        super().__init__()
 
 class RunOption:
     def __init__(self):
@@ -29,17 +36,22 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     def __init__(self):
         self.run_option = RunOption()
+        self.log_signal = LogSignal()
 
         super(TrainTestUtilForm, self).__init__()
         self.setupUi(self)
 
         def init_display():
+            self.two_hand_checkBox.hide()
+
             for train_test_type in self.TRAIN_TEST_TYPE_LIST:
                 self.train_type_combo.addItem(train_test_type)
                 self.test_type_combo.addItem(train_test_type)
         init_display()
 
         def init_handler():
+            self.log_signal.sig.connect(self.log)
+
             self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_change_handler)
             self.train_model_train_button.clicked.connect(self.train_model_train_button_handler)
             self.train_model_save_button.clicked.connect(self.train_model_save_button_handler)
@@ -175,13 +187,21 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.log("데이터셋이 들어있는 폴더를 선택해주세요", (255, 0, 0))
             return
 
-        data = self.detector.extract_dataset(dataset_folder)
-        train_data, name = data["data"], data["name"]
-        if len(train_data) == 0 or len(name) == 0:
-            self.log("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
-            return
+        def train_thread_func(detector, trainer, dataset_folder, log_signal):
+            def train_log(log : str, color : tuple) -> None:
+                log_signal.sig.emit(log, color)
 
-        self.trainer.train_svm(train_data, name)
+            detector.set_logger(train_log)
+            data = detector.extract_dataset(dataset_folder)
+            train_data, name = data["data"], data["name"]
+            if len(train_data) == 0 or len(name) == 0:
+                log_signal.sig.emit("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
+                return
+
+            trainer.train_svm(train_data, name)
+
+        train_thread = Thread(target=train_thread_func, args=(self.detector, self.trainer, dataset_folder, self.log_signal))
+        train_thread.start()
 
     
     @Slot()
