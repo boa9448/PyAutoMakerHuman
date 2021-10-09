@@ -26,7 +26,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="train_tab">
     <attribute name="title">
@@ -223,7 +223,7 @@
             <bool>true</bool>
            </property>
            <property name="specialValueText">
-            <string>85.0</string>
+            <string>75.0</string>
            </property>
            <property name="decimals">
             <number>3</number>

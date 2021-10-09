@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import random
 from threading import Thread, Event
 from glob import glob
 
@@ -142,11 +143,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pixmap = pixmap.scaled(label_size, aspectMode = Qt.IgnoreAspectRatio)
         target_img_label.setPixmap(pixmap)
 
-    def detect_drow(self, img_path) -> QImage:
+    def detect_draw(self, img_path) -> QImage:
         img = cv2.imread(img_path)
         if img is None:
             self.messagebox("이미지를 열 수 없습니다.")
-            self.log("이미지를 열 수 없습니다", (255, 0, 0))
             raise Exception("이미지를 열 수 없습니다")
 
         result = self.detector.detect(img)
@@ -163,13 +163,62 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         qImg = QImage(img.data, width, height, bytesPerLine
                         , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
         return qImg
+    
+    def detect_test_draw(self, img_path) -> QImage:
+        img = cv2.imread(img_path)
+        if img is None:
+            self.messagebox("이미지를 열 수 없습니다.")
+            raise Exception("이미지를 열 수 없습니다")
+
+        data_list = self.detector.extract(img)
+        if data_list is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            pass
+        
+        if data_list is not None:
+            color_dict = {}
+            for idx, data in enumerate(data_list):
+                name, proba = self.trainer.predict([data[-1]])
+                box = data[0]
+
+                if name in color_dict:
+                    color = color_dict[name]
+                else:
+                    color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                    color_dict[name] = color
+
+
+                cv2.putText(img, f"{name} : {proba:.2f}", (box[0], box[1] - 25)
+                            , cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
+                cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
+                                , color, 2)
+
+        height, width, channel = img.shape
+        bytesPerLine = channel * width
+        qImg = QImage(img.data, width, height, bytesPerLine
+                        , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
+        return qImg
 
     def view_landmark_img(self, target_img_label, img_path):
-        qImg = self.detect_drow(img_path)
-        pixmap = QPixmap(qImg)
-        label_size = target_img_label.size()
-        pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
-        target_img_label.setPixmap(pixmap)
+        try:
+            qImg = self.detect_draw(img_path)
+            pixmap = QPixmap(qImg)
+            label_size = target_img_label.size()
+            pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
+            target_img_label.setPixmap(pixmap)
+        except:
+            self.log("이미지를 열 수 없습니다.", (255, 0, 0))
+
+    def view_test_img(self, target_img_label, img_path):
+        try:
+            qImg = self.detect_test_draw(img_path)
+            pixmap = QPixmap(qImg)
+            label_size = target_img_label.size()
+            pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
+            target_img_label.setPixmap(pixmap)
+        except:
+            self.log("이미지를 열 수 없습니다.", (255, 0, 0))
 
     @Slot()
     def train_dataset_list_select_change_handler(self):
@@ -189,6 +238,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         try:
             self.log(f"{item.text()} 을(를) 열기를 시도합니다")
             self.view_original_img(self.test_original_img_label, item.text())
+            self.view_test_img(self.test_result_img_label, item.text())
             self.log(f"{item.text()} 의 작업을 끝냈습니다")
         except Exception as e:
             print(e)
