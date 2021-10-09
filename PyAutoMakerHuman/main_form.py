@@ -212,6 +212,24 @@ class Ui_Form(object):
         self.verticalLayout_11.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_12 = QVBoxLayout()
         self.verticalLayout_12.setObjectName(u"verticalLayout_12")
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.label_4 = QLabel(self.verticalLayoutWidget_9)
+        self.label_4.setObjectName(u"label_4")
+        sizePolicy.setHeightForWidth(self.label_4.sizePolicy().hasHeightForWidth())
+        self.label_4.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_5.addWidget(self.label_4)
+
+        self.test_type_combo = QComboBox(self.verticalLayoutWidget_9)
+        self.test_type_combo.setObjectName(u"test_type_combo")
+        self.test_type_combo.setEditable(False)
+
+        self.horizontalLayout_5.addWidget(self.test_type_combo)
+
+
+        self.verticalLayout_12.addLayout(self.horizontalLayout_5)
+
         self.test_model_load_button = QPushButton(self.verticalLayoutWidget_9)
         self.test_model_load_button.setObjectName(u"test_model_load_button")
 
@@ -304,6 +322,11 @@ class Ui_Form(object):
         self.groupBox_6.setTitle(QCoreApplication.translate("Form", u"\ud14c\uc2a4\ud2b8 \uacb0\uacfc \uc774\ubbf8\uc9c0", None))
         self.test_result_img_label.setText(QCoreApplication.translate("Form", u"\ud14c\uc2a4\ud2b8 \uacb0\uacfc \uc774\ubbf8\uc9c0", None))
         self.groupBox_7.setTitle(QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))
+        self.label_4.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud0c0\uc785 :   ", None))
+#if QT_CONFIG(accessibility)
+        self.test_type_combo.setAccessibleName("")
+#endif // QT_CONFIG(accessibility)
+        self.test_type_combo.setPlaceholderText("")
         self.test_model_load_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ubd88\ub7ec\uc624\uae30", None))
         self.label_5.setText(QCoreApplication.translate("Form", u"\ud14c\uc2a4\ud2b8\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.test_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))

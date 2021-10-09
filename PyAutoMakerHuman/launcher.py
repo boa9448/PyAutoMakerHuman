@@ -11,7 +11,10 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 
 from main_form import Ui_Form
-import face, hand, pose, train
+import face
+import hand
+import pose
+import train
 
 class LogSignal(QObject):
     sig = Signal(str, tuple)
@@ -59,13 +62,16 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             for train_test_type in self.TRAIN_TEST_TYPE_LIST:
                 self.train_type_combo.addItem(train_test_type)
+                self.test_type_combo.addItem(train_test_type)
         init_display()
 
         def init_handler():
             self.log_signal.sig.connect(self.log)
             self.train_exit_signal.sig.connect(self.tarin_exit_signal_handler)
 
+            self.main_menu_tab.currentChanged.connect(lambda x : print(x, " call!"))
             self.train_type_combo.currentIndexChanged.connect(self.train_test_type_combo_change_handler)
+            self.test_type_combo.currentIndexChanged.connect(self.test_test_type_combo_change_handler)
             self.train_model_train_button.clicked.connect(self.train_model_train_button_handler)
             self.train_model_save_button.clicked.connect(self.train_model_save_button_handler)
             self.test_model_load_button.clicked.connect(self.test_model_load_button_handler)
@@ -73,7 +79,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_dataset_path_find_button.clicked.connect(self.test_dataset_path_find_button_handler)
             self.train_dataset_list.itemSelectionChanged.connect(self.train_dataset_list_select_change_handler)
             self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_select_change_handler)
-            self.train_thresh_apply_button.clicked.connect(self.train_test_thresh_button_click_handler)
+            self.train_thresh_apply_button.clicked.connect(self.train_thresh_button_click_handler)
         init_handler()
 
         def init_data():
@@ -247,7 +253,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.log(f"{item.text()} 의 작업을 실패했습니다", (255, 0, 0))
 
     @Slot()
-    def train_test_thresh_button_click_handler(self):
+    def train_thresh_button_click_handler(self):
         cur_text = self.train_type_combo.currentText()
         thresh = self.train_thresh_spin_edit.text()
         thresh = float(thresh) / 100
@@ -255,8 +261,20 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.log("변경 완료")
 
     @Slot()
+    def test_thresh_button_click_handler(self):
+        cur_text = self.test_type_combo.currentText()
+        thresh = self.train_thresh_spin_edit.text()
+        thresh = float(75) / 100
+        self.detector = self.init_detector(cur_text, thresh)
+        self.log("변경 완료")
+
+    @Slot()
     def train_test_type_combo_change_handler(self, idx):
-        self.train_test_thresh_button_click_handler()
+        self.train_thresh_button_click_handler()
+
+    @Slot()
+    def test_test_type_combo_change_handler(self, idx):
+        self.test_thresh_button_click_handler()
 
     @Slot()
     def tarin_exit_signal_handler(self):
