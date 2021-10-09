@@ -253,6 +253,16 @@ class Ui_Form(object):
 
         self.verticalLayout_11.addLayout(self.horizontalLayout_2)
 
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+
+        self.verticalLayout_11.addLayout(self.horizontalLayout_8)
+
+        self.test_cam_use_check = QCheckBox(self.verticalLayoutWidget_9)
+        self.test_cam_use_check.setObjectName(u"test_cam_use_check")
+
+        self.verticalLayout_11.addWidget(self.test_cam_use_check)
+
         self.verticalLayout_13 = QVBoxLayout()
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
         self.test_dataset_list = QListWidget(self.verticalLayoutWidget_9)
@@ -330,6 +340,7 @@ class Ui_Form(object):
         self.test_model_load_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ubd88\ub7ec\uc624\uae30", None))
         self.label_5.setText(QCoreApplication.translate("Form", u"\ud14c\uc2a4\ud2b8\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.test_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
+        self.test_cam_use_check.setText(QCoreApplication.translate("Form", u"\uc6f9\ucea0\uc744 \uc774\uc6a9\ud574\uc11c \ud14c\uc2a4\ud2b8", None))
         self.groupBox_8.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.test_tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud14c\uc2a4\ud2b8", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.tools_tab), QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))

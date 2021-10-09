@@ -6,6 +6,7 @@ from threading import Thread, Event
 from glob import glob
 
 import cv2
+import numpy as np
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
@@ -24,6 +25,12 @@ class LogSignal(QObject):
 
 class TrainExitSignal(QObject):
     sig = Signal()
+
+    def __init__(self):
+        super().__init__()
+
+class TestCamSignal(QObject):
+    sig = Signal(np.ndarray)
 
     def __init__(self):
         super().__init__()
@@ -52,10 +59,14 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.bTraining = False
         self.color_dict = {}
 
+        self.test_cam_signal = TestCamSignal()
+        self.test_cam_exit_event = Event()
+        self.bUse_cam = False
+
         super(TrainTestUtilForm, self).__init__()
         self.setupUi(self)
 
-        self.tab_list = [(self.train_tab, self.train_log_list), (self.test_tab, self.test_log_list), self.tools_tab]
+        self.tab_info_list = [(self.train_tab, self.train_log_list, self.train_type_combo), (self.test_tab, self.test_log_list, self.test_type_combo), self.tools_tab]
 
         def init_display():
             self.two_hand_checkBox.hide()
@@ -68,8 +79,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         def init_handler():
             self.log_signal.sig.connect(self.log)
             self.train_exit_signal.sig.connect(self.tarin_exit_signal_handler)
+            self.test_cam_signal.sig.connect(self.test_cam_signal_handler)
 
-            self.main_menu_tab.currentChanged.connect(lambda x : print(x, " call!"))
             self.train_type_combo.currentIndexChanged.connect(self.train_test_type_combo_change_handler)
             self.test_type_combo.currentIndexChanged.connect(self.test_test_type_combo_change_handler)
             self.train_model_train_button.clicked.connect(self.train_model_train_button_handler)
@@ -78,6 +89,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_dataset_path_find_button.clicked.connect(self.train_dataset_path_find_button_handler)
             self.test_dataset_path_find_button.clicked.connect(self.test_dataset_path_find_button_handler)
             self.train_dataset_list.itemSelectionChanged.connect(self.train_dataset_list_select_change_handler)
+            self.test_cam_use_check.stateChanged.connect(self.test_cam_use_check_handler)
             self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_select_change_handler)
             self.train_thresh_apply_button.clicked.connect(self.train_thresh_button_click_handler)
         init_handler()
@@ -86,8 +98,12 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             thresh = self.train_thresh_spin_edit.text()
             thresh = float(thresh) / 100
 
-            cur_type = self.train_type_combo.currentText()
-            self.detector = self.init_detector(cur_type, thresh)
+            train_cur_type = self.train_type_combo.currentText()
+            self.train_detector = self.init_detector(train_cur_type, thresh)
+
+            test_cur_type = self.train_type_combo.currentText()
+            self.test_detector = self.init_detector(test_cur_type, thresh)
+
             self.trainer = train.SvmUtil()
         init_data()
 
@@ -127,7 +143,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         bg_color = QColor(*color)
         log_message_item.setBackground(bg_color)
         target_log_idx = self.main_menu_tab.currentIndex()
-        target_log_list = self.tab_list[target_log_idx][-1]
+        target_log_list = self.tab_info_list[target_log_idx][1]
         target_log_list.addItem(log_message_item)
         target_log_list.scrollToBottom()
 
@@ -150,13 +166,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pixmap = pixmap.scaled(label_size, aspectMode = Qt.IgnoreAspectRatio)
         target_img_label.setPixmap(pixmap)
 
-    def detect_draw(self, img_path) -> QImage:
-        img = cv2.imread(img_path)
-        if img is None:
-            self.messagebox("이미지를 열 수 없습니다.")
-            raise Exception("이미지를 열 수 없습니다")
-
-        result = self.detector.detect(img)
+    def detect_draw(self, img) -> QImage:
+        result = self.train_detector.detect(img)
         scores = result.scores()
         if scores is None:
             self.log(f"찾은 오브젝트가 없습니다")
@@ -171,14 +182,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                         , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
         return qImg
     
-    def detect_test_draw(self, img_path, size) -> QImage:
-        img = cv2.imread(img_path)
-        if img is None:
-            self.messagebox("이미지를 열 수 없습니다.")
-            raise Exception("이미지를 열 수 없습니다")
-
+    def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> QImage:
         # img = cv2.resize(img, size)
-        data_list = self.detector.extract(img)
+        data_list = self.test_detector.extract(img)
         if data_list is None:
             self.log(f"찾은 오브젝트가 없습니다")
         else:
@@ -197,9 +203,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
 
                 cv2.putText(img, f"{name} : {proba:.2f}", (box[0], box[1] - 25)
-                            , cv2.FONT_HERSHEY_SIMPLEX, 3, color, 10, cv2.LINE_AA)
+                            , cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness, cv2.LINE_AA)
                 cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
-                                , color, 10)
+                                , color, thickness)
 
         height, width, channel = img.shape
         bytesPerLine = channel * width
@@ -209,7 +215,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     def view_landmark_img(self, target_img_label, img_path):
         try:
-            qImg = self.detect_draw(img_path)
+            img = cv2.imread(img_path)
+            if img is None:
+                self.messagebox("이미지를 열 수 없습니다.")
+                raise Exception("이미지를 열 수 없습니다")
+            qImg = self.detect_draw(img)
             pixmap = QPixmap(qImg)
             label_size = target_img_label.size()
             pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
@@ -219,8 +229,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     def view_test_img(self, target_img_label : QLabel, img_path):
         try:
-            size = target_img_label.size()
-            qImg = self.detect_test_draw(img_path, (size.width(), size.height()))
+            img = cv2.imread(img_path)
+            if img is None:
+                self.messagebox("이미지를 열 수 없습니다.")
+                raise Exception("이미지를 열 수 없습니다")
+            qImg = self.detect_test_draw(img)
             pixmap = QPixmap(qImg)
             label_size = target_img_label.size()
             pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
@@ -257,7 +270,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         cur_text = self.train_type_combo.currentText()
         thresh = self.train_thresh_spin_edit.text()
         thresh = float(thresh) / 100
-        self.detector = self.init_detector(cur_text, thresh)
+        self.train_detector = self.init_detector(cur_text, thresh)
         self.log("변경 완료")
 
     @Slot()
@@ -265,7 +278,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         cur_text = self.test_type_combo.currentText()
         thresh = self.train_thresh_spin_edit.text()
         thresh = float(75) / 100
-        self.detector = self.init_detector(cur_text, thresh)
+        self.test_detector = self.init_detector(cur_text, thresh)
         self.log("변경 완료")
 
     @Slot()
@@ -277,6 +290,35 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.test_thresh_button_click_handler()
 
     @Slot()
+    def test_cam_use_check_handler(self, check_val):
+        if check_val:
+            def cam_test_thread_func(cam_signal : TestCamSignal, exit_event : Event):
+                cap = cv2.VideoCapture(0)
+
+                while cap.isOpened():
+                    try:
+                        if exit_event.is_set():
+                            break
+
+                        ret, frame = cap.read()
+                        if ret:
+                            cam_signal.sig.emit(frame)
+                    except:
+                        pass
+
+                cap.release()
+
+            self.test_cam_exit_event.clear()
+            self.cam_test_thread = Thread(target = cam_test_thread_func, args = (self.test_cam_signal, self.test_cam_exit_event))
+            self.cam_test_thread.start()
+        else:
+            self.test_cam_exit_event.set()
+            self.cam_test_thread.join()
+
+        self.test_dataset_list.setDisabled(True if check_val else False)
+
+
+    @Slot()
     def tarin_exit_signal_handler(self):
         """
         self.bTraining = False
@@ -285,6 +327,17 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         """
 
         self.train_model_train_button_handler()
+
+    @Slot()
+    def test_cam_signal_handler(self, img):
+        try:
+            qImg = self.detect_test_draw(img, 1, 2)
+            pixmap = QPixmap(qImg)
+            label_size = self.test_result_img_label.size()
+            pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
+            self.test_result_img_label.setPixmap(pixmap)
+        except:
+            self.log("이미지를 열 수 없습니다.", (255, 0, 0))
 
     @Slot()
     def train_model_train_button_handler(self):
@@ -309,7 +362,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 trainer.train_svm(train_data, name)
                 train_done_signal.sig.emit()
 
-            self.train_thread = Thread(target=train_thread_func, args=(self.detector, self.trainer, dataset_folder
+            self.train_thread = Thread(target=train_thread_func, args=(self.train_detector, self.trainer, dataset_folder
                                         , self.log_signal, self.train_exit_signal, self.train_exit_event))
             self.train_exit_event.clear()
             self.train_thread.start()
