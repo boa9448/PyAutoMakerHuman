@@ -176,7 +176,7 @@ class HandUtil:
         landmark_list = result.get_box_landmark_list(True)
         return [(box, np.asarray(landmark).flatten()) for box, landmark in zip(box_list, landmark_list)]
 
-    def extract_dataset(self, dataset_path : str, exit_event : Event) -> dict:
+    def extract_dataset(self, dataset_path : str, exit_event : Event = Event()) -> dict:
         ext_list = ["*.jpg", "*.png", "*.JPG", "*.PNG"]
         file_list = []
         
@@ -185,7 +185,15 @@ class HandUtil:
                 if not files:
                     continue
 
+                if exit_event.is_set():
+                    self.log("[INFO] exit event set")
+                    return dict()
+
                 for file in fnmatch.filter(files, ext):
+                    if exit_event.is_set():
+                        self.log("[INFO] exit event set")
+                        return dict()
+
                     file_list.append(os.path.join(root, file))
 
         self.log(f"[INFO] file count : {len(file_list)}")
@@ -193,6 +201,10 @@ class HandUtil:
         name_list = []
         data_list = []
         for idx, file in enumerate(file_list):
+            if exit_event.is_set():
+                self.log("[INFO] exit event set")
+                return dict()
+
             self.log(f"[INFO] process... {idx + 1}/{len(file_list)}")
             name = file.split(os.path.sep)[-2]
 
