@@ -50,24 +50,28 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         super(TrainTestUtilForm, self).__init__()
         self.setupUi(self)
 
+        self.tab_list = [(self.train_tab, self.train_log_list), (self.test_tab, self.test_log_list), self.tools_tab]
+
         def init_display():
             self.two_hand_checkBox.hide()
 
             for train_test_type in self.TRAIN_TEST_TYPE_LIST:
                 self.train_type_combo.addItem(train_test_type)
-                self.test_type_combo.addItem(train_test_type)
         init_display()
 
         def init_handler():
             self.log_signal.sig.connect(self.log)
             self.train_exit_signal.sig.connect(self.tarin_exit_signal_handler)
 
-            self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_change_handler)
+            self.train_type_combo.currentIndexChanged.connect(self.train_test_type_combo_change_handler)
             self.train_model_train_button.clicked.connect(self.train_model_train_button_handler)
             self.train_model_save_button.clicked.connect(self.train_model_save_button_handler)
+            self.test_model_load_button.clicked.connect(self.test_model_load_button_handler)
             self.train_dataset_path_find_button.clicked.connect(self.train_dataset_path_find_button_handler)
+            self.test_dataset_path_find_button.clicked.connect(self.test_dataset_path_find_button_handler)
             self.train_dataset_list.itemSelectionChanged.connect(self.train_dataset_list_select_change_handler)
-            self.train_thresh_apply_button.clicked.connect(self.train_thresh_button_click_handler)
+            self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_select_change_handler)
+            self.train_thresh_apply_button.clicked.connect(self.train_test_thresh_button_click_handler)
         init_handler()
 
         def init_data():
@@ -114,8 +118,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         log_message_item = QListWidgetItem(log_message)
         bg_color = QColor(*color)
         log_message_item.setBackground(bg_color)
-        self.train_log_list.addItem(log_message_item)
-        self.train_log_list.scrollToBottom()
+        target_log_idx = self.main_menu_tab.currentIndex()
+        target_log_list = self.tab_list[target_log_idx][-1]
+        target_log_list.addItem(log_message_item)
+        target_log_list.scrollToBottom()
 
     def add_dataset_to_list(self, target_list, dataset_folder_path):
         print(os.path.join(dataset_folder_path, "**", "*.*"))
@@ -124,7 +130,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         
         self.log(f"지정한 경로에서 총 : {len(dataset_file_list)}개의 파일을 찾았습니다")
 
-    def view_original_img(self, img_path):
+    def view_original_img(self, target_img_label, img_path):
         pixmap = QPixmap()
         pixmap.load(img_path)
         if pixmap.isNull():
@@ -132,9 +138,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.log("이미지를 열 수 없습니다", (255, 0, 0))
             raise Exception("이미지를 열 수 없습니다")
 
-        label_size = self.train_original_img_label.size()
+        label_size = target_img_label.size()
         pixmap = pixmap.scaled(label_size, aspectMode = Qt.IgnoreAspectRatio)
-        self.train_original_img_label.setPixmap(pixmap)
+        target_img_label.setPixmap(pixmap)
 
     def detect_drow(self, img_path) -> QImage:
         img = cv2.imread(img_path)
@@ -158,27 +164,38 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                         , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
         return qImg
 
-    def view_landmark_img(self, img_path):
+    def view_landmark_img(self, target_img_label, img_path):
         qImg = self.detect_drow(img_path)
         pixmap = QPixmap(qImg)
-        label_size = self.train_result_img_label.size()
+        label_size = target_img_label.size()
         pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
-        self.train_result_img_label.setPixmap(pixmap)
+        target_img_label.setPixmap(pixmap)
 
     @Slot()
     def train_dataset_list_select_change_handler(self):
         item = self.train_dataset_list.currentItem()
         try:
             self.log(f"{item.text()} 을(를) 열기를 시도합니다")
-            self.view_original_img(item.text())
-            self.view_landmark_img(item.text())
+            self.view_original_img(self.train_original_img_label, item.text())
+            self.view_landmark_img(self.train_result_img_label, item.text())
             self.log(f"{item.text()} 의 작업을 끝냈습니다")
         except Exception as e:
             print(e)
             self.log(f"{item.text()} 의 작업을 실패했습니다", (255, 0, 0))
 
     @Slot()
-    def train_thresh_button_click_handler(self):
+    def test_dataset_list_select_change_handler(self):
+        item = self.test_dataset_list.currentItem()
+        try:
+            self.log(f"{item.text()} 을(를) 열기를 시도합니다")
+            self.view_original_img(self.test_original_img_label, item.text())
+            self.log(f"{item.text()} 의 작업을 끝냈습니다")
+        except Exception as e:
+            print(e)
+            self.log(f"{item.text()} 의 작업을 실패했습니다", (255, 0, 0))
+
+    @Slot()
+    def train_test_thresh_button_click_handler(self):
         cur_text = self.train_type_combo.currentText()
         thresh = self.train_thresh_spin_edit.text()
         thresh = float(thresh) / 100
@@ -186,8 +203,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.log("변경 완료")
 
     @Slot()
-    def train_type_combo_change_handler(self, idx):
-        self.train_thresh_button_click_handler()
+    def train_test_type_combo_change_handler(self, idx):
+        self.train_test_thresh_button_click_handler()
 
     @Slot()
     def tarin_exit_signal_handler(self):
@@ -258,6 +275,28 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 self.run_option.set_dataset_folder_path(folder_path[0])
                 self.train_dataset_list.clear()
                 self.add_dataset_to_list(self.train_dataset_list, folder_path[0])
+
+    @Slot()
+    def test_model_load_button_handler(self):
+        print("test_model_load_button_handler call")
+        dlg = QFileDialog(self)
+        dlg.setFileMode(QFileDialog.Directory)
+        if dlg.exec():
+            folder_path = dlg.selectedFiles()
+            if folder_path:
+                self.trainer.load_svm(folder_path[0])
+                self.log(f"{folder_path[0]}의 모델을 불러왔습니다.", (0, 255, 0))
+
+    @Slot()
+    def test_dataset_path_find_button_handler(self):
+        print("test_dataset_path_find_button_handler call")
+        dlg = QFileDialog(self)
+        dlg.setFileMode(QFileDialog.Directory)
+        if dlg.exec():
+            folder_path = dlg.selectedFiles()
+            if folder_path:
+                self.test_dataset_list.clear()
+                self.add_dataset_to_list(self.test_dataset_list, folder_path[0])
 
 
 if __name__ == "__main__":

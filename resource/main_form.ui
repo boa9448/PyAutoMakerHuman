@@ -16,7 +16,7 @@
   <property name="windowTitle">
    <string>도우미 유틸</string>
   </property>
-  <widget class="QTabWidget" name="test_log_list">
+  <widget class="QTabWidget" name="main_menu_tab">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -26,9 +26,9 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
-   <widget class="QWidget" name="tab">
+   <widget class="QWidget" name="train_tab">
     <attribute name="title">
      <string>모델 학습</string>
     </attribute>
@@ -271,7 +271,7 @@
      </widget>
     </widget>
    </widget>
-   <widget class="QWidget" name="tab_2">
+   <widget class="QWidget" name="test_tab">
     <attribute name="title">
      <string>모델 테스트</string>
     </attribute>
@@ -317,7 +317,7 @@
       </rect>
      </property>
      <property name="title">
-      <string>랜드마크 이미지</string>
+      <string>테스트 결과 이미지</string>
      </property>
      <widget class="QWidget" name="verticalLayoutWidget_6">
       <property name="geometry">
@@ -332,7 +332,7 @@
        <item>
         <widget class="QLabel" name="test_result_img_label">
          <property name="text">
-          <string>랜드마크 이미지</string>
+          <string>테스트 결과 이미지</string>
          </property>
         </widget>
        </item>
@@ -364,36 +364,6 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_12">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QLabel" name="label_4">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>타입 :   </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="test_type_combo">
-             <property name="accessibleName">
-              <string/>
-             </property>
-             <property name="editable">
-              <bool>false</bool>
-             </property>
-             <property name="placeholderText">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
           <widget class="QPushButton" name="test_model_load_button">
            <property name="text">
             <string>모델 불러오기</string>
@@ -412,7 +382,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="train_path_find_button_2">
+          <widget class="QPushButton" name="test_dataset_path_find_button">
            <property name="text">
             <string>찾아보기</string>
            </property>
@@ -423,7 +393,7 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_13">
          <item>
-          <widget class="QListWidget" name="listWidget_3"/>
+          <widget class="QListWidget" name="test_dataset_list"/>
          </item>
         </layout>
        </item>
@@ -456,13 +426,13 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_10">
        <item>
-        <widget class="QListWidget" name="listWidget_4"/>
+        <widget class="QListWidget" name="test_log_list"/>
        </item>
       </layout>
      </widget>
     </widget>
    </widget>
-   <widget class="QWidget" name="tab_3">
+   <widget class="QWidget" name="tools_tab">
     <attribute name="title">
      <string>도구</string>
     </attribute>
