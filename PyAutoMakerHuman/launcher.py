@@ -18,6 +18,12 @@ class LogSignal(QObject):
     def __init__(self):
         super().__init__()
 
+class TrainExitSignal(QObject):
+    sig = Signal()
+
+    def __init__(self):
+        super().__init__()
+
 class RunOption:
     def __init__(self):
         self.dataset_folder_path = None
@@ -37,6 +43,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     def __init__(self):
         self.run_option = RunOption()
         self.log_signal = LogSignal()
+        self.train_exit_signal = TrainExitSignal()
         self.train_exit_event = Event()
         self.bTraining = False
 
@@ -53,6 +60,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
         def init_handler():
             self.log_signal.sig.connect(self.log)
+            self.train_exit_signal.sig.connect(self.tarin_exit_signal_handler)
 
             self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_change_handler)
             self.train_model_train_button.clicked.connect(self.train_model_train_button_handler)
@@ -182,6 +190,16 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.train_thresh_button_click_handler()
 
     @Slot()
+    def tarin_exit_signal_handler(self):
+        """
+        self.bTraining = False
+        self.train_exit_event.clear()
+        self.train_model_train_button.setText("모델 학습 시작")
+        """
+
+        self.train_model_train_button_handler()
+
+    @Slot()
     def train_model_train_button_handler(self):
         if self.bTraining == False:
             print("train_model_train_button call")
@@ -190,7 +208,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 self.log("데이터셋이 들어있는 폴더를 선택해주세요", (255, 0, 0))
                 return
 
-            def train_thread_func(detector, trainer, dataset_folder, log_signal, exit_event):
+            def train_thread_func(detector, trainer, dataset_folder, log_signal, train_done_signal, exit_event):
                 def train_log(log : str, color : tuple) -> None:
                     log_signal.sig.emit(log, color)
 
@@ -202,8 +220,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                     return
 
                 trainer.train_svm(train_data, name)
+                train_done_signal.sig.emit()
 
-            self.train_thread = Thread(target=train_thread_func, args=(self.detector, self.trainer, dataset_folder, self.log_signal, self.train_exit_event))
+            self.train_thread = Thread(target=train_thread_func, args=(self.detector, self.trainer, dataset_folder
+                                        , self.log_signal, self.train_exit_signal, self.train_exit_event))
             self.train_exit_event.clear()
             self.train_thread.start()
             self.train_model_train_button.setText("모델 학습 중지")
@@ -219,6 +239,13 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     @Slot()
     def train_model_save_button_handler(self):
         print("train_model_save_button call")
+        dlg = QFileDialog(self)
+        dlg.setFileMode(QFileDialog.Directory)
+        if dlg.exec():
+            folder_path = dlg.selectedFiles()
+            if folder_path:
+                self.trainer.save_svm(folder_path[0])
+                self.log(f"{folder_path[0]}에 모델을 저장했습니다.", (0, 255, 0))
 
     @Slot()
     def train_dataset_path_find_button_handler(self):
