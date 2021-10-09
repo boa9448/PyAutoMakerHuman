@@ -47,6 +47,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.train_exit_signal = TrainExitSignal()
         self.train_exit_event = Event()
         self.bTraining = False
+        self.color_dict = {}
 
         super(TrainTestUtilForm, self).__init__()
         self.setupUi(self)
@@ -164,12 +165,13 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                         , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
         return qImg
     
-    def detect_test_draw(self, img_path) -> QImage:
+    def detect_test_draw(self, img_path, size) -> QImage:
         img = cv2.imread(img_path)
         if img is None:
             self.messagebox("이미지를 열 수 없습니다.")
             raise Exception("이미지를 열 수 없습니다")
 
+        # img = cv2.resize(img, size)
         data_list = self.detector.extract(img)
         if data_list is None:
             self.log(f"찾은 오브젝트가 없습니다")
@@ -177,22 +179,21 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             pass
         
         if data_list is not None:
-            color_dict = {}
             for idx, data in enumerate(data_list):
                 name, proba = self.trainer.predict([data[-1]])
                 box = data[0]
 
-                if name in color_dict:
-                    color = color_dict[name]
+                if name in self.color_dict:
+                    color = self.color_dict[name]
                 else:
                     color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-                    color_dict[name] = color
+                    self.color_dict[name] = color
 
 
                 cv2.putText(img, f"{name} : {proba:.2f}", (box[0], box[1] - 25)
-                            , cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv2.LINE_AA)
+                            , cv2.FONT_HERSHEY_SIMPLEX, 3, color, 10, cv2.LINE_AA)
                 cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
-                                , color, 2)
+                                , color, 10)
 
         height, width, channel = img.shape
         bytesPerLine = channel * width
@@ -210,9 +211,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         except:
             self.log("이미지를 열 수 없습니다.", (255, 0, 0))
 
-    def view_test_img(self, target_img_label, img_path):
+    def view_test_img(self, target_img_label : QLabel, img_path):
         try:
-            qImg = self.detect_test_draw(img_path)
+            size = target_img_label.size()
+            qImg = self.detect_test_draw(img_path, (size.width(), size.height()))
             pixmap = QPixmap(qImg)
             label_size = target_img_label.size()
             pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
