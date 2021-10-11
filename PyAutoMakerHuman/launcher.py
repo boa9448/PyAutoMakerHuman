@@ -16,24 +16,7 @@ import face
 import hand
 import pose
 import train
-
-class LogSignal(QObject):
-    sig = Signal(str, tuple)
-
-    def __init__(self):
-        super().__init__()
-
-class TrainExitSignal(QObject):
-    sig = Signal()
-
-    def __init__(self):
-        super().__init__()
-
-class TestCamSignal(QObject):
-    sig = Signal(np.ndarray)
-
-    def __init__(self):
-        super().__init__()
+from custom_signal import LogSignal, TrainExitSignal, TestCamSignal
 
 class RunOption:
     def __init__(self):
@@ -47,6 +30,24 @@ class RunOption:
 
     def get_dataset_folder_path(self) -> str or None:
         return self.dataset_folder_path
+
+class TrainTabHandler:
+    def __init__(self, parent):
+        self.parent : TrainTestUtilForm = parent
+        self.train_exit_signal = TrainExitSignal()
+        self.train_exit_event = Event()
+        self.bTraining = False
+
+    def log(self, log_message:str, color:tuple = (255, 255, 255)):
+        self.parent.log(log_message, color)
+
+    @Slot()
+    def train_thresh_button_click_handler(self):
+        cur_text = self.train_type_combo.currentText()
+        thresh = self.train_thresh_spin_edit.text()
+        thresh = float(thresh) / 100
+        self.train_detector = self.init_detector(cur_text, thresh)
+        self.log("변경 완료")
 
 class TrainTestUtilForm(QMainWindow, Ui_Form):
     TRAIN_TEST_TYPE_LIST = ["얼굴 인식", "수형 인식", "수형 인식(홀리스틱)"]
@@ -335,6 +336,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             pixmap = QPixmap(qImg)
             label_size = self.test_result_img_label.size()
             pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
+            self.test_original_img_label.setPixmap(pixmap)
             self.test_result_img_label.setPixmap(pixmap)
         except:
             self.log("이미지를 열 수 없습니다.", (255, 0, 0))
