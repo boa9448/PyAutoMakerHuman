@@ -32,7 +32,15 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_dataset_add_thread = None
             self.train_dataset_add_thread_exit_event = Event()
 
-            self.train_detector = self.init_detector(0)
+            min_thresh = self.train_thresh_spin_edit.text()
+            min_thresh = float(min_thresh) / 100
+            self.train_detector = self.init_detector(0, min_thresh)
+            self.train_trainer = train.SvmUtil()
+
+            min_thresh = self.train_thresh_spin_edit.text()
+            min_thresh = float(min_thresh) / 100
+            self.test_detector = self.init_detector(0, min_thresh)
+            self.test_trainer = train.SvmUtil()
         init_data()
 
         def init_display():
@@ -66,11 +74,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     def closeEvent(self, event: QCloseEvent) -> None:
         return super().closeEvent(event)
 
-    def init_detector(self, idx : int) -> hand.HandUtil or pose.PoseUtil or None:
+    def init_detector(self, idx : int, thresh : float) -> hand.HandUtil or pose.PoseUtil or None:
         detector = None
 
         if idx == 0:
-            detector = hand.HandUtil()
+            detector = hand.HandUtil(min_detection_confidence = thresh)
         elif idx == 1:
             detector = pose.PoseUtil()
         elif idx == 2:
@@ -109,7 +117,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     @Slot()
     def train_type_combo_chnaged_handler(self, idx : int) -> None:
         print("훈련 타입 변경")
-        self.train_detector = self.init_detector(idx)
+        min_thresh = self.train_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        self.train_detector = self.init_detector(idx, min_thresh)
 
     @Slot()
     def train_model_train_button_clicked_handler(self):
