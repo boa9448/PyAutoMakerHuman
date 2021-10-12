@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1122</width>
-    <height>661</height>
+    <height>745</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,7 +22,7 @@
      <x>10</x>
      <y>10</y>
      <width>1101</width>
-     <height>641</height>
+     <height>471</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -37,8 +37,8 @@
       <rect>
        <x>10</x>
        <y>0</y>
-       <width>391</width>
-       <height>341</height>
+       <width>401</width>
+       <height>431</height>
       </rect>
      </property>
      <property name="title">
@@ -49,8 +49,8 @@
        <rect>
         <x>9</x>
         <y>19</y>
-        <width>371</width>
-        <height>311</height>
+        <width>381</width>
+        <height>401</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -67,10 +67,10 @@
     <widget class="QGroupBox" name="groupBox_2">
      <property name="geometry">
       <rect>
-       <x>410</x>
+       <x>420</x>
        <y>0</y>
-       <width>391</width>
-       <height>341</height>
+       <width>401</width>
+       <height>431</height>
       </rect>
      </property>
      <property name="title">
@@ -81,8 +81,8 @@
        <rect>
         <x>9</x>
         <y>19</y>
-        <width>371</width>
-        <height>311</height>
+        <width>381</width>
+        <height>401</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -99,10 +99,10 @@
     <widget class="QGroupBox" name="groupBox_3">
      <property name="geometry">
       <rect>
-       <x>810</x>
+       <x>830</x>
        <y>0</y>
-       <width>271</width>
-       <height>601</height>
+       <width>251</width>
+       <height>431</height>
       </rect>
      </property>
      <property name="title">
@@ -113,8 +113,8 @@
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>251</width>
-        <height>571</height>
+        <width>231</width>
+        <height>401</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -131,7 +131,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>타입 :   </string>
+              <string>모델 타입 :   </string>
              </property>
             </widget>
            </item>
@@ -194,7 +194,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
-          <widget class="QCheckBox" name="two_hand_checkBox">
+          <widget class="QCheckBox" name="train_two_hand_checkBox">
            <property name="text">
             <string>2개의 손을 학습 시키도록 고정</string>
            </property>
@@ -238,34 +238,6 @@
           </widget>
          </item>
         </layout>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-    <widget class="QGroupBox" name="groupBox_4">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>340</y>
-       <width>791</width>
-       <height>261</height>
-      </rect>
-     </property>
-     <property name="title">
-      <string>작업 로그</string>
-     </property>
-     <widget class="QWidget" name="verticalLayoutWidget_5">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>20</y>
-        <width>771</width>
-        <height>231</height>
-       </rect>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QListWidget" name="train_log_list"/>
        </item>
       </layout>
      </widget>
@@ -345,7 +317,7 @@
        <x>830</x>
        <y>0</y>
        <width>251</width>
-       <height>601</height>
+       <height>431</height>
       </rect>
      </property>
      <property name="title">
@@ -357,7 +329,7 @@
         <x>10</x>
         <y>20</y>
         <width>231</width>
-        <height>571</height>
+        <height>401</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_11">
@@ -421,9 +393,6 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_8"/>
-       </item>
-       <item>
         <widget class="QCheckBox" name="test_cam_use_check">
          <property name="text">
           <string>웹캠을 이용해서 테스트</string>
@@ -437,37 +406,6 @@
          </item>
         </layout>
        </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6"/>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-    <widget class="QGroupBox" name="groupBox_8">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>430</y>
-       <width>811</width>
-       <height>171</height>
-      </rect>
-     </property>
-     <property name="title">
-      <string>작업 로그</string>
-     </property>
-     <widget class="QWidget" name="verticalLayoutWidget_8">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>20</y>
-        <width>791</width>
-        <height>141</height>
-       </rect>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout_10">
-       <item>
-        <widget class="QListWidget" name="test_log_list"/>
-       </item>
       </layout>
      </widget>
     </widget>
@@ -476,6 +414,34 @@
     <attribute name="title">
      <string>도구</string>
     </attribute>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_4">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>480</y>
+     <width>1101</width>
+     <height>261</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>작업 로그</string>
+   </property>
+   <widget class="QWidget" name="verticalLayoutWidget_5">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>1071</width>
+      <height>231</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QListWidget" name="main_log_list"/>
+     </item>
+    </layout>
    </widget>
   </widget>
  </widget>

@@ -18,18 +18,18 @@ class Ui_Form(object):
         if not Form.objectName():
             Form.setObjectName(u"Form")
         Form.setEnabled(True)
-        Form.resize(1122, 661)
+        Form.resize(1122, 745)
         self.main_menu_tab = QTabWidget(Form)
         self.main_menu_tab.setObjectName(u"main_menu_tab")
-        self.main_menu_tab.setGeometry(QRect(10, 10, 1101, 641))
+        self.main_menu_tab.setGeometry(QRect(10, 10, 1101, 471))
         self.train_tab = QWidget()
         self.train_tab.setObjectName(u"train_tab")
         self.groupBox = QGroupBox(self.train_tab)
         self.groupBox.setObjectName(u"groupBox")
-        self.groupBox.setGeometry(QRect(10, 0, 391, 341))
+        self.groupBox.setGeometry(QRect(10, 0, 401, 431))
         self.verticalLayoutWidget_2 = QWidget(self.groupBox)
         self.verticalLayoutWidget_2.setObjectName(u"verticalLayoutWidget_2")
-        self.verticalLayoutWidget_2.setGeometry(QRect(9, 19, 371, 311))
+        self.verticalLayoutWidget_2.setGeometry(QRect(9, 19, 381, 401))
         self.verticalLayout_3 = QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
@@ -40,10 +40,10 @@ class Ui_Form(object):
 
         self.groupBox_2 = QGroupBox(self.train_tab)
         self.groupBox_2.setObjectName(u"groupBox_2")
-        self.groupBox_2.setGeometry(QRect(410, 0, 391, 341))
+        self.groupBox_2.setGeometry(QRect(420, 0, 401, 431))
         self.verticalLayoutWidget_3 = QWidget(self.groupBox_2)
         self.verticalLayoutWidget_3.setObjectName(u"verticalLayoutWidget_3")
-        self.verticalLayoutWidget_3.setGeometry(QRect(9, 19, 371, 311))
+        self.verticalLayoutWidget_3.setGeometry(QRect(9, 19, 381, 401))
         self.verticalLayout_4 = QVBoxLayout(self.verticalLayoutWidget_3)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
@@ -54,10 +54,10 @@ class Ui_Form(object):
 
         self.groupBox_3 = QGroupBox(self.train_tab)
         self.groupBox_3.setObjectName(u"groupBox_3")
-        self.groupBox_3.setGeometry(QRect(810, 0, 271, 601))
+        self.groupBox_3.setGeometry(QRect(830, 0, 251, 431))
         self.verticalLayoutWidget = QWidget(self.groupBox_3)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 251, 571))
+        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 231, 401))
         self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -124,10 +124,10 @@ class Ui_Form(object):
 
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.two_hand_checkBox = QCheckBox(self.verticalLayoutWidget)
-        self.two_hand_checkBox.setObjectName(u"two_hand_checkBox")
+        self.train_two_hand_checkBox = QCheckBox(self.verticalLayoutWidget)
+        self.train_two_hand_checkBox.setObjectName(u"train_two_hand_checkBox")
 
-        self.horizontalLayout_7.addWidget(self.two_hand_checkBox)
+        self.horizontalLayout_7.addWidget(self.train_two_hand_checkBox)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_7)
@@ -155,20 +155,6 @@ class Ui_Form(object):
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_4)
-
-        self.groupBox_4 = QGroupBox(self.train_tab)
-        self.groupBox_4.setObjectName(u"groupBox_4")
-        self.groupBox_4.setGeometry(QRect(10, 340, 791, 261))
-        self.verticalLayoutWidget_5 = QWidget(self.groupBox_4)
-        self.verticalLayoutWidget_5.setObjectName(u"verticalLayoutWidget_5")
-        self.verticalLayoutWidget_5.setGeometry(QRect(10, 20, 771, 231))
-        self.verticalLayout_2 = QVBoxLayout(self.verticalLayoutWidget_5)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.train_log_list = QListWidget(self.verticalLayoutWidget_5)
-        self.train_log_list.setObjectName(u"train_log_list")
-
-        self.verticalLayout_2.addWidget(self.train_log_list)
 
         self.main_menu_tab.addTab(self.train_tab, "")
         self.test_tab = QWidget()
@@ -203,10 +189,10 @@ class Ui_Form(object):
 
         self.groupBox_7 = QGroupBox(self.test_tab)
         self.groupBox_7.setObjectName(u"groupBox_7")
-        self.groupBox_7.setGeometry(QRect(830, 0, 251, 601))
+        self.groupBox_7.setGeometry(QRect(830, 0, 251, 431))
         self.verticalLayoutWidget_9 = QWidget(self.groupBox_7)
         self.verticalLayoutWidget_9.setObjectName(u"verticalLayoutWidget_9")
-        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 231, 571))
+        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 231, 401))
         self.verticalLayout_11 = QVBoxLayout(self.verticalLayoutWidget_9)
         self.verticalLayout_11.setObjectName(u"verticalLayout_11")
         self.verticalLayout_11.setContentsMargins(0, 0, 0, 0)
@@ -253,11 +239,6 @@ class Ui_Form(object):
 
         self.verticalLayout_11.addLayout(self.horizontalLayout_2)
 
-        self.horizontalLayout_8 = QHBoxLayout()
-        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-
-        self.verticalLayout_11.addLayout(self.horizontalLayout_8)
-
         self.test_cam_use_check = QCheckBox(self.verticalLayoutWidget_9)
         self.test_cam_use_check.setObjectName(u"test_cam_use_check")
 
@@ -273,29 +254,24 @@ class Ui_Form(object):
 
         self.verticalLayout_11.addLayout(self.verticalLayout_13)
 
-        self.horizontalLayout_6 = QHBoxLayout()
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-
-        self.verticalLayout_11.addLayout(self.horizontalLayout_6)
-
-        self.groupBox_8 = QGroupBox(self.test_tab)
-        self.groupBox_8.setObjectName(u"groupBox_8")
-        self.groupBox_8.setGeometry(QRect(10, 430, 811, 171))
-        self.verticalLayoutWidget_8 = QWidget(self.groupBox_8)
-        self.verticalLayoutWidget_8.setObjectName(u"verticalLayoutWidget_8")
-        self.verticalLayoutWidget_8.setGeometry(QRect(10, 20, 791, 141))
-        self.verticalLayout_10 = QVBoxLayout(self.verticalLayoutWidget_8)
-        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
-        self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
-        self.test_log_list = QListWidget(self.verticalLayoutWidget_8)
-        self.test_log_list.setObjectName(u"test_log_list")
-
-        self.verticalLayout_10.addWidget(self.test_log_list)
-
         self.main_menu_tab.addTab(self.test_tab, "")
         self.tools_tab = QWidget()
         self.tools_tab.setObjectName(u"tools_tab")
         self.main_menu_tab.addTab(self.tools_tab, "")
+        self.groupBox_4 = QGroupBox(Form)
+        self.groupBox_4.setObjectName(u"groupBox_4")
+        self.groupBox_4.setGeometry(QRect(10, 480, 1101, 261))
+        self.verticalLayoutWidget_5 = QWidget(self.groupBox_4)
+        self.verticalLayoutWidget_5.setObjectName(u"verticalLayoutWidget_5")
+        self.verticalLayoutWidget_5.setGeometry(QRect(10, 20, 1071, 231))
+        self.verticalLayout_2 = QVBoxLayout(self.verticalLayoutWidget_5)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.main_log_list = QListWidget(self.verticalLayoutWidget_5)
+        self.main_log_list.setObjectName(u"main_log_list")
+
+        self.verticalLayout_2.addWidget(self.main_log_list)
+
 
         self.retranslateUi(Form)
 
@@ -312,7 +288,7 @@ class Ui_Form(object):
         self.groupBox_2.setTitle(QCoreApplication.translate("Form", u"\ub79c\ub4dc\ub9c8\ud06c \uc774\ubbf8\uc9c0", None))
         self.train_result_img_label.setText(QCoreApplication.translate("Form", u"\ub79c\ub4dc\ub9c8\ud06c \uc774\ubbf8\uc9c0", None))
         self.groupBox_3.setTitle(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud559\uc2b5", None))
-        self.label_2.setText(QCoreApplication.translate("Form", u"\ud0c0\uc785 :   ", None))
+        self.label_2.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud0c0\uc785 :   ", None))
 #if QT_CONFIG(accessibility)
         self.train_type_combo.setAccessibleName("")
 #endif // QT_CONFIG(accessibility)
@@ -321,11 +297,10 @@ class Ui_Form(object):
         self.train_model_save_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \uc800\uc7a5\ud558\uae30", None))
         self.label.setText(QCoreApplication.translate("Form", u"\ub370\uc774\ud130\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.train_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
-        self.two_hand_checkBox.setText(QCoreApplication.translate("Form", u"2\uac1c\uc758 \uc190\uc744 \ud559\uc2b5 \uc2dc\ud0a4\ub3c4\ub85d \uace0\uc815", None))
+        self.train_two_hand_checkBox.setText(QCoreApplication.translate("Form", u"2\uac1c\uc758 \uc190\uc744 \ud559\uc2b5 \uc2dc\ud0a4\ub3c4\ub85d \uace0\uc815", None))
         self.label_3.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
         self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"75.0", None))
         self.train_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
-        self.groupBox_4.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.train_tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud559\uc2b5", None))
         self.groupBox_5.setTitle(QCoreApplication.translate("Form", u"\uc6d0\ubcf8", None))
         self.test_original_img_label.setText(QCoreApplication.translate("Form", u"\uc6d0\ubcf8 \uc774\ubbf8\uc9c0", None))
@@ -341,8 +316,8 @@ class Ui_Form(object):
         self.label_5.setText(QCoreApplication.translate("Form", u"\ud14c\uc2a4\ud2b8\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.test_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
         self.test_cam_use_check.setText(QCoreApplication.translate("Form", u"\uc6f9\ucea0\uc744 \uc774\uc6a9\ud574\uc11c \ud14c\uc2a4\ud2b8", None))
-        self.groupBox_8.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.test_tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud14c\uc2a4\ud2b8", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.tools_tab), QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))
+        self.groupBox_4.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
     # retranslateUi
 

@@ -7,6 +7,18 @@ class LogSignal(QObject):
     def __init__(self):
         super().__init__()
 
+class TrainDataSetAddEndSignal(QObject):
+    sig = Signal()
+
+    def __init__(self):
+        super().__init__()
+
+class TestDataSetAddEndSignal(QObject):
+    sig = Signal()
+
+    def __init__(self):
+        super().__init__()
+
 class TrainExitSignal(QObject):
     sig = Signal()
 
