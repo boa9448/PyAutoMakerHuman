@@ -164,9 +164,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 trainer.train_svm(train_data, name)
                 done_signal.sig.emit()
 
-            self.train_thread = WorkThread(WorkPyThread, train_thread_func, (self.train_detector, self.train_trainer
+            self.train_thread = WorkThread(WorkQThread, train_thread_func, (self.train_detector, self.train_trainer
                                                                             , self.train_dataset_folder, self.train_exit_event, train_logger
-                                                                            , self.train_done_signal))
+                                                                            , self.train_done_signal), self)
+            self.train_dataset_list.setDisabled(True)
+            self.train_thresh_apply_button.setDisabled(True)
             self.train_thread.start()
             self.train_model_train_button.setText("학습중")
         else:
@@ -174,6 +176,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_thread.join()
             self.train_thread = None
             self.train_model_train_button.setText("모델 학습 시작")
+            self.train_dataset_list.setDisabled(False)
+            self.train_thresh_apply_button.setDisabled(False)
 
         self.bTraining = not self.bTraining
 
@@ -237,6 +241,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         min_thresh = float(min_thresh) / 100
         idx = self.train_type_combo.currentIndex()
         self.train_detector = self.init_detector(idx, min_thresh)
+        self.log("설정 완료!", (0, 255, 0))
 
     @Slot()
     def test_type_combo_chnaged_handler(self, idx : int) -> None:
