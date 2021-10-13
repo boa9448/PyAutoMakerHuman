@@ -29,6 +29,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.setupUi(self)
 
         def init_data():
+            self.color_dict = dict()
+
             self.log_signal = LogSignal()
 
             self.train_dataset_add_end_signal = TrainDataSetAddEndSignal()
@@ -138,6 +140,33 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pixmap = QPixmap(qImg)
         pixmap = pixmap.scaled(img_label.size(), aspectMode= Qt.IgnoreAspectRatio)
         img_label.setPixmap(pixmap)
+
+    def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> QImage:
+        # img = cv2.resize(img, size)
+        data_list = self.test_detector.extract(img)
+        if data_list is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            pass
+        
+        if data_list is not None:
+            for idx, data in enumerate(data_list):
+                name, proba = self.test_trainer.predict([data[-1]])
+                box = data[0]
+
+                if name in self.color_dict:
+                    color = self.color_dict[name]
+                else:
+                    color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                    self.color_dict[name] = color
+
+
+                cv2.putText(img, f"{name} : {proba:.2f}", (box[0], box[1] - 25)
+                            , cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness, cv2.LINE_AA)
+                cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
+                                , color, thickness)
+        
+        return img
 
     @Slot()
     def train_dataset_add_end_signal_handler(self):
@@ -303,14 +332,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         qImg = self.ndarray_to_qimage(img)
         self.draw_label(self.test_original_img_label, qImg)
 
-        result = self.test_detector.detect(img)
-        scores = result.scores()
-        if scores is None:
-            self.log(f"찾은 오브젝트가 없습니다")
-        else:
-            self.log(f"찾은 개수 : {len(scores)} ({scores})")
-
-        result.draw(img)
+        img = self.detect_test_draw(img, 1, 3)
         qImg = self.ndarray_to_qimage(img)
         self.draw_label(self.test_result_img_label, qImg)
 
