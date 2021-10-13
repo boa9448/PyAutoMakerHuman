@@ -18,7 +18,7 @@ from main_form import Ui_Form
 import hand
 import pose
 import train
-from custom_signal import LogSignal, TrainExitSignal, TestCamSignal, TrainDataSetAddEndSignal
+from custom_signal import LogSignal, TrainExitSignal, TestCamSignal, TrainDataSetAddEndSignal, TestDataSetAddEndSignal
 from thread import WorkThread, WorkQThread, WorkPyThread
 
 class TrainTestUtilForm(QMainWindow, Ui_Form):
@@ -34,6 +34,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_dataset_add_end_signal = TrainDataSetAddEndSignal()
             self.train_dataset_add_thread = None
             self.train_dataset_add_thread_exit_event = Event()
+
+            self.test_dataset_add_end_signal = TestDataSetAddEndSignal()
+            self.test_dataset_add_thread = None
 
             self.train_done_signal = TrainExitSignal()
 
@@ -64,6 +67,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         def init_handler():
             self.log_signal.sig.connect(self.log)
             self.train_dataset_add_end_signal.sig.connect(self.train_dataset_add_end_signal_handler)
+            self.test_dataset_add_end_signal.sig.connect(self.test_dataset_add_end_signal_handler)
             self.train_done_signal.sig.connect(self.train_model_train_button_clicked_handler)
 
             self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_chnaged_handler)
@@ -74,6 +78,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_thresh_apply_button.clicked.connect(self.train_thresh_apply_button_clicked_handler)
 
             self.test_type_combo.currentIndexChanged.connect(self.test_type_combo_chnaged_handler)
+            self.test_model_load_button.clicked.connect(self.test_model_load_button_handler)
+            self.test_dataset_path_find_button.clicked.connect(self.test_dataset_path_find_button_handler)
+            self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_itemSelectionChanged_handler)
 
         init_handler()
 
@@ -138,11 +145,17 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.train_dataset_add_thread = None
 
     @Slot()
+    def test_dataset_add_end_signal_handler(self):
+        self.test_dataset_list.setDisabled(False)
+        self.test_dataset_add_thread = None
+
+    @Slot()
     def train_type_combo_chnaged_handler(self, idx : int) -> None:
         print("훈련 타입 변경")
         min_thresh = self.train_thresh_spin_edit.text()
         min_thresh = float(min_thresh) / 100
         self.train_detector = self.init_detector(idx, min_thresh)
+        self.log("훈련 타입 변경", (0, 255, 0))
 
     @Slot()
     def train_model_train_button_clicked_handler(self):
@@ -212,7 +225,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.train_file_add_thread.start()
 
     @Slot()
-    def train_dataset_list_itemSelectionChanged_handler(self):
+    def train_dataset_list_itemSelectionChanged_handler(self) -> None:
         print("훈련 데이터셋 선택 아이템 체인지")
         file_path = self.train_dataset_list.currentItem().text()
         img = cv2.imread(file_path)
@@ -246,6 +259,60 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     @Slot()
     def test_type_combo_chnaged_handler(self, idx : int) -> None:
         print("테스트 타입 변경")
+        min_thresh = self.train_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        self.test_detector = self.init_detector(idx, min_thresh)
+        self.log("테스트 타입 변경", (0, 255, 0))
+
+    @Slot()
+    def test_model_load_button_handler(self) -> None:
+        folder_paths = self.get_folder_paths()
+        if folder_paths is None:
+            return
+
+        self.test_trainer.load_svm(folder_paths[0])
+        self.log(f"{folder_paths[0]}의 모델을 불러왔습니다", (0, 255, 0))
+
+    @Slot()
+    def test_dataset_path_find_button_handler(self) -> None:
+        folder_paths = self.get_folder_paths()
+        if folder_paths is None:
+            return
+
+        def file_add_thread_func(folder_path : str, target_list : QListWidget, end_signal : TestDataSetAddEndSignal) -> None:
+            file_list = self.get_file_list(folder_path)
+            for file in file_list:
+                item = QListWidgetItem(file)
+                target_list.addItem(item)
+
+            end_signal.sig.emit()
+
+        self.test_dataset_list.clear()
+        self.test_dataset_list.setDisabled(True)
+        self.test_file_add_thread = Thread(target=file_add_thread_func, args=(folder_paths[0], self.test_dataset_list, self.test_dataset_add_end_signal))
+        self.test_file_add_thread.start()
+
+    @Slot()
+    def test_dataset_list_itemSelectionChanged_handler(self) -> None:
+        print("테스트 데이터셋 선택 아이템 체인지")
+        file_path = self.test_dataset_list.currentItem().text()
+        img = cv2.imread(file_path)
+        if img is None:
+            return
+
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.test_original_img_label, qImg)
+
+        result = self.test_detector.detect(img)
+        scores = result.scores()
+        if scores is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            self.log(f"찾은 개수 : {len(scores)} ({scores})")
+
+        result.draw(img)
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.test_result_img_label, qImg)
 
 
 if __name__ == "__main__":
