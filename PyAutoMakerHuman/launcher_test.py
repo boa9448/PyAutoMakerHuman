@@ -19,6 +19,7 @@ import hand
 import pose
 import train
 from custom_signal import LogSignal, TrainExitSignal, TestCamSignal, TrainDataSetAddEndSignal
+from thread import WorkThread, WorkQThread, WorkPyThread
 
 class TrainTestUtilForm(QMainWindow, Ui_Form):
     TRAIN_TEST_TYPE_DICT = {"수형 인식" : 0, "수형 인식(홀리스틱)" : 1, "얼굴 인식" : 2}
@@ -33,6 +34,12 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_dataset_add_end_signal = TrainDataSetAddEndSignal()
             self.train_dataset_add_thread = None
             self.train_dataset_add_thread_exit_event = Event()
+
+            self.train_done_signal = TrainExitSignal()
+
+            self.train_exit_event = Event()
+            self.bTraining = False
+            self.train_dataset_folder = ""
 
             min_thresh = self.train_thresh_spin_edit.text()
             min_thresh = float(min_thresh) / 100
@@ -57,6 +64,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         def init_handler():
             self.log_signal.sig.connect(self.log)
             self.train_dataset_add_end_signal.sig.connect(self.train_dataset_add_end_signal_handler)
+            self.train_done_signal.sig.connect(self.train_model_train_button_clicked_handler)
 
             self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_chnaged_handler)
             self.train_model_train_button.clicked.connect(self.train_model_train_button_clicked_handler)
@@ -139,10 +147,43 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     @Slot()
     def train_model_train_button_clicked_handler(self):
         print("훈련 모델 버튼 클릭")
+        if self.bTraining == False:
+            self.train_exit_event.clear()
+            def train_logger(log_message : str, color : tuple) -> None:
+                self.log_signal.sig.emit(log_message, color)
+
+            def train_thread_func(detector, trainer, dataset_folder : str, exit_event : Event, logger, done_signal : TrainExitSignal) -> None:
+                detector.set_logger(logger)
+                data = detector.extract_dataset(dataset_folder, exit_event)
+                train_data, name = data["data"], data["name"]
+                if len(train_data) == 0 or len(name) == 0:
+                    logger("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
+                    done_signal.sig.emit()
+                    return
+
+                trainer.train_svm(train_data, name)
+                done_signal.sig.emit()
+
+            self.train_thread = WorkThread(WorkPyThread, train_thread_func, (self.train_detector, self.train_trainer
+                                                                            , self.train_dataset_folder, self.train_exit_event, train_logger
+                                                                            , self.train_done_signal))
+            self.train_thread.start()
+            self.train_model_train_button.setText("학습중")
+        else:
+            self.train_exit_event.set()
+            self.train_thread.join()
+            self.train_thread = None
+            self.train_model_train_button.setText("모델 학습 시작")
+
+        self.bTraining = not self.bTraining
 
     @Slot()
     def train_model_save_button_clicked_handler(self):
         print("훈련 모델 저장 버튼")
+        folder_path = self.get_folder_paths()
+        if folder_path:
+            self.train_trainer.save_svm(folder_path[0])
+            self.log(f"{folder_path[0]}에 모델을 저장했습니다.", (0, 255, 0))
 
     @Slot()
     def train_dataset_path_find_button_clicked_handler(self):
@@ -159,6 +200,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             end_signal.sig.emit()
 
+        self.train_dataset_folder = folder_paths[0]
         self.train_dataset_add_thread_exit_event.clear()
         self.train_dataset_list.clear()
         self.train_dataset_list.setDisabled(True)
