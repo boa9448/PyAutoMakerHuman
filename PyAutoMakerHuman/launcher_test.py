@@ -301,6 +301,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             return
 
         self.test_trainer.load_svm(folder_paths[0])
+        self.test_target_label_combo.clear()
+        self.test_target_label_combo.addItems(self.test_trainer.get_labels())
         self.log(f"{folder_paths[0]}의 모델을 불러왔습니다", (0, 255, 0))
 
     @Slot()

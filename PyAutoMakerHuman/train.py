@@ -51,6 +51,9 @@ class SvmUtil:
 
         return str(name), float(proba)
 
+    def get_labels(self) -> tuple:
+        return self.le.classes_
+
 class KerasUtil:
     def __init__(self):
         pass
