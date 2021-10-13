@@ -113,7 +113,7 @@
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>231</width>
+        <width>244</width>
         <height>401</height>
        </rect>
       </property>
@@ -223,7 +223,7 @@
             <bool>true</bool>
            </property>
            <property name="specialValueText">
-            <string>75.0</string>
+            <string>70.0</string>
            </property>
            <property name="decimals">
             <number>3</number>
@@ -328,7 +328,7 @@
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>231</width>
+        <width>246</width>
         <height>401</height>
        </rect>
       </property>
@@ -402,7 +402,74 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_13">
          <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
+           <item>
+            <widget class="QLabel" name="label_10">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>대상 라벨 :   </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="test_target_label_combo">
+             <property name="accessibleName">
+              <string/>
+             </property>
+             <property name="editable">
+              <bool>false</bool>
+             </property>
+             <property name="placeholderText">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
           <widget class="QListWidget" name="test_dataset_list"/>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QLabel" name="label_6">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>탐지 임계율(%) : </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="test_thresh_spin_edit">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="specialValueText">
+              <string>70.0</string>
+             </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="test_thresh_apply_button">
+             <property name="text">
+              <string>적용</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>

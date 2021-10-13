@@ -83,6 +83,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_model_load_button.clicked.connect(self.test_model_load_button_handler)
             self.test_dataset_path_find_button.clicked.connect(self.test_dataset_path_find_button_handler)
             self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_itemSelectionChanged_handler)
+            self.test_thresh_apply_button.clicked.connect(self.test_thresh_apply_button_clicked_handler)
 
         init_handler()
 
@@ -288,7 +289,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     @Slot()
     def test_type_combo_chnaged_handler(self, idx : int) -> None:
         print("테스트 타입 변경")
-        min_thresh = self.train_thresh_spin_edit.text()
+        min_thresh = self.test_thresh_spin_edit.text()
         min_thresh = float(min_thresh) / 100
         self.test_detector = self.init_detector(idx, min_thresh)
         self.log("테스트 타입 변경", (0, 255, 0))
@@ -335,6 +336,15 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         img = self.detect_test_draw(img, 1, 3)
         qImg = self.ndarray_to_qimage(img)
         self.draw_label(self.test_result_img_label, qImg)
+
+    @Slot()
+    def test_thresh_apply_button_clicked_handler(self):
+        print("훈련 데이터셋 임계율 설정 버튼")
+        min_thresh = self.test_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        idx = self.test_type_combo.currentIndex()
+        self.test_detector = self.init_detector(idx, min_thresh)
+        self.log("설정 완료!", (0, 255, 0))
 
 
 if __name__ == "__main__":

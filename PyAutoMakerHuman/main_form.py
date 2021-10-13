@@ -57,7 +57,7 @@ class Ui_Form(object):
         self.groupBox_3.setGeometry(QRect(830, 0, 251, 431))
         self.verticalLayoutWidget = QWidget(self.groupBox_3)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 231, 401))
+        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 244, 401))
         self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -192,7 +192,7 @@ class Ui_Form(object):
         self.groupBox_7.setGeometry(QRect(830, 0, 251, 431))
         self.verticalLayoutWidget_9 = QWidget(self.groupBox_7)
         self.verticalLayoutWidget_9.setObjectName(u"verticalLayoutWidget_9")
-        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 231, 401))
+        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 246, 401))
         self.verticalLayout_11 = QVBoxLayout(self.verticalLayoutWidget_9)
         self.verticalLayout_11.setObjectName(u"verticalLayout_11")
         self.verticalLayout_11.setContentsMargins(0, 0, 0, 0)
@@ -246,10 +246,52 @@ class Ui_Form(object):
 
         self.verticalLayout_13 = QVBoxLayout()
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
+        self.horizontalLayout_11 = QHBoxLayout()
+        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
+        self.label_10 = QLabel(self.verticalLayoutWidget_9)
+        self.label_10.setObjectName(u"label_10")
+        sizePolicy.setHeightForWidth(self.label_10.sizePolicy().hasHeightForWidth())
+        self.label_10.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_11.addWidget(self.label_10)
+
+        self.test_target_label_combo = QComboBox(self.verticalLayoutWidget_9)
+        self.test_target_label_combo.setObjectName(u"test_target_label_combo")
+        self.test_target_label_combo.setEditable(False)
+
+        self.horizontalLayout_11.addWidget(self.test_target_label_combo)
+
+
+        self.verticalLayout_13.addLayout(self.horizontalLayout_11)
+
         self.test_dataset_list = QListWidget(self.verticalLayoutWidget_9)
         self.test_dataset_list.setObjectName(u"test_dataset_list")
 
         self.verticalLayout_13.addWidget(self.test_dataset_list)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_6 = QLabel(self.verticalLayoutWidget_9)
+        self.label_6.setObjectName(u"label_6")
+        sizePolicy.setHeightForWidth(self.label_6.sizePolicy().hasHeightForWidth())
+        self.label_6.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_6.addWidget(self.label_6)
+
+        self.test_thresh_spin_edit = QDoubleSpinBox(self.verticalLayoutWidget_9)
+        self.test_thresh_spin_edit.setObjectName(u"test_thresh_spin_edit")
+        self.test_thresh_spin_edit.setEnabled(True)
+        self.test_thresh_spin_edit.setDecimals(3)
+
+        self.horizontalLayout_6.addWidget(self.test_thresh_spin_edit)
+
+        self.test_thresh_apply_button = QPushButton(self.verticalLayoutWidget_9)
+        self.test_thresh_apply_button.setObjectName(u"test_thresh_apply_button")
+
+        self.horizontalLayout_6.addWidget(self.test_thresh_apply_button)
+
+
+        self.verticalLayout_13.addLayout(self.horizontalLayout_6)
 
 
         self.verticalLayout_11.addLayout(self.verticalLayout_13)
@@ -299,7 +341,7 @@ class Ui_Form(object):
         self.train_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
         self.train_two_hand_checkBox.setText(QCoreApplication.translate("Form", u"2\uac1c\uc758 \uc190\uc744 \ud559\uc2b5 \uc2dc\ud0a4\ub3c4\ub85d \uace0\uc815", None))
         self.label_3.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
-        self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"75.0", None))
+        self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"70.0", None))
         self.train_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.train_tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud559\uc2b5", None))
         self.groupBox_5.setTitle(QCoreApplication.translate("Form", u"\uc6d0\ubcf8", None))
@@ -316,6 +358,14 @@ class Ui_Form(object):
         self.label_5.setText(QCoreApplication.translate("Form", u"\ud14c\uc2a4\ud2b8\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.test_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
         self.test_cam_use_check.setText(QCoreApplication.translate("Form", u"\uc6f9\ucea0\uc744 \uc774\uc6a9\ud574\uc11c \ud14c\uc2a4\ud2b8", None))
+        self.label_10.setText(QCoreApplication.translate("Form", u"\ub300\uc0c1 \ub77c\ubca8 :   ", None))
+#if QT_CONFIG(accessibility)
+        self.test_target_label_combo.setAccessibleName("")
+#endif // QT_CONFIG(accessibility)
+        self.test_target_label_combo.setPlaceholderText("")
+        self.label_6.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
+        self.test_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"70.0", None))
+        self.test_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.test_tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud14c\uc2a4\ud2b8", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.tools_tab), QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))
         self.groupBox_4.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
