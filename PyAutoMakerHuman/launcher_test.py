@@ -55,6 +55,12 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             min_thresh = float(min_thresh) / 100
             self.test_detector = self.init_detector(0, min_thresh)
             self.test_trainer = train.SvmUtil()
+
+            self.test_use_cam = False
+            self.test_cam_thread = None
+            self.test_cam_exit_event = Event()
+
+            self.test_cam_signal = TestCamSignal()
         init_data()
 
         def init_display():
@@ -82,6 +88,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_type_combo.currentIndexChanged.connect(self.test_type_combo_chnaged_handler)
             self.test_model_load_button.clicked.connect(self.test_model_load_button_handler)
             self.test_dataset_path_find_button.clicked.connect(self.test_dataset_path_find_button_handler)
+            self.test_cam_use_check.stateChanged.connect(self.test_cam_use_check_handler)
             self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_itemSelectionChanged_handler)
             self.test_thresh_apply_button.clicked.connect(self.test_thresh_apply_button_clicked_handler)
 
@@ -93,6 +100,16 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pass
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        self.train_dataset_add_thread_exit_event.set()
+        self.train_exit_event.set()
+        self.test_cam_exit_event.set()
+
+        thread_list = [self.train_dataset_add_thread, self.test_dataset_add_thread, self.test_cam_thread]
+        for target_thread in thread_list:
+            if target_thread is None:
+                continue
+            target_thread.join()
+
         return super().closeEvent(event)
 
     def init_detector(self, idx : int, thresh : float) -> hand.HandUtil or pose.PoseUtil or None:
@@ -323,6 +340,38 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.test_dataset_list.setDisabled(True)
         self.test_file_add_thread = Thread(target=file_add_thread_func, args=(folder_paths[0], self.test_dataset_list, self.test_dataset_add_end_signal))
         self.test_file_add_thread.start()
+
+    @Slot()
+    def test_cam_use_check_handler(self, state):
+        if state:
+            self.test_use_cam = True
+
+            def test_cam_logger(log_message : str, color : tuple) -> None:
+                self.log_signal.sig.emit(log_message, color)
+            def cam_thread_func(detector, trainer, target_label : str, target_img_label : QLabel, logger, exit_event : Event, cam_signal : TestCamSignal):
+                while True:
+                    print("a")
+                    time.sleep(1)
+                    if exit_event.is_set():
+                        break
+
+            target_label = self.test_target_label_combo.currentText()
+
+            self.test_cam_exit_event.clear()
+            self.test_cam_thread = WorkThread(WorkPyThread, cam_thread_func
+                                    , (self.test_detector, self.test_trainer
+                                    , target_label, self.test_result_img_label
+                                    ,  test_cam_logger, self.test_cam_exit_event, self.test_cam_signal))
+
+            self.test_cam_thread.start()
+
+        else:
+            self.test_cam_exit_event.set()
+            self.test_cam_thread.join()
+            self.test_cam_thread = None
+            self.test_use_cam = False
+
+        self.test_dataset_list.setDisabled(True if state else False)
 
     @Slot()
     def test_dataset_list_itemSelectionChanged_handler(self) -> None:
