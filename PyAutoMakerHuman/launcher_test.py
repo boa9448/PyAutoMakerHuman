@@ -28,6 +28,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.setupUi(self)
 
         def init_data():
+            self.log_signal = LogSignal()
+
             self.train_dataset_add_end_signal = TrainDataSetAddEndSignal()
             self.train_dataset_add_thread = None
             self.train_dataset_add_thread_exit_event = Event()
@@ -53,6 +55,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         init_display()
 
         def init_handler():
+            self.log_signal.sig.connect(self.log)
             self.train_dataset_add_end_signal.sig.connect(self.train_dataset_add_end_signal_handler)
 
             self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_chnaged_handler)
@@ -105,9 +108,21 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
         return None
 
-    def get_file_list(self, folder_path) -> list:
+    def get_file_list(self, folder_path : str) -> list:
         file_lsit = glob(os.path.join(folder_path, "**", "*.*"), recursive = True)
         return file_lsit
+
+    def ndarray_to_qimage(self, img : np.ndarray) -> QImage:
+        height, width, channel = img.shape
+        bytesPerLine = channel * width
+        qImg = QImage(img.data, width, height, bytesPerLine
+                        , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
+        return qImg
+
+    def draw_label(self, img_label : QLabel, qImg : QImage) -> None:
+        pixmap = QPixmap(qImg)
+        pixmap = pixmap.scaled(img_label.size(), aspectMode= Qt.IgnoreAspectRatio)
+        img_label.setPixmap(pixmap)
 
     @Slot()
     def train_dataset_add_end_signal_handler(self):
@@ -153,10 +168,33 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     @Slot()
     def train_dataset_list_itemSelectionChanged_handler(self):
         print("훈련 데이터셋 선택 아이템 체인지")
+        file_path = self.train_dataset_list.currentItem().text()
+        img = cv2.imread(file_path)
+        if img is None:
+            return
+
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.train_original_img_label, qImg)
+
+        result = self.train_detector.detect(img)
+        scores = result.scores()
+        if scores is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            self.log(f"찾은 개수 : {len(scores)} ({scores})")
+
+        result.draw(img)
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.train_result_img_label, qImg)
+
     
     @Slot()
     def train_thresh_apply_button_clicked_handler(self):
         print("훈련 데이터셋 임계율 설정 버튼")
+        min_thresh = self.train_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        idx = self.train_type_combo.currentIndex()
+        self.train_detector = self.init_detector(idx, min_thresh)
 
     @Slot()
     def test_type_combo_chnaged_handler(self, idx : int) -> None:
