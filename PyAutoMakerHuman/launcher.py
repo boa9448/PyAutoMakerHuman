@@ -14,7 +14,7 @@ from PySide6.QtGui import *
 
 from main_form import Ui_Form
 # 테스트 개발엔 잠시 주석
-# import face
+import face
 import hand
 import pose
 import train
@@ -121,7 +121,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         elif idx == 1:
             detector = pose.PoseUtil()
         elif idx == 2:
-            pass
+            detector = face.FaceUtil(min_detection_confidence = thresh)
 
         return detector
 
