@@ -240,11 +240,13 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.bTraining = not self.bTraining
 
     @Slot()
-    def test_cam_signal_handler(self, code, img) -> None:
+    def test_cam_signal_handler(self, code, img) -> int:
         qImg = self.ndarray_to_qimage(img)
 
         target_label = self.test_original_img_label if code == self.test_cam_signal.ORIGINAL else self.test_result_img_label
         self.draw_label(target_label, qImg)
+
+        return 0
 
     @Slot()
     def train_model_save_button_clicked_handler(self):
@@ -353,7 +355,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             def test_cam_logger(log_message : str, color : tuple) -> None:
                 self.log_signal.sig.emit(log_message, color)
-            def cam_thread_func(detect_test_draw, target_label : str, logger, exit_event : Event, cam_signal : TestCamSignal):
+            def cam_thread_func(detect_test_draw, target_combo : QComboBox, logger, exit_event : Event, cam_signal : TestCamSignal):
                 cap = cv2.VideoCapture(0)
                 while cap.isOpened():
                     if exit_event.is_set():
@@ -367,6 +369,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                     cam_signal.sig.emit(cam_signal.ORIGINAL, frame)
                     frame, result = detect_test_draw(frame, 1, 3)
                     name, proba = result
+                    target_label = target_combo.currentText()
                     if name is not None and name == target_label:
                         cv2.putText(frame, "O", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 0), 5)
                     else:
@@ -376,12 +379,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
                 cap.release()
 
-            target_label = self.test_target_label_combo.currentText()
-
             self.test_cam_exit_event.clear()
             self.test_cam_thread = WorkThread(WorkQThread, cam_thread_func
                                     , (self.detect_test_draw
-                                    , target_label,  test_cam_logger
+                                    , self.test_target_label_combo,  test_cam_logger
                                     , self.test_cam_exit_event, self.test_cam_signal))
 
             self.test_cam_thread.start()
