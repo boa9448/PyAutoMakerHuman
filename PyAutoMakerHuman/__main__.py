@@ -6,4 +6,5 @@ from .launcher import TrainTestUtilForm
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = TrainTestUtilForm()
+    window.show()
     app.exec()
