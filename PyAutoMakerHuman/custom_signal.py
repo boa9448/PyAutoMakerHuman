@@ -1,5 +1,6 @@
 import numpy as np
 from PySide6.QtCore import *
+from PySide6.QtGui import QImage
 
 class LogSignal(QObject):
     sig = Signal(str, tuple)
@@ -26,7 +27,7 @@ class TrainExitSignal(QObject):
         super().__init__()
 
 class TestCamSignal(QObject):
-    sig = Signal(str)
+    sig = Signal(np.ndarray)
 
     def __init__(self):
         super().__init__()

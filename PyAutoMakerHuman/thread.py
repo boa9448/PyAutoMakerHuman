@@ -23,7 +23,10 @@ class WorkQThread(QThread):
         self.target(*self.param)
 
     def join(self, time_out : int = None):
-        self.wait(time_out if time_out != None else QDeadlineTimer())
+        if time_out:
+            self.wait(time_out)
+        else:
+            self.wait()
 
 class WorkThread:
     def __init__(self, thread_type : WorkPyThread or WorkQThread, target, args : tuple, parent = None):

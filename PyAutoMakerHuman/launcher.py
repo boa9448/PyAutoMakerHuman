@@ -4,6 +4,7 @@ import time
 import random
 from threading import Thread, Event
 from glob import glob
+from typing import List
 
 import cv2
 import numpy as np
@@ -12,188 +13,160 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 
 from main_form import Ui_Form
-import face
+# 테스트 개발엔 잠시 주석
+# import face
 import hand
 import pose
 import train
-from custom_signal import LogSignal, TrainExitSignal, TestCamSignal
-
-class RunOption:
-    def __init__(self):
-        self.dataset_folder_path = None
-
-    def __del__(self):
-        pass
-
-    def set_dataset_folder_path(self, dataset_folder_path) -> None:
-        self.dataset_folder_path = dataset_folder_path
-
-    def get_dataset_folder_path(self) -> str or None:
-        return self.dataset_folder_path
-
-class TrainTabHandler:
-    def __init__(self, parent):
-        self.parent : TrainTestUtilForm = parent
-        self.train_exit_signal = TrainExitSignal()
-        self.train_exit_event = Event()
-        self.bTraining = False
-
-    def log(self, log_message:str, color:tuple = (255, 255, 255)):
-        self.parent.log(log_message, color)
-
-    @Slot()
-    def train_thresh_button_click_handler(self):
-        cur_text = self.train_type_combo.currentText()
-        thresh = self.train_thresh_spin_edit.text()
-        thresh = float(thresh) / 100
-        self.train_detector = self.init_detector(cur_text, thresh)
-        self.log("변경 완료")
+from custom_signal import LogSignal, TrainExitSignal, TestCamSignal, TrainDataSetAddEndSignal, TestDataSetAddEndSignal
+from thread import WorkThread, WorkQThread, WorkPyThread
 
 class TrainTestUtilForm(QMainWindow, Ui_Form):
-    TRAIN_TEST_TYPE_LIST = ["얼굴 인식", "수형 인식", "수형 인식(홀리스틱)"]
+    TRAIN_TEST_TYPE_DICT = {"수형 인식" : 0, "수형 인식(홀리스틱)" : 1, "얼굴 인식" : 2}
 
     def __init__(self):
-        self.run_option = RunOption()
-        self.log_signal = LogSignal()
-        self.train_exit_signal = TrainExitSignal()
-        self.train_exit_event = Event()
-        self.bTraining = False
-        self.color_dict = {}
-
-        self.test_cam_signal = TestCamSignal()
-        self.test_cam_exit_event = Event()
-        self.bUse_cam = False
-
         super(TrainTestUtilForm, self).__init__()
         self.setupUi(self)
 
-        self.tab_info_list = [(self.train_tab, self.train_log_list, self.train_type_combo), (self.test_tab, self.test_log_list, self.test_type_combo), self.tools_tab]
+        def init_data():
+            self.color_dict = dict()
+
+            self.log_signal = LogSignal()
+
+            self.train_dataset_add_end_signal = TrainDataSetAddEndSignal()
+            self.train_dataset_add_thread = None
+            self.train_dataset_add_thread_exit_event = Event()
+
+            self.test_dataset_add_end_signal = TestDataSetAddEndSignal()
+            self.test_dataset_add_thread = None
+
+            self.train_done_signal = TrainExitSignal()
+
+            self.train_exit_event = Event()
+            self.bTraining = False
+            self.train_dataset_folder = ""
+
+            min_thresh = self.train_thresh_spin_edit.text()
+            min_thresh = float(min_thresh) / 100
+            self.train_detector = self.init_detector(0, min_thresh)
+            self.train_trainer = train.SvmUtil()
+
+            min_thresh = self.train_thresh_spin_edit.text()
+            min_thresh = float(min_thresh) / 100
+            self.test_detector = self.init_detector(0, min_thresh)
+            self.test_trainer = train.SvmUtil()
+
+            self.test_use_cam = False
+            self.test_cam_thread = None
+            self.test_cam_exit_event = Event()
+
+            self.test_cam_signal = TestCamSignal()
+        init_data()
 
         def init_display():
-            self.two_hand_checkBox.hide()
+            for model_type in self.TRAIN_TEST_TYPE_DICT:
+                self.train_type_combo.addItem(model_type)
+                self.test_type_combo.addItem(model_type)
 
-            for train_test_type in self.TRAIN_TEST_TYPE_LIST:
-                self.train_type_combo.addItem(train_test_type)
-                self.test_type_combo.addItem(train_test_type)
+            # 잠시 숨김
+            self.train_two_hand_checkBox.hide()
         init_display()
 
         def init_handler():
             self.log_signal.sig.connect(self.log)
-            self.train_exit_signal.sig.connect(self.tarin_exit_signal_handler)
+            self.train_dataset_add_end_signal.sig.connect(self.train_dataset_add_end_signal_handler)
+            self.test_dataset_add_end_signal.sig.connect(self.test_dataset_add_end_signal_handler)
+            self.train_done_signal.sig.connect(self.train_model_train_button_clicked_handler)
             self.test_cam_signal.sig.connect(self.test_cam_signal_handler)
 
-            self.train_type_combo.currentIndexChanged.connect(self.train_test_type_combo_change_handler)
-            self.test_type_combo.currentIndexChanged.connect(self.test_test_type_combo_change_handler)
-            self.train_model_train_button.clicked.connect(self.train_model_train_button_handler)
-            self.train_model_save_button.clicked.connect(self.train_model_save_button_handler)
+            self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_chnaged_handler)
+            self.train_model_train_button.clicked.connect(self.train_model_train_button_clicked_handler)
+            self.train_model_save_button.clicked.connect(self.train_model_save_button_clicked_handler)
+            self.train_dataset_path_find_button.clicked.connect(self.train_dataset_path_find_button_clicked_handler)
+            self.train_dataset_list.itemSelectionChanged.connect(self.train_dataset_list_itemSelectionChanged_handler)
+            self.train_thresh_apply_button.clicked.connect(self.train_thresh_apply_button_clicked_handler)
+
+            self.test_type_combo.currentIndexChanged.connect(self.test_type_combo_chnaged_handler)
             self.test_model_load_button.clicked.connect(self.test_model_load_button_handler)
-            self.train_dataset_path_find_button.clicked.connect(self.train_dataset_path_find_button_handler)
             self.test_dataset_path_find_button.clicked.connect(self.test_dataset_path_find_button_handler)
-            self.train_dataset_list.itemSelectionChanged.connect(self.train_dataset_list_select_change_handler)
             self.test_cam_use_check.stateChanged.connect(self.test_cam_use_check_handler)
-            self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_select_change_handler)
-            self.train_thresh_apply_button.clicked.connect(self.train_thresh_button_click_handler)
+            self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_itemSelectionChanged_handler)
+            self.test_thresh_apply_button.clicked.connect(self.test_thresh_apply_button_clicked_handler)
+
         init_handler()
 
-        def init_data():
-            thresh = self.train_thresh_spin_edit.text()
-            thresh = float(thresh) / 100
-
-            train_cur_type = self.train_type_combo.currentText()
-            self.train_detector = self.init_detector(train_cur_type, thresh)
-
-            test_cur_type = self.train_type_combo.currentText()
-            self.test_detector = self.init_detector(test_cur_type, thresh)
-
-            self.trainer = train.SvmUtil()
-        init_data()
-
-        self.log("프로그램 켜짐")
-        self.show()
-
+        self.log("프로그램 시작")
+        
     def __del__(self):
         pass
 
-    def init_detector(self, type_name, thresh):
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self.train_dataset_add_thread_exit_event.set()
+        self.train_exit_event.set()
+        self.test_cam_exit_event.set()
+
+        thread_list = [self.train_dataset_add_thread, self.test_dataset_add_thread, self.test_cam_thread]
+        for target_thread in thread_list:
+            if target_thread is None:
+                continue
+            target_thread.join()
+
+        return super().closeEvent(event)
+
+    def init_detector(self, idx : int, thresh : float) -> hand.HandUtil or pose.PoseUtil or None:
         detector = None
-        if type_name == self.TRAIN_TEST_TYPE_LIST[0]:
-            detector = face.FaceUtil(1, thresh)
-        elif type_name == self.TRAIN_TEST_TYPE_LIST[1]:
+
+        if idx == 0:
             detector = hand.HandUtil(min_detection_confidence = thresh)
-        elif type_name == self.TRAIN_TEST_TYPE_LIST[2]:
-            # 홀리스틱(손) 작성하면 여기로
-            pass
-        else:
+        elif idx == 1:
+            detector = pose.PoseUtil()
+        elif idx == 2:
             pass
 
-        if detector is not None:
-            detector.set_logger(self.log)
-            
         return detector
 
-    def messagebox(self, message, title = "확인 메시지"):
-        box = QMessageBox()
-        box.setText(message)
-        box.setWindowTitle(title)
-        box.exec()
-
-    def log(self, log_message, color = (255, 255, 255)):
+    def log(self, log_message : str, color : tuple = (255, 255, 255)) -> None:
         cur_time =  time.strftime('%X', time.localtime(time.time()))
         log_message = f"[{cur_time}] : {log_message}"
         log_message_item = QListWidgetItem(log_message)
         bg_color = QColor(*color)
         log_message_item.setBackground(bg_color)
-        target_log_idx = self.main_menu_tab.currentIndex()
-        target_log_list = self.tab_info_list[target_log_idx][1]
-        target_log_list.addItem(log_message_item)
-        target_log_list.scrollToBottom()
+        self.main_log_list.addItem(log_message_item)
+        self.main_log_list.scrollToBottom()
 
-    def add_dataset_to_list(self, target_list, dataset_folder_path):
-        print(os.path.join(dataset_folder_path, "**", "*.*"))
-        dataset_file_list = glob(os.path.join(dataset_folder_path, "**", "*.*"), recursive = True)
-        target_list.addItems(dataset_file_list)
-        
-        self.log(f"지정한 경로에서 총 : {len(dataset_file_list)}개의 파일을 찾았습니다")
+    def get_folder_paths(self) -> list or None:
+        dlg = QFileDialog(self)
+        dlg.setFileMode(QFileDialog.Directory)
+        if dlg.exec():
+            folder_paths = dlg.selectedFiles()
+            if folder_paths:
+                return folder_paths
 
-    def view_original_img(self, target_img_label, img_path):
-        pixmap = QPixmap()
-        pixmap.load(img_path)
-        if pixmap.isNull():
-            self.messagebox("이미지를 열 수 없습니다.")
-            self.log("이미지를 열 수 없습니다", (255, 0, 0))
-            raise Exception("이미지를 열 수 없습니다")
+        return None
 
-        label_size = target_img_label.size()
-        pixmap = pixmap.scaled(label_size, aspectMode = Qt.IgnoreAspectRatio)
-        target_img_label.setPixmap(pixmap)
+    def get_file_list(self, folder_path : str) -> list:
+        file_lsit = glob(os.path.join(folder_path, "**", "*.*"), recursive = True)
+        return file_lsit
 
-    def detect_draw(self, img) -> QImage:
-        result = self.train_detector.detect(img)
-        scores = result.scores()
-        if scores is None:
-            self.log(f"찾은 오브젝트가 없습니다")
-        else:
-            self.log(f"찾은 개수 : {len(scores)} ({scores})")
-
-
-        result.draw(img)
+    def ndarray_to_qimage(self, img : np.ndarray) -> QImage:
         height, width, channel = img.shape
         bytesPerLine = channel * width
         qImg = QImage(img.data, width, height, bytesPerLine
                         , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
         return qImg
-    
-    def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> QImage:
+
+    def draw_label(self, img_label : QLabel, qImg : QImage) -> None:
+        pixmap = QPixmap(qImg)
+        pixmap = pixmap.scaled(img_label.size(), aspectMode= Qt.IgnoreAspectRatio)
+        img_label.setPixmap(pixmap)
+
+    def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> np.ndarray:
         # img = cv2.resize(img, size)
         data_list = self.test_detector.extract(img)
-        if data_list is None:
-            self.log(f"찾은 오브젝트가 없습니다")
-        else:
-            pass
         
         if data_list is not None:
             for idx, data in enumerate(data_list):
-                name, proba = self.trainer.predict([data[-1]])
+                name, proba = self.test_trainer.predict([data[-1]])
                 box = data[0]
 
                 if name in self.color_dict:
@@ -207,224 +180,237 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                             , cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness, cv2.LINE_AA)
                 cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
                                 , color, thickness)
-
-        height, width, channel = img.shape
-        bytesPerLine = channel * width
-        qImg = QImage(img.data, width, height, bytesPerLine
-                        , QImage.Format_BGR888 if channel == 3 else QImage.Format_BGR30)
-        return qImg
-
-    def view_landmark_img(self, target_img_label, img_path):
-        try:
-            img = cv2.imread(img_path)
-            if img is None:
-                self.messagebox("이미지를 열 수 없습니다.")
-                raise Exception("이미지를 열 수 없습니다")
-            qImg = self.detect_draw(img)
-            pixmap = QPixmap(qImg)
-            label_size = target_img_label.size()
-            pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
-            target_img_label.setPixmap(pixmap)
-        except:
-            self.log("이미지를 열 수 없습니다.", (255, 0, 0))
-
-    def view_test_img(self, target_img_label : QLabel, img_path):
-        try:
-            img = cv2.imread(img_path)
-            if img is None:
-                self.messagebox("이미지를 열 수 없습니다.")
-                raise Exception("이미지를 열 수 없습니다")
-            qImg = self.detect_test_draw(img)
-            pixmap = QPixmap(qImg)
-            label_size = target_img_label.size()
-            pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
-            target_img_label.setPixmap(pixmap)
-        except:
-            self.log("이미지를 열 수 없습니다.", (255, 0, 0))
+        
+        return img
 
     @Slot()
-    def train_dataset_list_select_change_handler(self):
-        item = self.train_dataset_list.currentItem()
-        try:
-            self.log(f"{item.text()} 을(를) 열기를 시도합니다")
-            self.view_original_img(self.train_original_img_label, item.text())
-            self.view_landmark_img(self.train_result_img_label, item.text())
-            self.log(f"{item.text()} 의 작업을 끝냈습니다")
-        except Exception as e:
-            print(e)
-            self.log(f"{item.text()} 의 작업을 실패했습니다", (255, 0, 0))
+    def train_dataset_add_end_signal_handler(self):
+        self.train_dataset_list.setDisabled(False)
+        self.train_dataset_add_thread = None
 
     @Slot()
-    def test_dataset_list_select_change_handler(self):
-        item = self.test_dataset_list.currentItem()
-        try:
-            self.log(f"{item.text()} 을(를) 열기를 시도합니다")
-            self.view_original_img(self.test_original_img_label, item.text())
-            self.view_test_img(self.test_result_img_label, item.text())
-            self.log(f"{item.text()} 의 작업을 끝냈습니다")
-        except Exception as e:
-            print(e)
-            self.log(f"{item.text()} 의 작업을 실패했습니다", (255, 0, 0))
+    def test_dataset_add_end_signal_handler(self):
+        self.test_dataset_list.setDisabled(False)
+        self.test_dataset_add_thread = None
 
     @Slot()
-    def train_thresh_button_click_handler(self):
-        cur_text = self.train_type_combo.currentText()
-        thresh = self.train_thresh_spin_edit.text()
-        thresh = float(thresh) / 100
-        self.train_detector = self.init_detector(cur_text, thresh)
-        self.log("변경 완료")
+    def train_type_combo_chnaged_handler(self, idx : int) -> None:
+        print("훈련 타입 변경")
+        min_thresh = self.train_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        self.train_detector = self.init_detector(idx, min_thresh)
+        self.log("훈련 타입 변경", (0, 255, 0))
 
     @Slot()
-    def test_thresh_button_click_handler(self):
-        cur_text = self.test_type_combo.currentText()
-        thresh = self.train_thresh_spin_edit.text()
-        thresh = float(75) / 100
-        self.test_detector = self.init_detector(cur_text, thresh)
-        self.log("변경 완료")
-
-    @Slot()
-    def train_test_type_combo_change_handler(self, idx):
-        self.train_thresh_button_click_handler()
-
-    @Slot()
-    def test_test_type_combo_change_handler(self, idx):
-        self.test_thresh_button_click_handler()
-
-    @Slot()
-    def test_cam_use_check_handler(self, check_val):
-        if check_val:
-            def cam_test_thread_func(cam_signal : TestCamSignal, exit_event : Event):
-                cap = cv2.VideoCapture(0)
-
-                while cap.isOpened():
-                    try:
-                        if exit_event.is_set():
-                            break
-
-                        ret, frame = cap.read()
-                        if ret:
-                            cam_signal.sig.emit(frame)
-                    except:
-                        pass
-
-                cap.release()
-
-            self.test_cam_exit_event.clear()
-            self.cam_test_thread = Thread(target = cam_test_thread_func, args = (self.test_cam_signal, self.test_cam_exit_event))
-            self.cam_test_thread.start()
-        else:
-            self.test_cam_exit_event.set()
-            self.cam_test_thread.join()
-
-        self.test_dataset_list.setDisabled(True if check_val else False)
-
-
-    @Slot()
-    def tarin_exit_signal_handler(self):
-        """
-        self.bTraining = False
-        self.train_exit_event.clear()
-        self.train_model_train_button.setText("모델 학습 시작")
-        """
-
-        self.train_model_train_button_handler()
-
-    @Slot()
-    def test_cam_signal_handler(self, img):
-        try:
-            qImg = self.detect_test_draw(img, 1, 2)
-            pixmap = QPixmap(qImg)
-            label_size = self.test_result_img_label.size()
-            pixmap = pixmap.scaled(label_size, aspectMode= Qt.IgnoreAspectRatio)
-            self.test_original_img_label.setPixmap(pixmap)
-            self.test_result_img_label.setPixmap(pixmap)
-        except:
-            self.log("이미지를 열 수 없습니다.", (255, 0, 0))
-
-    @Slot()
-    def train_model_train_button_handler(self):
+    def train_model_train_button_clicked_handler(self):
+        print("훈련 모델 버튼 클릭")
         if self.bTraining == False:
-            print("train_model_train_button call")
-            dataset_folder = self.run_option.get_dataset_folder_path()
-            if dataset_folder is None:
-                self.log("데이터셋이 들어있는 폴더를 선택해주세요", (255, 0, 0))
-                return
+            self.train_exit_event.clear()
+            def train_logger(log_message : str, color : tuple) -> None:
+                self.log_signal.sig.emit(log_message, color)
 
-            def train_thread_func(detector, trainer, dataset_folder, log_signal, train_done_signal, exit_event):
-                def train_log(log : str, color : tuple) -> None:
-                    log_signal.sig.emit(log, color)
-
-                detector.set_logger(train_log)
+            def train_thread_func(detector, trainer, dataset_folder : str, exit_event : Event, logger, done_signal : TrainExitSignal) -> None:
+                detector.set_logger(logger)
                 data = detector.extract_dataset(dataset_folder, exit_event)
                 train_data, name = data["data"], data["name"]
                 if len(train_data) == 0 or len(name) == 0:
-                    log_signal.sig.emit("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
+                    logger("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
+                    done_signal.sig.emit()
                     return
 
                 trainer.train_svm(train_data, name)
-                train_done_signal.sig.emit()
+                done_signal.sig.emit()
 
-            self.train_thread = Thread(target=train_thread_func, args=(self.train_detector, self.trainer, dataset_folder
-                                        , self.log_signal, self.train_exit_signal, self.train_exit_event))
-            self.train_exit_event.clear()
+            self.train_thread = WorkThread(WorkQThread, train_thread_func, (self.train_detector, self.train_trainer
+                                                                            , self.train_dataset_folder, self.train_exit_event, train_logger
+                                                                            , self.train_done_signal), self)
+            self.train_dataset_list.setDisabled(True)
+            self.train_thresh_apply_button.setDisabled(True)
             self.train_thread.start()
-            self.train_model_train_button.setText("모델 학습 중지")
+            self.train_model_train_button.setText("학습중")
         else:
             self.train_exit_event.set()
-            self.train_model_train_button.setText("중지하는 중...")
             self.train_thread.join()
+            self.train_thread = None
             self.train_model_train_button.setText("모델 학습 시작")
+            self.train_dataset_list.setDisabled(False)
+            self.train_thresh_apply_button.setDisabled(False)
 
         self.bTraining = not self.bTraining
 
+    @Slot()
+    def test_cam_signal_handler(self, img) -> None:
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.test_result_img_label, qImg)
+
+    @Slot()
+    def train_model_save_button_clicked_handler(self):
+        print("훈련 모델 저장 버튼")
+        folder_path = self.get_folder_paths()
+        if folder_path:
+            self.train_trainer.save_svm(folder_path[0])
+            self.log(f"{folder_path[0]}에 모델을 저장했습니다.", (0, 255, 0))
+
+    @Slot()
+    def train_dataset_path_find_button_clicked_handler(self):
+        print("훈련 데이터셋 찾기 버튼")
+        folder_paths = self.get_folder_paths()
+        if folder_paths is None:
+            return
+
+        def file_add_thread_func(folder_path : str, target_list : QListWidget, end_signal : TrainDataSetAddEndSignal) -> None:
+            file_list = self.get_file_list(folder_path)
+            for file in file_list:
+                item = QListWidgetItem(file)
+                target_list.addItem(item)
+
+            end_signal.sig.emit()
+
+        self.train_dataset_folder = folder_paths[0]
+        self.train_dataset_add_thread_exit_event.clear()
+        self.train_dataset_list.clear()
+        self.train_dataset_list.setDisabled(True)
+        self.train_file_add_thread = Thread(target=file_add_thread_func, args=(folder_paths[0], self.train_dataset_list, self.train_dataset_add_end_signal))
+        self.train_file_add_thread.start()
+
+    @Slot()
+    def train_dataset_list_itemSelectionChanged_handler(self) -> None:
+        print("훈련 데이터셋 선택 아이템 체인지")
+        file_path = self.train_dataset_list.currentItem().text()
+        img = cv2.imread(file_path)
+        if img is None:
+            return
+
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.train_original_img_label, qImg)
+
+        result = self.train_detector.detect(img)
+        scores = result.scores()
+        if scores is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            self.log(f"찾은 개수 : {len(scores)} ({scores})")
+
+        result.draw(img)
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.train_result_img_label, qImg)
+
     
     @Slot()
-    def train_model_save_button_handler(self):
-        print("train_model_save_button call")
-        dlg = QFileDialog(self)
-        dlg.setFileMode(QFileDialog.Directory)
-        if dlg.exec():
-            folder_path = dlg.selectedFiles()
-            if folder_path:
-                self.trainer.save_svm(folder_path[0])
-                self.log(f"{folder_path[0]}에 모델을 저장했습니다.", (0, 255, 0))
+    def train_thresh_apply_button_clicked_handler(self):
+        print("훈련 데이터셋 임계율 설정 버튼")
+        min_thresh = self.train_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        idx = self.train_type_combo.currentIndex()
+        self.train_detector = self.init_detector(idx, min_thresh)
+        self.log("설정 완료!", (0, 255, 0))
 
     @Slot()
-    def train_dataset_path_find_button_handler(self):
-        print("train_dataset_path_find_button_clicked call")
-        dlg = QFileDialog(self)
-        dlg.setFileMode(QFileDialog.Directory)
-        if dlg.exec():
-            folder_path = dlg.selectedFiles()
-            if folder_path:
-                self.run_option.set_dataset_folder_path(folder_path[0])
-                self.train_dataset_list.clear()
-                self.add_dataset_to_list(self.train_dataset_list, folder_path[0])
+    def test_type_combo_chnaged_handler(self, idx : int) -> None:
+        print("테스트 타입 변경")
+        min_thresh = self.test_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        self.test_detector = self.init_detector(idx, min_thresh)
+        self.log("테스트 타입 변경", (0, 255, 0))
 
     @Slot()
-    def test_model_load_button_handler(self):
-        print("test_model_load_button_handler call")
-        dlg = QFileDialog(self)
-        dlg.setFileMode(QFileDialog.Directory)
-        if dlg.exec():
-            folder_path = dlg.selectedFiles()
-            if folder_path:
-                self.trainer.load_svm(folder_path[0])
-                self.log(f"{folder_path[0]}의 모델을 불러왔습니다.", (0, 255, 0))
+    def test_model_load_button_handler(self) -> None:
+        folder_paths = self.get_folder_paths()
+        if folder_paths is None:
+            return
+
+        self.test_trainer.load_svm(folder_paths[0])
+        self.test_target_label_combo.clear()
+        self.test_target_label_combo.addItems(self.test_trainer.get_labels())
+        self.log(f"{folder_paths[0]}의 모델을 불러왔습니다", (0, 255, 0))
 
     @Slot()
-    def test_dataset_path_find_button_handler(self):
-        print("test_dataset_path_find_button_handler call")
-        dlg = QFileDialog(self)
-        dlg.setFileMode(QFileDialog.Directory)
-        if dlg.exec():
-            folder_path = dlg.selectedFiles()
-            if folder_path:
-                self.test_dataset_list.clear()
-                self.add_dataset_to_list(self.test_dataset_list, folder_path[0])
+    def test_dataset_path_find_button_handler(self) -> None:
+        folder_paths = self.get_folder_paths()
+        if folder_paths is None:
+            return
+
+        def file_add_thread_func(folder_path : str, target_list : QListWidget, end_signal : TestDataSetAddEndSignal) -> None:
+            file_list = self.get_file_list(folder_path)
+            for file in file_list:
+                item = QListWidgetItem(file)
+                target_list.addItem(item)
+
+            end_signal.sig.emit()
+
+        self.test_dataset_list.clear()
+        self.test_dataset_list.setDisabled(True)
+        self.test_file_add_thread = Thread(target=file_add_thread_func, args=(folder_paths[0], self.test_dataset_list, self.test_dataset_add_end_signal))
+        self.test_file_add_thread.start()
+
+    @Slot()
+    def test_cam_use_check_handler(self, state):
+        if state:
+            self.test_use_cam = True
+
+            def test_cam_logger(log_message : str, color : tuple) -> None:
+                self.log_signal.sig.emit(log_message, color)
+            def cam_thread_func(detect_test_draw, target_label : str, logger, exit_event : Event, cam_signal : TestCamSignal):
+                cap = cv2.VideoCapture(0)
+                while cap.isOpened():
+                    if exit_event.is_set():
+                        break
+
+                    ret, frame = cap.read()
+                    if ret == False:
+                        continue
+                    
+                    frame = cv2.flip(frame, 1)
+                    frame = detect_test_draw(frame, 1, 3)
+                    cam_signal.sig.emit(frame)
+
+                cap.release()
+
+            target_label = self.test_target_label_combo.currentText()
+
+            self.test_cam_exit_event.clear()
+            self.test_cam_thread = WorkThread(WorkQThread, cam_thread_func
+                                    , (self.detect_test_draw
+                                    , target_label,  test_cam_logger
+                                    , self.test_cam_exit_event, self.test_cam_signal))
+
+            self.test_cam_thread.start()
+
+        else:
+            self.test_cam_exit_event.set()
+            self.test_cam_thread.join()
+            self.test_cam_thread = None
+            self.test_use_cam = False
+
+        self.test_dataset_list.setDisabled(True if state else False)
+
+    @Slot()
+    def test_dataset_list_itemSelectionChanged_handler(self) -> None:
+        print("테스트 데이터셋 선택 아이템 체인지")
+        file_path = self.test_dataset_list.currentItem().text()
+        img = cv2.imread(file_path)
+        if img is None:
+            return
+
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.test_original_img_label, qImg)
+
+        img = self.detect_test_draw(img, 1, 3)
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(self.test_result_img_label, qImg)
+
+    @Slot()
+    def test_thresh_apply_button_clicked_handler(self):
+        print("훈련 데이터셋 임계율 설정 버튼")
+        min_thresh = self.test_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        idx = self.test_type_combo.currentIndex()
+        self.test_detector = self.init_detector(idx, min_thresh)
+        self.log("설정 완료!", (0, 255, 0))
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = TrainTestUtilForm()
+    window.show()
     app.exec()
