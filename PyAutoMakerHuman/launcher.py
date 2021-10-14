@@ -160,10 +160,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pixmap = pixmap.scaled(img_label.size(), aspectMode= Qt.IgnoreAspectRatio)
         img_label.setPixmap(pixmap)
 
-    def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> np.ndarray:
+    def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> tuple:
         # img = cv2.resize(img, size)
         data_list = self.test_detector.extract(img)
         
+        name, proba = None, None
         if data_list is not None:
             for idx, data in enumerate(data_list):
                 name, proba = self.test_trainer.predict([data[-1]])
@@ -181,7 +182,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3])
                                 , color, thickness)
         
-        return img
+        return (img, (name, proba))
 
     @Slot()
     def train_dataset_add_end_signal_handler(self):
@@ -239,9 +240,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.bTraining = not self.bTraining
 
     @Slot()
-    def test_cam_signal_handler(self, img) -> None:
+    def test_cam_signal_handler(self, code, img) -> None:
         qImg = self.ndarray_to_qimage(img)
-        self.draw_label(self.test_result_img_label, qImg)
+
+        target_label = self.test_original_img_label if code == self.test_cam_signal.ORIGINAL else self.test_result_img_label
+        self.draw_label(target_label, qImg)
 
     @Slot()
     def train_model_save_button_clicked_handler(self):
@@ -361,8 +364,15 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                         continue
                     
                     frame = cv2.flip(frame, 1)
-                    frame = detect_test_draw(frame, 1, 3)
-                    cam_signal.sig.emit(frame)
+                    cam_signal.sig.emit(cam_signal.ORIGINAL, frame)
+                    frame, result = detect_test_draw(frame, 1, 3)
+                    name, proba = result
+                    if name is not None and name == target_label:
+                        cv2.putText(frame, "O", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 0), 5)
+                    else:
+                        cv2.putText(frame, "X", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 5)
+
+                    cam_signal.sig.emit(cam_signal.RESULT, frame)
 
                 cap.release()
 
@@ -395,7 +405,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         qImg = self.ndarray_to_qimage(img)
         self.draw_label(self.test_original_img_label, qImg)
 
-        img = self.detect_test_draw(img, 1, 3)
+        img, _ = self.detect_test_draw(img, 1, 3)
         qImg = self.ndarray_to_qimage(img)
         self.draw_label(self.test_result_img_label, qImg)
 

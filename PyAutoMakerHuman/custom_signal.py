@@ -27,7 +27,9 @@ class TrainExitSignal(QObject):
         super().__init__()
 
 class TestCamSignal(QObject):
-    sig = Signal(np.ndarray)
+    ORIGINAL = 1
+    RESULT = 2
+    sig = Signal(int, np.ndarray)
 
     def __init__(self):
         super().__init__()
