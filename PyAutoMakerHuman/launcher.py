@@ -161,7 +161,6 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         img_label.setPixmap(pixmap)
 
     def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> tuple:
-        # img = cv2.resize(img, size)
         data_list = self.test_detector.extract(img)
         
         name, proba = None, None
