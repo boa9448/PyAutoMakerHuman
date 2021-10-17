@@ -17,6 +17,7 @@ import hand
 import pose
 import train
 from custom_signal import LogSignal, TrainExitSignal, TestCamSignal
+from image import cv2_imread
 
 class RunOption:
     def __init__(self):
@@ -216,7 +217,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     def view_landmark_img(self, target_img_label, img_path):
         try:
-            img = cv2.imread(img_path)
+            img = cv2_imread(img_path)
             if img is None:
                 self.messagebox("이미지를 열 수 없습니다.")
                 raise Exception("이미지를 열 수 없습니다")
@@ -230,7 +231,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     def view_test_img(self, target_img_label : QLabel, img_path):
         try:
-            img = cv2.imread(img_path)
+            img = cv2_imread(img_path)
             if img is None:
                 self.messagebox("이미지를 열 수 없습니다.")
                 raise Exception("이미지를 열 수 없습니다")

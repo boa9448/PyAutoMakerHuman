@@ -3,12 +3,13 @@ import cv2
 import imutils
 import os
 import PyAutoMakerHuman as pamh
+from PyAutoMakerHuman import cv2_imread
 
 img_path = "C:\\th.jpg"
 
 face = pamh.FaceUtil(min_detection_confidence=0.7)
 
-img = cv2.imread(img_path)
+img = cv2_imread(img_path)
 result = face.detect(img)
 
 face_box_list = result.get_box_list()

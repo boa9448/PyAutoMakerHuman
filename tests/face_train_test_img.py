@@ -3,6 +3,7 @@ import cv2
 import imutils
 import os
 import PyAutoMakerHuman as pamh
+from PyAutoMakerHuman import cv2_imread
 
 img_path = "C:\\adrian.jpg"
 dataset_path = os.path.join("dataset", "face")
@@ -15,7 +16,7 @@ embed, name = data["data"], data["name"]
 trainer = pamh.SvmUtil()
 trainer.train_svm(embed, name)
 
-img = cv2.imread(img_path)
+img = cv2_imread(img_path)
 img = imutils.resize(img, width=600)
 emb_list = face.extract(img)
 

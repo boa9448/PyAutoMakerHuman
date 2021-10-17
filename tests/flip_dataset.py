@@ -1,5 +1,6 @@
 import os
 import cv2
+from PyAutoMakerHuman import cv2_imread
 
 
 dataset_path = os.path.join("dataset", "hand")
@@ -10,6 +11,6 @@ for root, dirs, files in os.walk(dataset_path):
         img_path_list.append(os.path.join(root, file))
 
 
-img_list = (cv2.imread(img_path) for img_path in img_path_list)
+img_list = (cv2_imread(img_path) for img_path in img_path_list)
 
 for img_path, img in zip(img_path_list, img_list):

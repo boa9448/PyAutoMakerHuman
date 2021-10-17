@@ -6,6 +6,8 @@ import imutils
 import numpy as np
 import cv2
 import mediapipe as mp
+from image import cv2_imread
+
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
@@ -232,7 +234,7 @@ class FaceUtil:
             print(f"[INFO] process... {idx + 1}/{len(file_list)}")
             name = file.split(os.path.sep)[-2]
 
-            img = cv2.imread(file)
+            img = cv2_imread(file)
             img = imutils.resize(img, width=600)
             embed = self.extract(img)
             if not embed:
@@ -274,7 +276,7 @@ if __name__ == "__main__":
     def extract_test():
         os.chdir("..")
         os.environ["FACE_MODEL_PATH"] = os.path.join("PyAutoMakerHuman\\", "models")
-        img = cv2.imread("C:\\th.jpg")
+        img = cv2_imread("C:\\th.jpg")
         face = FaceUtil()
         face.initExtractor()
         result = face.extract(img)

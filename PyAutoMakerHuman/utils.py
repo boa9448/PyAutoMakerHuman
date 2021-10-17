@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import requests as rq
+from image import cv2_imread
 
 
 def get_webcam_frame(target_url : str):

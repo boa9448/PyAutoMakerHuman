@@ -20,6 +20,7 @@ import pose
 import train
 from custom_signal import LogSignal, TrainExitSignal, TestCamSignal, TrainDataSetAddEndSignal, TestDataSetAddEndSignal
 from thread import WorkThread, WorkQThread, WorkPyThread
+from image import cv2_imread
 
 class TrainTestUtilForm(QMainWindow, Ui_Form):
     TRAIN_TEST_TYPE_DICT = {"수형 인식" : 0, "수형 인식(홀리스틱)" : 1, "얼굴 인식" : 2}
@@ -281,7 +282,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     def train_dataset_list_itemSelectionChanged_handler(self) -> None:
         print("훈련 데이터셋 선택 아이템 체인지")
         file_path = self.train_dataset_list.currentItem().text()
-        img = cv2.imread(file_path)
+        img = cv2_imread(file_path)
         if img is None:
             return
 
@@ -398,7 +399,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     def test_dataset_list_itemSelectionChanged_handler(self) -> None:
         print("테스트 데이터셋 선택 아이템 체인지")
         file_path = self.test_dataset_list.currentItem().text()
-        img = cv2.imread(file_path)
+        img = cv2_imread(file_path)
         if img is None:
             return
 

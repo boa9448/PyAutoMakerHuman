@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import mediapipe as mp
 from threading import Event
+from image import cv2_imread
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
@@ -208,7 +209,7 @@ class HandUtil:
             self.log(f"[INFO] process... {idx + 1}/{len(file_list)}")
             name = file.split(os.path.sep)[-2]
 
-            img = cv2.imread(file)
+            img = cv2_imread(file)
             img = imutils.resize(img, width=600)
             data = self.extract(img)
             if not data:
@@ -222,8 +223,8 @@ class HandUtil:
 
 
 if __name__ == "__main__":
-    no_img = cv2.imread("C:\\test.jpg")
-    two_img = cv2.imread("C:\\2_hand.jpg")
+    no_img = cv2_imread("C:\\test.jpg")
+    two_img = cv2_imread("C:\\2_hand.jpg")
     hand = HandUtil()
     
     no_result = hand.detect(no_img)

@@ -11,3 +11,4 @@ from hand import *
 from pose import *
 from train import *
 from utils import *
+from image import *
