@@ -109,3 +109,8 @@ python setup.py install <br>
 
 # 추후 개발
 간단하게 모델을 학습 시킬 수 있는 GUI도구
+
+
+# GUI도구 미리 둘러보기
+패키지 설치 후 
+python -m PyAutoMakerHuman
