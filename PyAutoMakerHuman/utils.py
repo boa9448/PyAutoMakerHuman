@@ -1,10 +1,9 @@
 import cv2
 import numpy as np
 import requests as rq
-from image import cv2_imread
 
 
-def get_webcam_frame(target_url : str):
+def get_webcam_frame(target_url : str) -> np.ndarray or None:
     try:
         data = rq.get(target_url)
         data = np.frombuffer(data.content, dtype=np.byte)

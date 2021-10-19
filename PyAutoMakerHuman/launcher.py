@@ -85,6 +85,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_done_signal.sig.connect(self.train_model_train_button_clicked_handler)
             self.test_cam_signal.sig.connect(self.test_cam_signal_handler)
 
+            self.main_menu_tab.currentChanged.connect(self.main_menu_tab_changed_hander)
+
             self.train_type_combo.currentIndexChanged.connect(self.train_type_combo_chnaged_handler)
             self.train_model_train_button.clicked.connect(self.train_model_train_button_clicked_handler)
             self.train_model_save_button.clicked.connect(self.train_model_save_button_clicked_handler)
@@ -98,6 +100,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_cam_use_check.stateChanged.connect(self.test_cam_use_check_handler)
             self.test_dataset_list.itemSelectionChanged.connect(self.test_dataset_list_itemSelectionChanged_handler)
             self.test_thresh_apply_button.clicked.connect(self.test_thresh_apply_button_clicked_handler)
+
+            self.tools_type_combo.currentIndexChanged.connect(self.tools_type_combo_chnaged_handler)
+            self.tools_thresh_apply_button.clicked.connect(self.tools_thresh_apply_button_clicked_handler)
+            self.tools_capture_button.clicked.connect(self.tools_capture_button_handler)
 
         init_handler()
 
@@ -245,13 +251,23 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.bTraining = not self.bTraining
 
     @Slot()
-    def test_cam_signal_handler(self, code, img) -> int:
+    def test_cam_signal_handler(self, code, img):
         qImg = self.ndarray_to_qimage(img)
 
         target_label = self.test_original_img_label if code == self.test_cam_signal.ORIGINAL else self.test_result_img_label
         self.draw_label(target_label, qImg)
 
-        return 0
+    def main_menu_tab_changed_hander(self, idx):
+        if idx == 2:
+            self.tools_cap = cv2.VideoCapture(0)
+            if self.tools_cap.isOpened() == False:
+                self.tools_cap.release()
+                self.tools_cap = None
+                self.log("카메라를 열 수 없습니다.", (255, 0, 0))
+                return
+        else:
+            self.tools_cap.release()
+            self.tools_cap = None
 
     @Slot()
     def train_model_save_button_clicked_handler(self):
@@ -417,12 +433,53 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     @Slot()
     def test_thresh_apply_button_clicked_handler(self):
-        print("훈련 데이터셋 임계율 설정 버튼")
+        print("테스트 임계율 설정 버튼")
         min_thresh = self.test_thresh_spin_edit.text()
         min_thresh = float(min_thresh) / 100
         idx = self.test_type_combo.currentIndex()
         self.test_detector = self.init_detector(idx, min_thresh)
         self.log("설정 완료!", (0, 255, 0))
+
+    
+    @Slot()
+    def tools_thresh_apply_button_clicked_handler(self):
+        print("도구 임계율 설정 버튼")
+        min_thresh = self.test_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        idx = self.tools_type_combo.currentIndex()
+        self.tools_detector = self.init_detector(idx, min_thresh)
+        self.log("설정 완료!", (0, 255, 0))
+
+    @Slot()
+    def tools_type_combo_chnaged_handler(self, idx):
+        print("도구 타입 변경")
+        min_thresh = self.tools_thresh_spin_edit.text()
+        min_thresh = float(min_thresh) / 100
+        self.tools_detector = self.init_detector(idx, min_thresh)
+        self.log("도구 타입 변경", (0, 255, 0))
+
+    @Slot()
+    def tools_capture_button_handler(self):
+        if self.tools_cap is None or self.tools_cap.isOpened() == False:
+            self.log("카메라를 열 수 없습니다.", (255, 0, 0))
+            return
+
+        ret, frame = self.tools_cap.read()
+        if ret == False:
+            self.log("프레임을 얻을 수 없습니다. 잠시후 다시 시도해주세요", (255, 0, 0))
+            return
+
+        self.draw_label(self.tools_original_img_label, self.ndarray_to_qimage(frame))
+        result = self.train_detector.detect(frame)
+        scores = result.scores()
+        if scores is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            self.log(f"찾은 개수 : {len(scores)} ({scores})")
+
+        result.draw(frame)
+        qImg = self.ndarray_to_qimage(frame)
+        self.draw_label(self.tools_result_img_label, qImg)
 
 
 if __name__ == "__main__":
