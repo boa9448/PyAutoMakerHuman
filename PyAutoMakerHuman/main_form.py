@@ -3,15 +3,22 @@
 ################################################################################
 ## Form generated from reading UI file 'main_form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.1.2
+## Created by: Qt User Interface Compiler version 6.2.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import *  # type: ignore
-from PySide6.QtGui import *  # type: ignore
-from PySide6.QtWidgets import *  # type: ignore
-
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox,
+    QGroupBox, QHBoxLayout, QLabel, QListWidget,
+    QListWidgetItem, QPushButton, QSizePolicy, QTabWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -54,10 +61,10 @@ class Ui_Form(object):
 
         self.groupBox_3 = QGroupBox(self.train_tab)
         self.groupBox_3.setObjectName(u"groupBox_3")
-        self.groupBox_3.setGeometry(QRect(830, 0, 251, 431))
+        self.groupBox_3.setGeometry(QRect(830, 0, 261, 431))
         self.verticalLayoutWidget = QWidget(self.groupBox_3)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 231, 401))
+        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 241, 401))
         self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -83,6 +90,30 @@ class Ui_Form(object):
 
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_3)
+
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.label_3 = QLabel(self.verticalLayoutWidget)
+        self.label_3.setObjectName(u"label_3")
+        sizePolicy.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
+        self.label_3.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_4.addWidget(self.label_3)
+
+        self.train_thresh_spin_edit = QDoubleSpinBox(self.verticalLayoutWidget)
+        self.train_thresh_spin_edit.setObjectName(u"train_thresh_spin_edit")
+        self.train_thresh_spin_edit.setEnabled(True)
+        self.train_thresh_spin_edit.setDecimals(3)
+
+        self.horizontalLayout_4.addWidget(self.train_thresh_spin_edit)
+
+        self.train_thresh_apply_button = QPushButton(self.verticalLayoutWidget)
+        self.train_thresh_apply_button.setObjectName(u"train_thresh_apply_button")
+
+        self.horizontalLayout_4.addWidget(self.train_thresh_apply_button)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_4)
 
         self.train_model_train_button = QPushButton(self.verticalLayoutWidget)
         self.train_model_train_button.setObjectName(u"train_model_train_button")
@@ -132,30 +163,6 @@ class Ui_Form(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout_7)
 
-        self.horizontalLayout_4 = QHBoxLayout()
-        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.label_3 = QLabel(self.verticalLayoutWidget)
-        self.label_3.setObjectName(u"label_3")
-        sizePolicy.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
-        self.label_3.setSizePolicy(sizePolicy)
-
-        self.horizontalLayout_4.addWidget(self.label_3)
-
-        self.train_thresh_spin_edit = QDoubleSpinBox(self.verticalLayoutWidget)
-        self.train_thresh_spin_edit.setObjectName(u"train_thresh_spin_edit")
-        self.train_thresh_spin_edit.setEnabled(True)
-        self.train_thresh_spin_edit.setDecimals(3)
-
-        self.horizontalLayout_4.addWidget(self.train_thresh_spin_edit)
-
-        self.train_thresh_apply_button = QPushButton(self.verticalLayoutWidget)
-        self.train_thresh_apply_button.setObjectName(u"train_thresh_apply_button")
-
-        self.horizontalLayout_4.addWidget(self.train_thresh_apply_button)
-
-
-        self.verticalLayout.addLayout(self.horizontalLayout_4)
-
         self.main_menu_tab.addTab(self.train_tab, "")
         self.test_tab = QWidget()
         self.test_tab.setObjectName(u"test_tab")
@@ -189,10 +196,10 @@ class Ui_Form(object):
 
         self.groupBox_7 = QGroupBox(self.test_tab)
         self.groupBox_7.setObjectName(u"groupBox_7")
-        self.groupBox_7.setGeometry(QRect(830, 0, 251, 431))
+        self.groupBox_7.setGeometry(QRect(830, 0, 261, 431))
         self.verticalLayoutWidget_9 = QWidget(self.groupBox_7)
         self.verticalLayoutWidget_9.setObjectName(u"verticalLayoutWidget_9")
-        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 231, 401))
+        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 241, 401))
         self.verticalLayout_11 = QVBoxLayout(self.verticalLayoutWidget_9)
         self.verticalLayout_11.setObjectName(u"verticalLayout_11")
         self.verticalLayout_11.setContentsMargins(0, 0, 0, 0)
@@ -215,6 +222,30 @@ class Ui_Form(object):
 
 
         self.verticalLayout_12.addLayout(self.horizontalLayout_5)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_6 = QLabel(self.verticalLayoutWidget_9)
+        self.label_6.setObjectName(u"label_6")
+        sizePolicy.setHeightForWidth(self.label_6.sizePolicy().hasHeightForWidth())
+        self.label_6.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_6.addWidget(self.label_6)
+
+        self.test_thresh_spin_edit = QDoubleSpinBox(self.verticalLayoutWidget_9)
+        self.test_thresh_spin_edit.setObjectName(u"test_thresh_spin_edit")
+        self.test_thresh_spin_edit.setEnabled(True)
+        self.test_thresh_spin_edit.setDecimals(3)
+
+        self.horizontalLayout_6.addWidget(self.test_thresh_spin_edit)
+
+        self.test_thresh_apply_button = QPushButton(self.verticalLayoutWidget_9)
+        self.test_thresh_apply_button.setObjectName(u"test_thresh_apply_button")
+
+        self.horizontalLayout_6.addWidget(self.test_thresh_apply_button)
+
+
+        self.verticalLayout_12.addLayout(self.horizontalLayout_6)
 
         self.test_model_load_button = QPushButton(self.verticalLayoutWidget_9)
         self.test_model_load_button.setObjectName(u"test_model_load_button")
@@ -269,36 +300,131 @@ class Ui_Form(object):
 
         self.verticalLayout_13.addWidget(self.test_dataset_list)
 
-        self.horizontalLayout_6 = QHBoxLayout()
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.label_6 = QLabel(self.verticalLayoutWidget_9)
-        self.label_6.setObjectName(u"label_6")
-        sizePolicy.setHeightForWidth(self.label_6.sizePolicy().hasHeightForWidth())
-        self.label_6.setSizePolicy(sizePolicy)
-
-        self.horizontalLayout_6.addWidget(self.label_6)
-
-        self.test_thresh_spin_edit = QDoubleSpinBox(self.verticalLayoutWidget_9)
-        self.test_thresh_spin_edit.setObjectName(u"test_thresh_spin_edit")
-        self.test_thresh_spin_edit.setEnabled(True)
-        self.test_thresh_spin_edit.setDecimals(3)
-
-        self.horizontalLayout_6.addWidget(self.test_thresh_spin_edit)
-
-        self.test_thresh_apply_button = QPushButton(self.verticalLayoutWidget_9)
-        self.test_thresh_apply_button.setObjectName(u"test_thresh_apply_button")
-
-        self.horizontalLayout_6.addWidget(self.test_thresh_apply_button)
-
-
-        self.verticalLayout_13.addLayout(self.horizontalLayout_6)
-
 
         self.verticalLayout_11.addLayout(self.verticalLayout_13)
 
         self.main_menu_tab.addTab(self.test_tab, "")
         self.tools_tab = QWidget()
         self.tools_tab.setObjectName(u"tools_tab")
+        self.groupBox_8 = QGroupBox(self.tools_tab)
+        self.groupBox_8.setObjectName(u"groupBox_8")
+        self.groupBox_8.setGeometry(QRect(10, 0, 401, 431))
+        self.verticalLayoutWidget_7 = QWidget(self.groupBox_8)
+        self.verticalLayoutWidget_7.setObjectName(u"verticalLayoutWidget_7")
+        self.verticalLayoutWidget_7.setGeometry(QRect(9, 19, 381, 401))
+        self.verticalLayout_9 = QVBoxLayout(self.verticalLayoutWidget_7)
+        self.verticalLayout_9.setObjectName(u"verticalLayout_9")
+        self.verticalLayout_9.setContentsMargins(0, 0, 0, 0)
+        self.tools_original_img_label = QLabel(self.verticalLayoutWidget_7)
+        self.tools_original_img_label.setObjectName(u"tools_original_img_label")
+
+        self.verticalLayout_9.addWidget(self.tools_original_img_label)
+
+        self.groupBox_9 = QGroupBox(self.tools_tab)
+        self.groupBox_9.setObjectName(u"groupBox_9")
+        self.groupBox_9.setGeometry(QRect(420, 0, 401, 431))
+        self.verticalLayoutWidget_8 = QWidget(self.groupBox_9)
+        self.verticalLayoutWidget_8.setObjectName(u"verticalLayoutWidget_8")
+        self.verticalLayoutWidget_8.setGeometry(QRect(9, 19, 381, 401))
+        self.verticalLayout_10 = QVBoxLayout(self.verticalLayoutWidget_8)
+        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
+        self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
+        self.tools_result_img_label = QLabel(self.verticalLayoutWidget_8)
+        self.tools_result_img_label.setObjectName(u"tools_result_img_label")
+
+        self.verticalLayout_10.addWidget(self.tools_result_img_label)
+
+        self.groupBox_10 = QGroupBox(self.tools_tab)
+        self.groupBox_10.setObjectName(u"groupBox_10")
+        self.groupBox_10.setGeometry(QRect(830, 0, 261, 431))
+        self.verticalLayoutWidget_10 = QWidget(self.groupBox_10)
+        self.verticalLayoutWidget_10.setObjectName(u"verticalLayoutWidget_10")
+        self.verticalLayoutWidget_10.setGeometry(QRect(10, 20, 241, 401))
+        self.verticalLayout_14 = QVBoxLayout(self.verticalLayoutWidget_10)
+        self.verticalLayout_14.setObjectName(u"verticalLayout_14")
+        self.verticalLayout_14.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_15 = QVBoxLayout()
+        self.verticalLayout_15.setObjectName(u"verticalLayout_15")
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.label_7 = QLabel(self.verticalLayoutWidget_10)
+        self.label_7.setObjectName(u"label_7")
+        sizePolicy.setHeightForWidth(self.label_7.sizePolicy().hasHeightForWidth())
+        self.label_7.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_8.addWidget(self.label_7)
+
+        self.tools_type_combo = QComboBox(self.verticalLayoutWidget_10)
+        self.tools_type_combo.setObjectName(u"tools_type_combo")
+        self.tools_type_combo.setEditable(False)
+
+        self.horizontalLayout_8.addWidget(self.tools_type_combo)
+
+
+        self.verticalLayout_15.addLayout(self.horizontalLayout_8)
+
+        self.horizontalLayout_12 = QHBoxLayout()
+        self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
+        self.label_9 = QLabel(self.verticalLayoutWidget_10)
+        self.label_9.setObjectName(u"label_9")
+        sizePolicy.setHeightForWidth(self.label_9.sizePolicy().hasHeightForWidth())
+        self.label_9.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_12.addWidget(self.label_9)
+
+        self.tools_thresh_spin_edit = QDoubleSpinBox(self.verticalLayoutWidget_10)
+        self.tools_thresh_spin_edit.setObjectName(u"tools_thresh_spin_edit")
+        self.tools_thresh_spin_edit.setEnabled(True)
+        self.tools_thresh_spin_edit.setDecimals(3)
+
+        self.horizontalLayout_12.addWidget(self.tools_thresh_spin_edit)
+
+        self.tools_thresh_apply_button = QPushButton(self.verticalLayoutWidget_10)
+        self.tools_thresh_apply_button.setObjectName(u"tools_thresh_apply_button")
+
+        self.horizontalLayout_12.addWidget(self.tools_thresh_apply_button)
+
+
+        self.verticalLayout_15.addLayout(self.horizontalLayout_12)
+
+        self.tools_capture_button = QPushButton(self.verticalLayoutWidget_10)
+        self.tools_capture_button.setObjectName(u"tools_capture_button")
+
+        self.verticalLayout_15.addWidget(self.tools_capture_button)
+
+        self.tools_video_button = QPushButton(self.verticalLayoutWidget_10)
+        self.tools_video_button.setObjectName(u"tools_video_button")
+
+        self.verticalLayout_15.addWidget(self.tools_video_button)
+
+
+        self.verticalLayout_14.addLayout(self.verticalLayout_15)
+
+        self.horizontalLayout_9 = QHBoxLayout()
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.label_8 = QLabel(self.verticalLayoutWidget_10)
+        self.label_8.setObjectName(u"label_8")
+
+        self.horizontalLayout_9.addWidget(self.label_8)
+
+        self.tools_save_path_find_button = QPushButton(self.verticalLayoutWidget_10)
+        self.tools_save_path_find_button.setObjectName(u"tools_save_path_find_button")
+
+        self.horizontalLayout_9.addWidget(self.tools_save_path_find_button)
+
+
+        self.verticalLayout_14.addLayout(self.horizontalLayout_9)
+
+        self.verticalLayout_16 = QVBoxLayout()
+        self.verticalLayout_16.setObjectName(u"verticalLayout_16")
+        self.tools_image_list = QListWidget(self.verticalLayoutWidget_10)
+        self.tools_image_list.setObjectName(u"tools_image_list")
+
+        self.verticalLayout_16.addWidget(self.tools_image_list)
+
+
+        self.verticalLayout_14.addLayout(self.verticalLayout_16)
+
         self.main_menu_tab.addTab(self.tools_tab, "")
         self.groupBox_4 = QGroupBox(Form)
         self.groupBox_4.setObjectName(u"groupBox_4")
@@ -335,14 +461,14 @@ class Ui_Form(object):
         self.train_type_combo.setAccessibleName("")
 #endif // QT_CONFIG(accessibility)
         self.train_type_combo.setPlaceholderText("")
+        self.label_3.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
+        self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"70.0", None))
+        self.train_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
         self.train_model_train_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud559\uc2b5 \uc2dc\uc791", None))
         self.train_model_save_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \uc800\uc7a5\ud558\uae30", None))
         self.label.setText(QCoreApplication.translate("Form", u"\ub370\uc774\ud130\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.train_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
         self.train_two_hand_checkBox.setText(QCoreApplication.translate("Form", u"2\uac1c\uc758 \uc190\uc744 \ud559\uc2b5 \uc2dc\ud0a4\ub3c4\ub85d \uace0\uc815", None))
-        self.label_3.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
-        self.train_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"70.0", None))
-        self.train_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.train_tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud559\uc2b5", None))
         self.groupBox_5.setTitle(QCoreApplication.translate("Form", u"\uc6d0\ubcf8", None))
         self.test_original_img_label.setText(QCoreApplication.translate("Form", u"\uc6d0\ubcf8 \uc774\ubbf8\uc9c0", None))
@@ -354,6 +480,9 @@ class Ui_Form(object):
         self.test_type_combo.setAccessibleName("")
 #endif // QT_CONFIG(accessibility)
         self.test_type_combo.setPlaceholderText("")
+        self.label_6.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
+        self.test_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"70.0", None))
+        self.test_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
         self.test_model_load_button.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ubd88\ub7ec\uc624\uae30", None))
         self.label_5.setText(QCoreApplication.translate("Form", u"\ud14c\uc2a4\ud2b8\uc14b \ud3f4\ub354 \uc5f4\uae30 : ", None))
         self.test_dataset_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
@@ -363,10 +492,24 @@ class Ui_Form(object):
         self.test_target_label_combo.setAccessibleName("")
 #endif // QT_CONFIG(accessibility)
         self.test_target_label_combo.setPlaceholderText("")
-        self.label_6.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
-        self.test_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"70.0", None))
-        self.test_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.test_tab), QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud14c\uc2a4\ud2b8", None))
+        self.groupBox_8.setTitle(QCoreApplication.translate("Form", u"\uc6d0\ubcf8", None))
+        self.tools_original_img_label.setText(QCoreApplication.translate("Form", u"\uc6d0\ubcf8 \uc774\ubbf8\uc9c0", None))
+        self.groupBox_9.setTitle(QCoreApplication.translate("Form", u"\ub79c\ub4dc\ub9c8\ud06c \uc774\ubbf8\uc9c0", None))
+        self.tools_result_img_label.setText(QCoreApplication.translate("Form", u"\ub79c\ub4dc\ub9c8\ud06c \uc774\ubbf8\uc9c0", None))
+        self.groupBox_10.setTitle(QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))
+        self.label_7.setText(QCoreApplication.translate("Form", u"\ubaa8\ub378 \ud0c0\uc785 :   ", None))
+#if QT_CONFIG(accessibility)
+        self.tools_type_combo.setAccessibleName("")
+#endif // QT_CONFIG(accessibility)
+        self.tools_type_combo.setPlaceholderText("")
+        self.label_9.setText(QCoreApplication.translate("Form", u"\ud0d0\uc9c0 \uc784\uacc4\uc728(%) : ", None))
+        self.tools_thresh_spin_edit.setSpecialValueText(QCoreApplication.translate("Form", u"70.0", None))
+        self.tools_thresh_apply_button.setText(QCoreApplication.translate("Form", u"\uc801\uc6a9", None))
+        self.tools_capture_button.setText(QCoreApplication.translate("Form", u"\ucea1\uccd0", None))
+        self.tools_video_button.setText(QCoreApplication.translate("Form", u"\ucd2c\uc601 \uc2dc\uc791", None))
+        self.label_8.setText(QCoreApplication.translate("Form", u"\uc774\ubbf8\uc9c0 \uc800\uc7a5 \uc704\uce58 : ", None))
+        self.tools_save_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.tools_tab), QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))
         self.groupBox_4.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
     # retranslateUi

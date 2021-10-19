@@ -57,6 +57,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_detector = self.init_detector(0, min_thresh)
             self.test_trainer = train.SvmUtil()
 
+            min_thresh = self.tools_thresh_spin_edit.text()
+            min_thresh = float(min_thresh) / 100
+            self.tools_detector = self.init_detector(0, min_thresh)
+
             self.test_use_cam = False
             self.test_cam_thread = None
             self.test_cam_exit_event = Event()
@@ -68,6 +72,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             for model_type in self.TRAIN_TEST_TYPE_DICT:
                 self.train_type_combo.addItem(model_type)
                 self.test_type_combo.addItem(model_type)
+                self.tools_type_combo.addItem(model_type)
 
             # 잠시 숨김
             self.train_two_hand_checkBox.hide()
