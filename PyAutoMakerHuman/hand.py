@@ -1,5 +1,7 @@
 import os
 import fnmatch
+from glob import glob
+
 import imutils
 import numpy as np
 import cv2
@@ -177,26 +179,13 @@ class HandUtil:
         landmark_list = result.get_box_landmark_list(True)
         return [(box, np.asarray(landmark).flatten()) for box, landmark in zip(box_list, landmark_list)]
 
-    def extract_dataset(self, dataset_path : str, exit_event : Event = Event()) -> dict:
-        ext_list = ["*.jpg", "*.png", "*.JPG", "*.PNG"]
+    def extract_dataset(self, dataset_path : str or list, exit_event : Event = Event()) -> dict:
         file_list = []
         
-        for ext in ext_list:
-            for root, dirs, files in os.walk(dataset_path):
-                if not files:
-                    continue
+        def get_file_list() -> list:
+            return glob(os.path.join(dataset_path, "**", "*.*"), recursive = True)
 
-                if exit_event.is_set():
-                    self.log("[INFO] exit event set")
-                    return dict()
-
-                for file in fnmatch.filter(files, ext):
-                    if exit_event.is_set():
-                        self.log("[INFO] exit event set")
-                        return dict()
-
-                    file_list.append(os.path.join(root, file))
-
+        file_list = get_file_list() if type(dataset_path) == str else dataset_path
         self.log(f"[INFO] file count : {len(file_list)}")
 
         name_list = []

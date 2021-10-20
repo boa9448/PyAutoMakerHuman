@@ -23,6 +23,7 @@ class WorkQThread(QThread):
         self.target(*self.param)
 
     def join(self, time_out : int = None):
+        self.wait(deadline=QDeadlineTimer(QDeadlineTimer.Forever) if time_out is None else time_out)
         if time_out:
             self.wait(time_out)
         else:

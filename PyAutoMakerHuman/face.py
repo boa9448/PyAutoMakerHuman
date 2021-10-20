@@ -1,6 +1,8 @@
 import os
 import platform
 import fnmatch
+from glob import glob
+
 from typing import Generator
 import imutils
 import numpy as np
@@ -214,18 +216,13 @@ class FaceUtil:
 
         return vec_list
 
-    def extract_dataset(self, dataset_path):
-        ext_list = ["*.jpg", "*.png", "*.JPG", "*.PNG"]
+    def extract_dataset(self, dataset_path : str or list):
         file_list = []
         
-        for ext in ext_list:
-            for root, dirs, files in os.walk(dataset_path):
-                if not files:
-                    continue
+        def get_file_list() -> list:
+            return glob(os.path.join(dataset_path, "**", "*.*"), recursive = True)
 
-                for file in fnmatch.filter(files, ext):
-                    file_list.append(os.path.join(root, file))
-
+        file_list = get_file_list() if type(dataset_path) == str else dataset_path
         print(f"[INFO] file count : {len(file_list)}")
 
         name_list = []

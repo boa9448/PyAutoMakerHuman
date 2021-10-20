@@ -66,6 +66,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_cam_exit_event = Event()
 
             self.test_cam_signal = TestCamSignal()
+
+            self.tools_cap = None
         init_data()
 
         def init_display():
@@ -160,6 +162,15 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         file_lsit = glob(os.path.join(folder_path, "**", "*.*"), recursive = True)
         return file_lsit
 
+    def get_train_file_list(self) -> list:
+        file_list = []
+        count = self.train_dataset_list.count()
+        for idx in range(count):
+            file = self.train_dataset_list.item(idx)
+            file_list.append(file.text())
+
+        return file_list
+
     def ndarray_to_qimage(self, img : np.ndarray) -> QImage:
         height, width, channel = img.shape
         bytesPerLine = channel * width
@@ -221,9 +232,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             def train_logger(log_message : str, color : tuple) -> None:
                 self.log_signal.sig.emit(log_message, color)
 
-            def train_thread_func(detector, trainer, dataset_folder : str, exit_event : Event, logger, done_signal : TrainExitSignal) -> None:
+            def train_thread_func(detector, trainer, dataset_list : list, exit_event : Event, logger, done_signal : TrainExitSignal) -> None:
                 detector.set_logger(logger)
-                data = detector.extract_dataset(dataset_folder, exit_event)
+                data = detector.extract_dataset(dataset_list, exit_event)
                 train_data, name = data["data"], data["name"]
                 if len(train_data) == 0 or len(name) == 0:
                     logger("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
@@ -234,7 +245,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 done_signal.sig.emit()
 
             self.train_thread = WorkThread(WorkQThread, train_thread_func, (self.train_detector, self.train_trainer
-                                                                            , self.train_dataset_folder, self.train_exit_event, train_logger
+                                                                            , self.get_train_file_list(), self.train_exit_event, train_logger
                                                                             , self.train_done_signal), self)
             self.train_dataset_list.setDisabled(True)
             self.train_thresh_apply_button.setDisabled(True)
@@ -266,8 +277,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 self.log("카메라를 열 수 없습니다.", (255, 0, 0))
                 return
         else:
-            self.tools_cap.release()
-            self.tools_cap = None
+            if self.tools_cap is not None:
+                self.tools_cap.release()
+                self.tools_cap = None
 
     @Slot()
     def train_model_save_button_clicked_handler(self):
