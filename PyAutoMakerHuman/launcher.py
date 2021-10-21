@@ -64,10 +64,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_use_cam = False
             self.test_cam_thread = None
             self.test_cam_exit_event = Event()
-
             self.test_cam_signal = TestCamSignal()
 
             self.tools_cap = None
+            self.tools_img_dict = dict()
         init_data()
 
         def init_display():
@@ -481,6 +481,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.log("프레임을 얻을 수 없습니다. 잠시후 다시 시도해주세요", (255, 0, 0))
             return
 
+        org_frame = frame.copy()
         self.draw_label(self.tools_original_img_label, self.ndarray_to_qimage(frame))
         result = self.train_detector.detect(frame)
         scores = result.scores()
@@ -492,6 +493,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         result.draw(frame)
         qImg = self.ndarray_to_qimage(frame)
         self.draw_label(self.tools_result_img_label, qImg)
+        tools_img_dict_len = len(self.tools_img_dict)
+        self.tools_img_dict[f"이미지{tools_img_dict_len}"] = org_frame
+
 
 
 if __name__ == "__main__":
