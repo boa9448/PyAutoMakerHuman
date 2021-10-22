@@ -67,7 +67,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_cam_signal = TestCamSignal()
 
             self.tools_cap = None
-            self.tools_img_dict = dict()
+            self.tools_image_dict = dict()
         init_data()
 
         def init_display():
@@ -106,6 +106,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.tools_type_combo.currentIndexChanged.connect(self.tools_type_combo_chnaged_handler)
             self.tools_thresh_apply_button.clicked.connect(self.tools_thresh_apply_button_clicked_handler)
             self.tools_capture_button.clicked.connect(self.tools_capture_button_handler)
+            self.tools_image_list.itemSelectionChanged.connect(self.tools_image_list_itemSelectionChanged_handler)
 
         init_handler()
 
@@ -182,6 +183,18 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pixmap = QPixmap(qImg)
         pixmap = pixmap.scaled(img_label.size(), aspectMode= Qt.IgnoreAspectRatio)
         img_label.setPixmap(pixmap)
+
+    def detect_draw(self, detector, img : np.ndarray, target_label : QLabel) -> None:
+        result = detector.detect(img)
+        scores = result.scores()
+        if scores is None:
+            self.log(f"찾은 오브젝트가 없습니다")
+        else:
+            self.log(f"찾은 개수 : {len(scores)} ({scores})")
+
+        result.draw(img)
+        qImg = self.ndarray_to_qimage(img)
+        self.draw_label(target_label, qImg)
 
     def detect_test_draw(self, img : np.ndarray, font_scale : int  = 3, thickness : int = 10) -> tuple:
         data_list = self.test_detector.extract(img)
@@ -322,16 +335,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         qImg = self.ndarray_to_qimage(img)
         self.draw_label(self.train_original_img_label, qImg)
 
-        result = self.train_detector.detect(img)
-        scores = result.scores()
-        if scores is None:
-            self.log(f"찾은 오브젝트가 없습니다")
-        else:
-            self.log(f"찾은 개수 : {len(scores)} ({scores})")
-
-        result.draw(img)
-        qImg = self.ndarray_to_qimage(img)
-        self.draw_label(self.train_result_img_label, qImg)
+        self.detect_draw(self.train_detector, img, self.train_result_img_label)
 
     
     @Slot()
@@ -483,18 +487,22 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
         org_frame = frame.copy()
         self.draw_label(self.tools_original_img_label, self.ndarray_to_qimage(frame))
-        result = self.train_detector.detect(frame)
-        scores = result.scores()
-        if scores is None:
-            self.log(f"찾은 오브젝트가 없습니다")
-        else:
-            self.log(f"찾은 개수 : {len(scores)} ({scores})")
+        
+        self.detect_draw(self.tools_detector, frame, self.tools_result_img_label)
 
-        result.draw(frame)
-        qImg = self.ndarray_to_qimage(frame)
-        self.draw_label(self.tools_result_img_label, qImg)
-        tools_img_dict_len = len(self.tools_img_dict)
-        self.tools_img_dict[f"이미지{tools_img_dict_len}"] = org_frame
+        tools_image_dict_len = len(self.tools_image_dict)
+        tools_image_name = f"이미지{tools_image_dict_len}"
+        self.tools_image_dict[tools_image_name] = org_frame
+        self.tools_image_list.addItem(tools_image_name)
+
+    @Slot()
+    def tools_image_list_itemSelectionChanged_handler(self):
+        img_name = self.tools_image_list.currentItem().text()
+        img = self.tools_image_dict[img_name].copy()
+        
+        qimg = self.ndarray_to_qimage(img)
+        self.draw_label(self.tools_original_img_label, qimg)
+        self.detect_draw(self.tools_detector, img, self.tools_result_img_label)
 
 
 
