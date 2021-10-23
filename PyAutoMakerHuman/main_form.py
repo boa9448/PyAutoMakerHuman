@@ -378,10 +378,10 @@ class Ui_Form(object):
 
         self.verticalLayout_14.addLayout(self.horizontalLayout_9)
 
-        self.tools_image_list = QListWidget(self.verticalLayoutWidget_10)
-        self.tools_image_list.setObjectName(u"tools_image_list")
+        self.tools_img_list = QListWidget(self.verticalLayoutWidget_10)
+        self.tools_img_list.setObjectName(u"tools_img_list")
 
-        self.verticalLayout_14.addWidget(self.tools_image_list)
+        self.verticalLayout_14.addWidget(self.tools_img_list)
 
         self.tools_img_remove_button = QPushButton(self.verticalLayoutWidget_10)
         self.tools_img_remove_button.setObjectName(u"tools_img_remove_button")
@@ -473,7 +473,7 @@ class Ui_Form(object):
         self.tools_video_button.setText(QCoreApplication.translate("Form", u"\ucd2c\uc601 \uc2dc\uc791", None))
         self.label_8.setText(QCoreApplication.translate("Form", u"\uc774\ubbf8\uc9c0 \uc800\uc7a5 \uc704\uce58 : ", None))
         self.tools_save_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
-        self.tools_img_remove_button.setText(QCoreApplication.translate("Form", u"\ucd2c\uc601 \uc2dc\uc791", None))
+        self.tools_img_remove_button.setText(QCoreApplication.translate("Form", u"\uc774\ubbf8\uc9c0 \uc0ad\uc81c", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.tools_tab), QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))
         self.groupBox_4.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
     # retranslateUi

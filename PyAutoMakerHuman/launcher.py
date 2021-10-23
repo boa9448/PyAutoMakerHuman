@@ -18,7 +18,7 @@ import face
 import hand
 import pose
 import train
-from custom_signal import LogSignal, TrainExitSignal, TestCamSignal, TrainDataSetAddEndSignal, TestDataSetAddEndSignal
+from custom_signal import LogSignal, TrainExitSignal, CamSignal, TrainDataSetAddEndSignal, TestDataSetAddEndSignal
 from thread import WorkThread, WorkQThread, WorkPyThread
 from image import cv2_imread
 
@@ -64,10 +64,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_use_cam = False
             self.test_cam_thread = None
             self.test_cam_exit_event = Event()
-            self.test_cam_signal = TestCamSignal()
+            self.test_cam_signal = CamSignal()
 
             self.tools_cap = None
             self.tools_image_dict = dict()
+            self.tools_cam_signal = CamSignal()
         init_data()
 
         def init_display():
@@ -86,6 +87,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_dataset_add_end_signal.sig.connect(self.test_dataset_add_end_signal_handler)
             self.train_done_signal.sig.connect(self.train_model_train_button_clicked_handler)
             self.test_cam_signal.sig.connect(self.test_cam_signal_handler)
+            self.tools_cam_signal.sig.connect(self.tools_cam_signal_handler)
 
             self.main_menu_tab.currentChanged.connect(self.main_menu_tab_changed_hander)
 
@@ -106,7 +108,9 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.tools_type_combo.currentIndexChanged.connect(self.tools_type_combo_chnaged_handler)
             self.tools_thresh_apply_button.clicked.connect(self.tools_thresh_apply_button_clicked_handler)
             self.tools_capture_button.clicked.connect(self.tools_capture_button_handler)
-            self.tools_image_list.itemSelectionChanged.connect(self.tools_image_list_itemSelectionChanged_handler)
+            self.tools_video_button.clicked.connect(self.tools_video_button_handler)
+            self.tools_img_list.itemSelectionChanged.connect(self.tools_img_list_itemSelectionChanged_handler)
+            self.tools_img_remove_button.clicked.connect(self.tools_img_remove_button_handler)
 
         init_handler()
 
@@ -219,6 +223,12 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         
         return (img, (name, proba))
 
+    def tools_add_img_list(self, img):
+        tools_image_dict_len = len(self.tools_image_dict)
+        tools_image_name = f"image_{tools_image_dict_len}"
+        self.tools_image_dict[tools_image_name] = img
+        self.tools_img_list.addItem(tools_image_name)
+
     @Slot()
     def train_dataset_add_end_signal_handler(self):
         self.train_dataset_list.setDisabled(False)
@@ -275,10 +285,18 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.bTraining = not self.bTraining
 
     @Slot()
-    def test_cam_signal_handler(self, code, img):
+    def test_cam_signal_handler(self, code : int, img : np.ndarray):
         qImg = self.ndarray_to_qimage(img)
 
         target_label = self.test_original_img_label if code == self.test_cam_signal.ORIGINAL else self.test_result_img_label
+        self.draw_label(target_label, qImg)
+
+    @Slot()
+    def tools_cam_signal_handler(self, code : int, img : np.ndarray):
+        qImg = self.ndarray_to_qimage(img)
+        self.tools_add_img_list(img)
+
+        target_label = self.tools_original_img_label if code == self.tools_cam_signal.ORIGINAL else self.tools_result_img_label
         self.draw_label(target_label, qImg)
 
     def main_menu_tab_changed_hander(self, idx):
@@ -392,7 +410,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             def test_cam_logger(log_message : str, color : tuple) -> None:
                 self.log_signal.sig.emit(log_message, color)
-            def cam_thread_func(detect_test_draw, target_combo : QComboBox, logger, exit_event : Event, cam_signal : TestCamSignal):
+            def cam_thread_func(detect_test_draw, target_combo : QComboBox, logger, exit_event : Event, cam_signal : CamSignal):
                 cap = cv2.VideoCapture(0)
                 while cap.isOpened():
                     if exit_event.is_set():
@@ -489,20 +507,24 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.draw_label(self.tools_original_img_label, self.ndarray_to_qimage(frame))
         
         self.detect_draw(self.tools_detector, frame, self.tools_result_img_label)
-
-        tools_image_dict_len = len(self.tools_image_dict)
-        tools_image_name = f"이미지{tools_image_dict_len}"
-        self.tools_image_dict[tools_image_name] = org_frame
-        self.tools_image_list.addItem(tools_image_name)
+        self.tools_add_img_list(org_frame)
 
     @Slot()
-    def tools_image_list_itemSelectionChanged_handler(self):
-        img_name = self.tools_image_list.currentItem().text()
+    def tools_video_button_handler(self):
+        pass
+
+    @Slot()
+    def tools_img_list_itemSelectionChanged_handler(self):
+        img_name = self.tools_img_list.currentItem().text()
         img = self.tools_image_dict[img_name].copy()
         
         qimg = self.ndarray_to_qimage(img)
         self.draw_label(self.tools_original_img_label, qimg)
         self.detect_draw(self.tools_detector, img, self.tools_result_img_label)
+
+    @Slot()
+    def tools_img_remove_button_handler(self):
+        self.tools_img_list.clear()
 
 
 

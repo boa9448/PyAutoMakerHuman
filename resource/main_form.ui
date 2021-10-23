@@ -647,12 +647,12 @@
         </layout>
        </item>
        <item>
-        <widget class="QListWidget" name="tools_image_list"/>
+        <widget class="QListWidget" name="tools_img_list"/>
        </item>
        <item>
         <widget class="QPushButton" name="tools_img_remove_button">
          <property name="text">
-          <string>촬영 시작</string>
+          <string>이미지 삭제</string>
          </property>
         </widget>
        </item>
