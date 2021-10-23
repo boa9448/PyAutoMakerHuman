@@ -113,95 +113,91 @@
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>241</width>
+        <width>246</width>
         <height>401</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_6">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QLabel" name="label_2">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>모델 타입 :   </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="train_type_combo">
-             <property name="accessibleName">
-              <string/>
-             </property>
-             <property name="editable">
-              <bool>false</bool>
-             </property>
-             <property name="placeholderText">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
-           <item>
-            <widget class="QLabel" name="label_3">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>탐지 임계율(%) : </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QDoubleSpinBox" name="train_thresh_spin_edit">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="specialValueText">
-              <string>70.0</string>
-             </property>
-             <property name="decimals">
-              <number>3</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="train_thresh_apply_button">
-             <property name="text">
-              <string>적용</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QPushButton" name="train_model_train_button">
+          <widget class="QLabel" name="label_2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
-            <string>모델 학습 시작</string>
+            <string>모델 타입 :   </string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="train_model_save_button">
-           <property name="text">
-            <string>모델 저장하기</string>
+          <widget class="QComboBox" name="train_type_combo">
+           <property name="accessibleName">
+            <string/>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <property name="placeholderText">
+            <string/>
            </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>탐지 임계율(%) : </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="train_thresh_spin_edit">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="specialValueText">
+            <string>70.0</string>
+           </property>
+           <property name="decimals">
+            <number>3</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="train_thresh_apply_button">
+           <property name="text">
+            <string>적용</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="train_model_train_button">
+         <property name="text">
+          <string>모델 학습 시작</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="train_model_save_button">
+         <property name="text">
+          <string>모델 저장하기</string>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
@@ -222,22 +218,14 @@
         </layout>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_7">
-         <item>
-          <widget class="QListWidget" name="train_dataset_list"/>
-         </item>
-        </layout>
+        <widget class="QListWidget" name="train_dataset_list"/>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <widget class="QCheckBox" name="train_two_hand_checkBox">
-           <property name="text">
-            <string>2개의 손을 학습 시키도록 고정</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QCheckBox" name="train_two_hand_checkBox">
+         <property name="text">
+          <string>2개의 손을 학습 시키도록 고정</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -328,88 +316,84 @@
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>241</width>
+        <width>246</width>
         <height>401</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_11">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_12">
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QLabel" name="label_4">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>모델 타입 :   </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="test_type_combo">
-             <property name="accessibleName">
-              <string/>
-             </property>
-             <property name="editable">
-              <bool>false</bool>
-             </property>
-             <property name="placeholderText">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_6">
-           <item>
-            <widget class="QLabel" name="label_6">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>탐지 임계율(%) : </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QDoubleSpinBox" name="test_thresh_spin_edit">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="specialValueText">
-              <string>70.0</string>
-             </property>
-             <property name="decimals">
-              <number>3</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="test_thresh_apply_button">
-             <property name="text">
-              <string>적용</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QPushButton" name="test_model_load_button">
+          <widget class="QLabel" name="label_4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
-            <string>모델 불러오기</string>
+            <string>모델 타입 :   </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="test_type_combo">
+           <property name="accessibleName">
+            <string/>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <property name="placeholderText">
+            <string/>
            </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QLabel" name="label_6">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>탐지 임계율(%) : </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="test_thresh_spin_edit">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="specialValueText">
+            <string>70.0</string>
+           </property>
+           <property name="decimals">
+            <number>3</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="test_thresh_apply_button">
+           <property name="text">
+            <string>적용</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="test_model_load_button">
+         <property name="text">
+          <string>모델 불러오기</string>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -437,41 +421,37 @@
         </widget>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_13">
+        <layout class="QHBoxLayout" name="horizontalLayout_11">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_11">
-           <item>
-            <widget class="QLabel" name="label_10">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>대상 라벨 :   </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="test_target_label_combo">
-             <property name="accessibleName">
-              <string/>
-             </property>
-             <property name="editable">
-              <bool>false</bool>
-             </property>
-             <property name="placeholderText">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QLabel" name="label_10">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>대상 라벨 :   </string>
+           </property>
+          </widget>
          </item>
          <item>
-          <widget class="QListWidget" name="test_dataset_list"/>
+          <widget class="QComboBox" name="test_target_label_combo">
+           <property name="accessibleName">
+            <string/>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <property name="placeholderText">
+            <string/>
+           </property>
+          </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QListWidget" name="test_dataset_list"/>
        </item>
       </layout>
      </widget>
@@ -562,95 +542,91 @@
        <rect>
         <x>10</x>
         <y>20</y>
-        <width>241</width>
+        <width>246</width>
         <height>401</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_14">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_15">
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_8">
-           <item>
-            <widget class="QLabel" name="label_7">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>모델 타입 :   </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="tools_type_combo">
-             <property name="accessibleName">
-              <string/>
-             </property>
-             <property name="editable">
-              <bool>false</bool>
-             </property>
-             <property name="placeholderText">
-              <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_12">
-           <item>
-            <widget class="QLabel" name="label_9">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>탐지 임계율(%) : </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QDoubleSpinBox" name="tools_thresh_spin_edit">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="specialValueText">
-              <string>70.0</string>
-             </property>
-             <property name="decimals">
-              <number>3</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="tools_thresh_apply_button">
-             <property name="text">
-              <string>적용</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QPushButton" name="tools_capture_button">
+          <widget class="QLabel" name="label_7">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
-            <string>캡쳐</string>
+            <string>모델 타입 :   </string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="tools_video_button">
-           <property name="text">
-            <string>촬영 시작</string>
+          <widget class="QComboBox" name="tools_type_combo">
+           <property name="accessibleName">
+            <string/>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <property name="placeholderText">
+            <string/>
            </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <item>
+          <widget class="QLabel" name="label_9">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>탐지 임계율(%) : </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="tools_thresh_spin_edit">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="specialValueText">
+            <string>70.0</string>
+           </property>
+           <property name="decimals">
+            <number>3</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="tools_thresh_apply_button">
+           <property name="text">
+            <string>적용</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="tools_capture_button">
+         <property name="text">
+          <string>캡쳐</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="tools_video_button">
+         <property name="text">
+          <string>촬영 시작</string>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_9">
@@ -671,11 +647,14 @@
         </layout>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_16">
-         <item>
-          <widget class="QListWidget" name="tools_image_list"/>
-         </item>
-        </layout>
+        <widget class="QListWidget" name="tools_image_list"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="tools_img_remove_button">
+         <property name="text">
+          <string>촬영 시작</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

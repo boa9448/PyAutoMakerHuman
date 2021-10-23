@@ -3,22 +3,15 @@
 ################################################################################
 ## Form generated from reading UI file 'main_form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.2.0
+## Created by: Qt User Interface Compiler version 6.1.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox,
-    QGroupBox, QHBoxLayout, QLabel, QListWidget,
-    QListWidgetItem, QPushButton, QSizePolicy, QTabWidget,
-    QVBoxLayout, QWidget)
+from PySide6.QtCore import *  # type: ignore
+from PySide6.QtGui import *  # type: ignore
+from PySide6.QtWidgets import *  # type: ignore
+
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -64,12 +57,10 @@ class Ui_Form(object):
         self.groupBox_3.setGeometry(QRect(830, 0, 261, 431))
         self.verticalLayoutWidget = QWidget(self.groupBox_3)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 241, 401))
+        self.verticalLayoutWidget.setGeometry(QRect(10, 20, 246, 401))
         self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_6 = QVBoxLayout()
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.label_2 = QLabel(self.verticalLayoutWidget)
@@ -89,7 +80,7 @@ class Ui_Form(object):
         self.horizontalLayout_3.addWidget(self.train_type_combo)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_3)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
 
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
@@ -113,20 +104,17 @@ class Ui_Form(object):
         self.horizontalLayout_4.addWidget(self.train_thresh_apply_button)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_4)
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
 
         self.train_model_train_button = QPushButton(self.verticalLayoutWidget)
         self.train_model_train_button.setObjectName(u"train_model_train_button")
 
-        self.verticalLayout_6.addWidget(self.train_model_train_button)
+        self.verticalLayout.addWidget(self.train_model_train_button)
 
         self.train_model_save_button = QPushButton(self.verticalLayoutWidget)
         self.train_model_save_button.setObjectName(u"train_model_save_button")
 
-        self.verticalLayout_6.addWidget(self.train_model_save_button)
-
-
-        self.verticalLayout.addLayout(self.verticalLayout_6)
+        self.verticalLayout.addWidget(self.train_model_save_button)
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
@@ -143,25 +131,15 @@ class Ui_Form(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.verticalLayout_7 = QVBoxLayout()
-        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.train_dataset_list = QListWidget(self.verticalLayoutWidget)
         self.train_dataset_list.setObjectName(u"train_dataset_list")
 
-        self.verticalLayout_7.addWidget(self.train_dataset_list)
+        self.verticalLayout.addWidget(self.train_dataset_list)
 
-
-        self.verticalLayout.addLayout(self.verticalLayout_7)
-
-        self.horizontalLayout_7 = QHBoxLayout()
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
         self.train_two_hand_checkBox = QCheckBox(self.verticalLayoutWidget)
         self.train_two_hand_checkBox.setObjectName(u"train_two_hand_checkBox")
 
-        self.horizontalLayout_7.addWidget(self.train_two_hand_checkBox)
-
-
-        self.verticalLayout.addLayout(self.horizontalLayout_7)
+        self.verticalLayout.addWidget(self.train_two_hand_checkBox)
 
         self.main_menu_tab.addTab(self.train_tab, "")
         self.test_tab = QWidget()
@@ -199,12 +177,10 @@ class Ui_Form(object):
         self.groupBox_7.setGeometry(QRect(830, 0, 261, 431))
         self.verticalLayoutWidget_9 = QWidget(self.groupBox_7)
         self.verticalLayoutWidget_9.setObjectName(u"verticalLayoutWidget_9")
-        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 241, 401))
+        self.verticalLayoutWidget_9.setGeometry(QRect(10, 20, 246, 401))
         self.verticalLayout_11 = QVBoxLayout(self.verticalLayoutWidget_9)
         self.verticalLayout_11.setObjectName(u"verticalLayout_11")
         self.verticalLayout_11.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_12 = QVBoxLayout()
-        self.verticalLayout_12.setObjectName(u"verticalLayout_12")
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.label_4 = QLabel(self.verticalLayoutWidget_9)
@@ -221,7 +197,7 @@ class Ui_Form(object):
         self.horizontalLayout_5.addWidget(self.test_type_combo)
 
 
-        self.verticalLayout_12.addLayout(self.horizontalLayout_5)
+        self.verticalLayout_11.addLayout(self.horizontalLayout_5)
 
         self.horizontalLayout_6 = QHBoxLayout()
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
@@ -245,15 +221,12 @@ class Ui_Form(object):
         self.horizontalLayout_6.addWidget(self.test_thresh_apply_button)
 
 
-        self.verticalLayout_12.addLayout(self.horizontalLayout_6)
+        self.verticalLayout_11.addLayout(self.horizontalLayout_6)
 
         self.test_model_load_button = QPushButton(self.verticalLayoutWidget_9)
         self.test_model_load_button.setObjectName(u"test_model_load_button")
 
-        self.verticalLayout_12.addWidget(self.test_model_load_button)
-
-
-        self.verticalLayout_11.addLayout(self.verticalLayout_12)
+        self.verticalLayout_11.addWidget(self.test_model_load_button)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -275,8 +248,6 @@ class Ui_Form(object):
 
         self.verticalLayout_11.addWidget(self.test_cam_use_check)
 
-        self.verticalLayout_13 = QVBoxLayout()
-        self.verticalLayout_13.setObjectName(u"verticalLayout_13")
         self.horizontalLayout_11 = QHBoxLayout()
         self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
         self.label_10 = QLabel(self.verticalLayoutWidget_9)
@@ -293,15 +264,12 @@ class Ui_Form(object):
         self.horizontalLayout_11.addWidget(self.test_target_label_combo)
 
 
-        self.verticalLayout_13.addLayout(self.horizontalLayout_11)
+        self.verticalLayout_11.addLayout(self.horizontalLayout_11)
 
         self.test_dataset_list = QListWidget(self.verticalLayoutWidget_9)
         self.test_dataset_list.setObjectName(u"test_dataset_list")
 
-        self.verticalLayout_13.addWidget(self.test_dataset_list)
-
-
-        self.verticalLayout_11.addLayout(self.verticalLayout_13)
+        self.verticalLayout_11.addWidget(self.test_dataset_list)
 
         self.main_menu_tab.addTab(self.test_tab, "")
         self.tools_tab = QWidget()
@@ -339,12 +307,10 @@ class Ui_Form(object):
         self.groupBox_10.setGeometry(QRect(830, 0, 261, 431))
         self.verticalLayoutWidget_10 = QWidget(self.groupBox_10)
         self.verticalLayoutWidget_10.setObjectName(u"verticalLayoutWidget_10")
-        self.verticalLayoutWidget_10.setGeometry(QRect(10, 20, 241, 401))
+        self.verticalLayoutWidget_10.setGeometry(QRect(10, 20, 246, 401))
         self.verticalLayout_14 = QVBoxLayout(self.verticalLayoutWidget_10)
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
         self.verticalLayout_14.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_15 = QVBoxLayout()
-        self.verticalLayout_15.setObjectName(u"verticalLayout_15")
         self.horizontalLayout_8 = QHBoxLayout()
         self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
         self.label_7 = QLabel(self.verticalLayoutWidget_10)
@@ -361,7 +327,7 @@ class Ui_Form(object):
         self.horizontalLayout_8.addWidget(self.tools_type_combo)
 
 
-        self.verticalLayout_15.addLayout(self.horizontalLayout_8)
+        self.verticalLayout_14.addLayout(self.horizontalLayout_8)
 
         self.horizontalLayout_12 = QHBoxLayout()
         self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
@@ -385,20 +351,17 @@ class Ui_Form(object):
         self.horizontalLayout_12.addWidget(self.tools_thresh_apply_button)
 
 
-        self.verticalLayout_15.addLayout(self.horizontalLayout_12)
+        self.verticalLayout_14.addLayout(self.horizontalLayout_12)
 
         self.tools_capture_button = QPushButton(self.verticalLayoutWidget_10)
         self.tools_capture_button.setObjectName(u"tools_capture_button")
 
-        self.verticalLayout_15.addWidget(self.tools_capture_button)
+        self.verticalLayout_14.addWidget(self.tools_capture_button)
 
         self.tools_video_button = QPushButton(self.verticalLayoutWidget_10)
         self.tools_video_button.setObjectName(u"tools_video_button")
 
-        self.verticalLayout_15.addWidget(self.tools_video_button)
-
-
-        self.verticalLayout_14.addLayout(self.verticalLayout_15)
+        self.verticalLayout_14.addWidget(self.tools_video_button)
 
         self.horizontalLayout_9 = QHBoxLayout()
         self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
@@ -415,15 +378,15 @@ class Ui_Form(object):
 
         self.verticalLayout_14.addLayout(self.horizontalLayout_9)
 
-        self.verticalLayout_16 = QVBoxLayout()
-        self.verticalLayout_16.setObjectName(u"verticalLayout_16")
         self.tools_image_list = QListWidget(self.verticalLayoutWidget_10)
         self.tools_image_list.setObjectName(u"tools_image_list")
 
-        self.verticalLayout_16.addWidget(self.tools_image_list)
+        self.verticalLayout_14.addWidget(self.tools_image_list)
 
+        self.tools_img_remove_button = QPushButton(self.verticalLayoutWidget_10)
+        self.tools_img_remove_button.setObjectName(u"tools_img_remove_button")
 
-        self.verticalLayout_14.addLayout(self.verticalLayout_16)
+        self.verticalLayout_14.addWidget(self.tools_img_remove_button)
 
         self.main_menu_tab.addTab(self.tools_tab, "")
         self.groupBox_4 = QGroupBox(Form)
@@ -510,6 +473,7 @@ class Ui_Form(object):
         self.tools_video_button.setText(QCoreApplication.translate("Form", u"\ucd2c\uc601 \uc2dc\uc791", None))
         self.label_8.setText(QCoreApplication.translate("Form", u"\uc774\ubbf8\uc9c0 \uc800\uc7a5 \uc704\uce58 : ", None))
         self.tools_save_path_find_button.setText(QCoreApplication.translate("Form", u"\ucc3e\uc544\ubcf4\uae30", None))
+        self.tools_img_remove_button.setText(QCoreApplication.translate("Form", u"\ucd2c\uc601 \uc2dc\uc791", None))
         self.main_menu_tab.setTabText(self.main_menu_tab.indexOf(self.tools_tab), QCoreApplication.translate("Form", u"\ub3c4\uad6c", None))
         self.groupBox_4.setTitle(QCoreApplication.translate("Form", u"\uc791\uc5c5 \ub85c\uadf8", None))
     # retranslateUi
