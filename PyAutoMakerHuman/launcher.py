@@ -22,6 +22,11 @@ from custom_signal import LogSignal, TrainExitSignal, CamSignal, TrainDataSetAdd
 from thread import WorkThread, WorkQThread, WorkPyThread
 from image import cv2_imread
 
+
+def get_file_list(folder_path : str) -> list:
+    file_lsit = glob(os.path.join(folder_path, "**", "*.*"), recursive = True)
+    return file_lsit
+
 class TrainTestUtilForm(QMainWindow, Ui_Form):
     TRAIN_TEST_TYPE_DICT = {"수형 인식" : 0, "수형 인식(홀리스틱)" : 1, "얼굴 인식" : 2}
 
@@ -36,14 +41,12 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             self.train_dataset_add_end_signal = TrainDataSetAddEndSignal()
             self.train_dataset_add_thread = None
-            self.train_dataset_add_thread_exit_event = Event()
 
             self.test_dataset_add_end_signal = TestDataSetAddEndSignal()
             self.test_dataset_add_thread = None
 
             self.train_done_signal = TrainExitSignal()
 
-            self.train_exit_event = Event()
             self.bTraining = False
             self.train_dataset_folder = ""
 
@@ -63,7 +66,6 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             self.test_use_cam = False
             self.test_cam_thread = None
-            self.test_cam_exit_event = Event()
             self.test_cam_signal = CamSignal()
 
             self.tools_cap = None
@@ -120,14 +122,11 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         pass
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        self.train_dataset_add_thread_exit_event.set()
-        self.train_exit_event.set()
-        self.test_cam_exit_event.set()
-
         thread_list = [self.train_dataset_add_thread, self.test_dataset_add_thread, self.test_cam_thread]
         for target_thread in thread_list:
             if target_thread is None:
                 continue
+            target_thread.exit()
             target_thread.join()
 
         return super().closeEvent(event)
@@ -162,10 +161,6 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 return folder_paths
 
         return None
-
-    def get_file_list(self, folder_path : str) -> list:
-        file_lsit = glob(os.path.join(folder_path, "**", "*.*"), recursive = True)
-        return file_lsit
 
     def get_train_file_list(self) -> list:
         file_list = []
@@ -247,35 +242,40 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.train_detector = self.init_detector(idx, min_thresh)
         self.log("훈련 타입 변경", (0, 255, 0))
 
+    @staticmethod
+    def train_thread_func(args : tuple) -> None:
+        detector, trainer, dataset_list, log_signal, done_signal, exit_event = args
+
+        def train_logger(log_message : str, color : tuple) -> None:
+            log_signal.sig.emit(log_message, color)
+
+        detector.set_logger(train_logger)
+        data = detector.extract_dataset(dataset_list, exit_event)
+        train_data, name = data["data"], data["name"]
+        if len(train_data) == 0 or len(name) == 0:
+            train_logger("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
+            done_signal.sig.emit()
+            return
+
+        trainer.train_svm(train_data, name)
+        done_signal.sig.emit()
+
     @Slot()
     def train_model_train_button_clicked_handler(self):
         print("훈련 모델 버튼 클릭")
         if self.bTraining == False:
-            self.train_exit_event.clear()
-            def train_logger(log_message : str, color : tuple) -> None:
-                self.log_signal.sig.emit(log_message, color)
+            self.train_thread = WorkThread(WorkQThread, self.train_thread_func
+                                                        , (self.train_detector, self.train_trainer
+                                                        , self.get_train_file_list(), self.log_signal
+                                                        , self.train_done_signal)
+                                                        , self)
 
-            def train_thread_func(detector, trainer, dataset_list : list, exit_event : Event, logger, done_signal : TrainExitSignal) -> None:
-                detector.set_logger(logger)
-                data = detector.extract_dataset(dataset_list, exit_event)
-                train_data, name = data["data"], data["name"]
-                if len(train_data) == 0 or len(name) == 0:
-                    logger("데이터셋에서 학습할 수 있는 특징이 없습니다.", (255, 0, 0))
-                    done_signal.sig.emit()
-                    return
-
-                trainer.train_svm(train_data, name)
-                done_signal.sig.emit()
-
-            self.train_thread = WorkThread(WorkQThread, train_thread_func, (self.train_detector, self.train_trainer
-                                                                            , self.get_train_file_list(), self.train_exit_event, train_logger
-                                                                            , self.train_done_signal), self)
             self.train_dataset_list.setDisabled(True)
             self.train_thresh_apply_button.setDisabled(True)
             self.train_thread.start()
             self.train_model_train_button.setText("학습중")
         else:
-            self.train_exit_event.set()
+            self.train_thread.exit()
             self.train_thread.join()
             self.train_thread = None
             self.train_model_train_button.setText("모델 학습 시작")
@@ -320,6 +320,17 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_trainer.save_svm(folder_path[0])
             self.log(f"{folder_path[0]}에 모델을 저장했습니다.", (0, 255, 0))
 
+    @staticmethod
+    def file_add_thread_func(args : tuple) -> None:
+        folder_path, target_list, end_signal, exit_event = args
+
+        file_list = get_file_list(folder_path)
+        for file in file_list:
+            item = QListWidgetItem(file)
+            target_list.addItem(item)
+
+        end_signal.sig.emit()
+
     @Slot()
     def train_dataset_path_find_button_clicked_handler(self):
         print("훈련 데이터셋 찾기 버튼")
@@ -327,19 +338,12 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         if folder_paths is None:
             return
 
-        def file_add_thread_func(folder_path : str, target_list : QListWidget, end_signal : TrainDataSetAddEndSignal) -> None:
-            file_list = self.get_file_list(folder_path)
-            for file in file_list:
-                item = QListWidgetItem(file)
-                target_list.addItem(item)
-
-            end_signal.sig.emit()
-
         self.train_dataset_folder = folder_paths[0]
-        self.train_dataset_add_thread_exit_event.clear()
         self.train_dataset_list.clear()
         self.train_dataset_list.setDisabled(True)
-        self.train_file_add_thread = Thread(target=file_add_thread_func, args=(folder_paths[0], self.train_dataset_list, self.train_dataset_add_end_signal))
+        self.train_file_add_thread = WorkThread(WorkQThread, self.file_add_thread_func
+                                                , (folder_paths[0], self.train_dataset_list, self.train_dataset_add_end_signal)
+                                                , self)
         self.train_file_add_thread.start()
 
     @Slot()
@@ -390,60 +394,56 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         if folder_paths is None:
             return
 
-        def file_add_thread_func(folder_path : str, target_list : QListWidget, end_signal : TestDataSetAddEndSignal) -> None:
-            file_list = self.get_file_list(folder_path)
-            for file in file_list:
-                item = QListWidgetItem(file)
-                target_list.addItem(item)
-
-            end_signal.sig.emit()
-
         self.test_dataset_list.clear()
         self.test_dataset_list.setDisabled(True)
-        self.test_file_add_thread = Thread(target=file_add_thread_func, args=(folder_paths[0], self.test_dataset_list, self.test_dataset_add_end_signal))
+        self.test_file_add_thread = WorkThread(WorkQThread, self.file_add_thread_func
+                                                            ,(folder_paths[0], self.test_dataset_list, self.test_dataset_add_end_signal)
+                                                            , self)
         self.test_file_add_thread.start()
+
+    @staticmethod
+    def cam_thread_func(args : tuple):
+        detect_test_draw, target_combo, log_signal, cam_signal, exit_event = args
+
+        def test_cam_logger(log_message : str, color : tuple) -> None:
+            log_signal.sig.emit(log_message, color)
+
+        cap = cv2.VideoCapture(0)
+        while cap.isOpened():
+            if exit_event.is_set():
+                break
+
+            ret, frame = cap.read()
+            if ret == False:
+                continue
+            
+            frame = cv2.flip(frame, 1)
+            cam_signal.sig.emit(cam_signal.ORIGINAL, frame.copy())
+            frame, result = detect_test_draw(frame, 1, 3)
+            name, proba = result
+            target_label = target_combo.currentText()
+            if name is not None and name == target_label:
+                cv2.putText(frame, "O", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 0), 5)
+            else:
+                cv2.putText(frame, "X", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 5)
+
+            cam_signal.sig.emit(cam_signal.RESULT, frame)
+
+        cap.release()
 
     @Slot()
     def test_cam_use_check_handler(self, state):
         if state:
             self.test_use_cam = True
-
-            def test_cam_logger(log_message : str, color : tuple) -> None:
-                self.log_signal.sig.emit(log_message, color)
-            def cam_thread_func(detect_test_draw, target_combo : QComboBox, logger, exit_event : Event, cam_signal : CamSignal):
-                cap = cv2.VideoCapture(0)
-                while cap.isOpened():
-                    if exit_event.is_set():
-                        break
-
-                    ret, frame = cap.read()
-                    if ret == False:
-                        continue
-                    
-                    frame = cv2.flip(frame, 1)
-                    cam_signal.sig.emit(cam_signal.ORIGINAL, frame)
-                    frame, result = detect_test_draw(frame, 1, 3)
-                    name, proba = result
-                    target_label = target_combo.currentText()
-                    if name is not None and name == target_label:
-                        cv2.putText(frame, "O", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 0), 5)
-                    else:
-                        cv2.putText(frame, "X", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 5)
-
-                    cam_signal.sig.emit(cam_signal.RESULT, frame)
-
-                cap.release()
-
-            self.test_cam_exit_event.clear()
-            self.test_cam_thread = WorkThread(WorkQThread, cam_thread_func
+            self.test_cam_thread = WorkThread(WorkQThread, self.cam_thread_func
                                     , (self.detect_test_draw
-                                    , self.test_target_label_combo,  test_cam_logger
-                                    , self.test_cam_exit_event, self.test_cam_signal))
+                                    , self.test_target_label_combo,  self.log_signal
+                                    , self.test_cam_signal), self)
 
             self.test_cam_thread.start()
 
         else:
-            self.test_cam_exit_event.set()
+            self.test_cam_thread.exit()
             self.test_cam_thread.join()
             self.test_cam_thread = None
             self.test_use_cam = False
