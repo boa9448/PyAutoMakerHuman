@@ -69,7 +69,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_cam_signal = CamSignal()
 
             self.tools_cap = None
-            self.tools_image_dict = dict()
+            self.tools_img_dict = dict()
+            self.tools_cam_thread = None
             self.tools_cam_signal = CamSignal()
         init_data()
 
@@ -219,10 +220,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         return (img, (name, proba))
 
     def tools_add_img_list(self, img):
-        tools_image_dict_len = len(self.tools_image_dict)
-        tools_image_name = f"image_{tools_image_dict_len}"
-        self.tools_image_dict[tools_image_name] = img
-        self.tools_img_list.addItem(tools_image_name)
+        tools_img_dict_len = len(self.tools_img_dict)
+        tools_img_name = f"image_{tools_img_dict_len}"
+        self.tools_img_dict[tools_img_name] = img
+        self.tools_img_list.addItem(tools_img_name)
 
     @Slot()
     def train_dataset_add_end_signal_handler(self):
@@ -509,14 +510,40 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         self.detect_draw(self.tools_detector, frame, self.tools_result_img_label)
         self.tools_add_img_list(org_frame)
 
+    @staticmethod
+    def tools_video_capture_thread_func(args : tuple) -> None:
+        cap, cam_signal, cature_time, exit_event = args
+
+        start_time = time.time()
+        while cap.isOpened() and exit_event.is_set() == False:
+            if time.time() - start_time > cature_time:
+                break
+
+            ret, frame = cap.read()
+            if ret == False:
+                continue
+
+            cam_signal.sig.emit(cam_signal.ORIGINAL, frame.copy())
+
     @Slot()
     def tools_video_button_handler(self):
-        pass
+        if self.tools_cam_thread is None:
+            self.tools_capture_button.setDisabled(True)
+            self.tools_cam_thread = WorkThread(WorkQThread, self.tools_video_capture_thread_func
+                                                            , (self.tools_cap, self.tools_cam_signal, 5000))
+            self.tools_cam_thraed.start()
+            
+        else:
+            self.tools_cam_thread.exit()
+            self.tools_cam_thread.join()
+            self.tools_cam_thread = None
+
+            self.tools_capture_button.setDisabled(False)
 
     @Slot()
     def tools_img_list_itemSelectionChanged_handler(self):
         img_name = self.tools_img_list.currentItem().text()
-        img = self.tools_image_dict[img_name].copy()
+        img = self.tools_img_dict[img_name].copy()
         
         qimg = self.ndarray_to_qimage(img)
         self.draw_label(self.tools_original_img_label, qimg)
