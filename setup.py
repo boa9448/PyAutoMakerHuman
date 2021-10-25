@@ -22,7 +22,7 @@ elif sys.platform == "linux":
 
 setuptools.setup(
     name="PyAutoMakerHuman",
-    version="1.1.1",
+    version="1.2.1",
     author="WDW",
     author_email="boa3465@gmail.com",
     description="얼굴, 포즈, 손의 랜드마크를 쉽게 가져오기위한 모듈",
