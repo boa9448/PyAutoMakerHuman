@@ -20,7 +20,7 @@ import pose
 import train
 from custom_signal import LogSignal, CamSignal, WorkDoneSignal
 from thread import WorkThread, WorkQThread, WorkPyThread
-from image import cv2_imread
+from image import cv2_imread, cv2_imwrite
 
 
 def get_file_list(folder_path : str) -> list:
@@ -114,6 +114,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.tools_thresh_apply_button.clicked.connect(self.tools_thresh_apply_button_clicked_handler)
             self.tools_capture_button.clicked.connect(self.tools_capture_button_handler)
             self.tools_video_button.clicked.connect(self.tools_video_button_handler)
+            self.tools_save_path_find_button.clicked.connect(self.tools_save_path_find_button_handler)
             self.tools_img_list.itemSelectionChanged.connect(self.tools_img_list_itemSelectionChanged_handler)
             self.tools_img_remove_button.clicked.connect(self.tools_img_remove_button_handler)
 
@@ -554,6 +555,18 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             self.tools_capture_button.setDisabled(False)
             self.tools_video_button.setText("촬영 시작")
+
+    @Slot()
+    def tools_save_path_find_button_handler(self):
+        folder_paths = self.get_folder_paths()
+        if folder_paths is None:
+            return
+
+        for name, img in self.tools_img_dict.items():
+            name += ".png"
+            img_path = os.path.join(folder_paths[0], name,)
+            cv2_imwrite(img_path, img)
+
 
     @Slot()
     def tools_img_list_itemSelectionChanged_handler(self):
