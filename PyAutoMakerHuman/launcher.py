@@ -18,7 +18,7 @@ import face
 import hand
 import pose
 import train
-from custom_signal import LogSignal, TrainExitSignal, CamSignal, TrainDataSetAddEndSignal, TestDataSetAddEndSignal
+from custom_signal import LogSignal, TrainExitSignal, CamSignal, WorkDoneSignal
 from thread import WorkThread, WorkQThread, WorkPyThread
 from image import cv2_imread
 
@@ -39,10 +39,10 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             self.log_signal = LogSignal()
 
-            self.train_dataset_add_end_signal = TrainDataSetAddEndSignal()
+            self.train_dataset_add_end_signal = WorkDoneSignal()
             self.train_dataset_add_thread = None
 
-            self.test_dataset_add_end_signal = TestDataSetAddEndSignal()
+            self.test_dataset_add_end_signal = WorkDoneSignal()
             self.test_dataset_add_thread = None
 
             self.train_done_signal = TrainExitSignal()
@@ -72,6 +72,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.tools_img_dict = dict()
             self.tools_cam_thread = None
             self.tools_cam_signal = CamSignal()
+            self.tools_cam_done_signal = WorkDoneSignal()
         init_data()
 
         def init_display():
@@ -91,6 +92,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_done_signal.sig.connect(self.train_model_train_button_clicked_handler)
             self.test_cam_signal.sig.connect(self.test_cam_signal_handler)
             self.tools_cam_signal.sig.connect(self.tools_cam_signal_handler)
+            self.tools_cam_done_signal.sig.connect(self.tools_cam_done_signal_handler)
 
             self.main_menu_tab.currentChanged.connect(self.main_menu_tab_changed_hander)
 
@@ -299,6 +301,15 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
         target_label = self.tools_original_img_label if code == self.tools_cam_signal.ORIGINAL else self.tools_result_img_label
         self.draw_label(target_label, qImg)
+
+    @Slot()
+    def tools_cam_done_signal_handler(self):
+        self.tools_cam_thread.exit()
+        self.tools_cam_thread.join()
+        self.tools_cam_thread = None
+
+        self.tools_capture_button.setDisabled(False)
+        self.tools_video_button.setText("촬영 시작")
 
     def main_menu_tab_changed_hander(self, idx):
         if idx == 2:
@@ -512,7 +523,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     @staticmethod
     def tools_video_capture_thread_func(args : tuple) -> None:
-        cap, cam_signal, cature_time, exit_event = args
+        cap, cam_signal, cature_time, done_signal, exit_event = args
 
         start_time = time.time()
         while cap.isOpened() and exit_event.is_set() == False:
@@ -524,25 +535,31 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 continue
 
             cam_signal.sig.emit(cam_signal.ORIGINAL, frame.copy())
-            time.sleep(1)
+            # time.sleep(1)
+
+        done_signal.sig.emit()
 
     @Slot()
     def tools_video_button_handler(self):
         if self.tools_cam_thread is None:
             self.tools_capture_button.setDisabled(True)
             self.tools_cam_thread = WorkThread(WorkQThread, self.tools_video_capture_thread_func
-                                                            , (self.tools_cap, self.tools_cam_signal, 5000))
+                                                            , (self.tools_cap, self.tools_cam_signal, 10, self.tools_cam_done_signal))
             self.tools_cam_thread.start()
-            
+            self.tools_video_button.setText("촬영 중지")
         else:
             self.tools_cam_thread.exit()
             self.tools_cam_thread.join()
             self.tools_cam_thread = None
 
             self.tools_capture_button.setDisabled(False)
+            self.tools_video_button.setText("촬영 시작")
 
     @Slot()
     def tools_img_list_itemSelectionChanged_handler(self):
+        if not self.tools_img_dict:
+            return
+
         img_name = self.tools_img_list.currentItem().text()
         img = self.tools_img_dict[img_name].copy()
         
@@ -552,6 +569,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
     @Slot()
     def tools_img_remove_button_handler(self):
+        self.tools_img_dict.clear()
         self.tools_img_list.clear()
 
 

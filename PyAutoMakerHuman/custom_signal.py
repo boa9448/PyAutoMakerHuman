@@ -20,6 +20,12 @@ class TestDataSetAddEndSignal(QObject):
     def __init__(self):
         super().__init__()
 
+class WorkDoneSignal(QObject):
+    sig = Signal()
+
+    def __init__(self):
+        super().__init__()
+
 class TrainExitSignal(QObject):
     sig = Signal()
 
