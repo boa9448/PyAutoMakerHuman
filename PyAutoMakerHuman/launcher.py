@@ -524,6 +524,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 continue
 
             cam_signal.sig.emit(cam_signal.ORIGINAL, frame.copy())
+            time.sleep(1)
 
     @Slot()
     def tools_video_button_handler(self):
@@ -531,7 +532,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.tools_capture_button.setDisabled(True)
             self.tools_cam_thread = WorkThread(WorkQThread, self.tools_video_capture_thread_func
                                                             , (self.tools_cap, self.tools_cam_signal, 5000))
-            self.tools_cam_thraed.start()
+            self.tools_cam_thread.start()
             
         else:
             self.tools_cam_thread.exit()

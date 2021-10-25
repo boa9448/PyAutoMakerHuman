@@ -7,12 +7,14 @@ class WorkPyThread(Thread):
         self.target = target
         self.param = param
         self.exit_event = Event()
+        self.exit_event.clear()
 
     def __del__(self):
         pass
 
-    def run(self):
+    def run(self) -> bool:
         self.target((*self.param, self.exit_event))
+        return True
 
     def exit(self):
         self.exit_event.set()
@@ -23,12 +25,14 @@ class WorkQThread(QThread):
         self.target = target
         self.param = param
         self.exit_event = Event()
+        self.exit_event.clear()
 
-    def run(self) -> None:
+    def run(self) -> bool:
         self.target((*self.param, self.exit_event))
+        return True
 
     def join(self, time_out : int = None):
-        self.wait(deadline=QDeadlineTimer(QDeadlineTimer.Forever) if time_out is None else time_out)
+        self.wait(deadline = QDeadlineTimer(-1) if time_out is None else time_out)
 
     def exit(self):
         self.exit_event.set()
