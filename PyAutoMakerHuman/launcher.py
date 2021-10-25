@@ -18,7 +18,7 @@ import face
 import hand
 import pose
 import train
-from custom_signal import LogSignal, TrainExitSignal, CamSignal, WorkDoneSignal
+from custom_signal import LogSignal, CamSignal, WorkDoneSignal
 from thread import WorkThread, WorkQThread, WorkPyThread
 from image import cv2_imread
 
@@ -45,7 +45,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.test_dataset_add_end_signal = WorkDoneSignal()
             self.test_dataset_add_thread = None
 
-            self.train_done_signal = TrainExitSignal()
+            self.train_done_signal = WorkDoneSignal()
 
             self.bTraining = False
             self.train_dataset_folder = ""
@@ -535,7 +535,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
                 continue
 
             cam_signal.sig.emit(cam_signal.ORIGINAL, frame.copy())
-            # time.sleep(1)
+            time.sleep(0.2)
 
         done_signal.sig.emit()
 
