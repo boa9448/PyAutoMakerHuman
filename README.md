@@ -2,12 +2,6 @@
 사람과 관련된 자동화 모듈
 
 
-# 주의
-이 프로젝트는 아직 개발중입니다
-내보내는 API는 언제든지 바뀔 수 있습니다
-
-
-
 # 설치
 pip install PyAutoMakerHuman
 
