@@ -39,21 +39,8 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
 
             self.log_signal = LogSignal()
 
-            self.train_dataset_add_end_signal = WorkDoneSignal()
-            self.train_dataset_add_thread = None
-
             self.test_dataset_add_end_signal = WorkDoneSignal()
             self.test_dataset_add_thread = None
-
-            self.train_done_signal = WorkDoneSignal()
-
-            self.bTraining = False
-            self.train_dataset_folder = ""
-
-            min_thresh = self.train_thresh_spin_edit.text()
-            min_thresh = float(min_thresh) / 100
-            self.train_detector = self.init_detector(0, min_thresh)
-            self.train_trainer = train.SvmUtil()
 
             min_thresh = self.train_thresh_spin_edit.text()
             min_thresh = float(min_thresh) / 100
@@ -267,7 +254,7 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
     @Slot()
     def train_model_train_button_clicked_handler(self):
         print("훈련 모델 버튼 클릭")
-        if self.bTraining == False:
+        if self.train_thread is None:
             self.train_thread = WorkThread(WorkQThread, self.train_thread_func
                                                         , (self.train_detector, self.train_trainer
                                                         , self.get_train_file_list(), self.log_signal
@@ -285,8 +272,6 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
             self.train_model_train_button.setText("모델 학습 시작")
             self.train_dataset_list.setDisabled(False)
             self.train_thresh_apply_button.setDisabled(False)
-
-        self.bTraining = not self.bTraining
 
     @Slot()
     def test_cam_signal_handler(self, code : int, img : np.ndarray):
@@ -351,7 +336,6 @@ class TrainTestUtilForm(QMainWindow, Ui_Form):
         if folder_paths is None:
             return
 
-        self.train_dataset_folder = folder_paths[0]
         self.train_dataset_list.clear()
         self.train_dataset_list.setDisabled(True)
         self.train_file_add_thread = WorkThread(WorkQThread, self.file_add_thread_func
