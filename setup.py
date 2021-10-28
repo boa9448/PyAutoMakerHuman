@@ -42,7 +42,7 @@ setuptools.setup(
     data_files=[(os.path.sep.join([data_files_path, "PyAutoMakerHuman", "models"])
                  , [file for file in glob("PyAutoMakerHuman\\models\\*.*")])],
 
-    install_requires = ["imutils", "scikit-learn", "waitress", "flask", "requests"
+    install_requires = ["imutils", "scikit-learn"
     , "mediapipe; platform_system == 'Windows'", "mediapipe-rpi4; platform_system == 'Linux'"
     , "tensorflow; platform_system == 'Windows'", "PySide6"],
     python_requires=">=3.6",
