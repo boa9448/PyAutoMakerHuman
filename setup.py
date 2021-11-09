@@ -1,11 +1,4 @@
-#수정 해야함, 그냥 카피떴음
-
 import setuptools
-import os
-import sys
-import site
-from os.path import dirname
-from glob import glob
 
 with open("README.md", "rt", encoding="utf-8") as fh:
     long_description = fh.read()
