@@ -10,16 +10,6 @@ from glob import glob
 with open("README.md", "rt", encoding="utf-8") as fh:
     long_description = fh.read()
 
-data_files_path = ""
-
-if sys.platform == "nt":
-    data_files_path = os.path.join("lib", "site-packages")
-
-#라즈베리파이와 일반 데스크톱 리눅스를 지원할 수 있도록 나눌것
-elif sys.platform == "linux":
-    version = "python{}.{}".format(sys.version_info[0], sys.version_info[1])
-    data_files_path = os.path.join(site.USER_BASE, "lib", version, "site-packages")
-
 setuptools.setup(
     name="PyAutoMakerHuman",
     version="1.2.1",
@@ -38,9 +28,9 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows :: Windows 10"
     ],
-    packages=["PyAutoMakerHuman"],
-    data_files=[(os.path.sep.join([data_files_path, "PyAutoMakerHuman", "models"])
-                 , [file for file in glob("PyAutoMakerHuman\\models\\*.*")])],
+    package_dir={"": "src"},
+    packages=setuptools.find_packages(where="src"),
+    package_data={"PyAutoMakerHuman": ["models/*"]},
 
     install_requires = ["imutils", "scikit-learn"
     , "mediapipe; platform_system == 'Windows'", "mediapipe-rpi4; platform_system == 'Linux'"
