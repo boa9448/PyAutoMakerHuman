@@ -212,15 +212,4 @@ class HandUtil:
 
 
 if __name__ == "__main__":
-    no_img = cv2_imread("C:\\test.jpg")
-    two_img = cv2_imread("C:\\2_hand.jpg")
-    hand = HandUtil()
-    
-    no_result = hand.detect(no_img)
-    two_result = hand.detect(two_img)
-
-    print(f"no hand count : {no_result.count()}")
-    print(f"two hand count : {two_result.count()}")
-
-    print(f"no hand scores : {no_result.scores()}")
-    print(f"two hand scores : {two_result.scores()}")
+    pass
