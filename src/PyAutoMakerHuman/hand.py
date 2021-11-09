@@ -13,10 +13,10 @@ mp_hands = mp.solutions.hands
 
 
 class HandResult:
-    def __init__(self, img_size, result):
+    def __init__(self, img_size : tuple, result):
         self.img_size = img_size
-        self.width = img_size[0]
-        self.height = img_size[1]
+        self.width : int = img_size[0]
+        self.height : int = img_size[1]
         self.result = result
 
     def __del__(self):
@@ -44,19 +44,19 @@ class HandResult:
         for data in data_list:
             yield data
 
-    def count(self):
+    def count(self) -> int:
         if not self.result.multi_hand_landmarks:
             return 0
 
         return len(self.result.multi_hand_landmarks)
 
-    def scores(self):
+    def scores(self) -> list:
         if self.count() == 0:
             return None
 
         return [hand.classification[0].score for hand in self.result.multi_handedness]
 
-    def labels(self):
+    def labels(self) -> list:
         if self.count() == 0:
             return None
 
@@ -68,7 +68,7 @@ class HandResult:
 
         return [hand.classification[0].index for hand in self.result.multi_handedness]
 
-    def get_box_list(self, bRelative : bool = False):
+    def get_box_list(self, bRelative : bool = False) -> list:
         if self.count() == 0:
             return None
 
@@ -84,7 +84,7 @@ class HandResult:
 
         return box_list
 
-    def get_landmark_list(self, bRelative : bool = False):
+    def get_landmark_list(self, bRelative : bool = False) -> list:
         """
         랜드마크의 리트스를 리턴하는 함수
         bRelative가 True라면 정규화된 좌표를 리턴함
