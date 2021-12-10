@@ -4,11 +4,13 @@ import cv2
 import numpy as np
 from PIL import ImageFont, ImageDraw, Image
 
+
 def cv2_imread(filename : str, flags : int = cv2.IMREAD_COLOR) -> np.ndarray:
     raw = np.fromfile(filename, np.uint8)
     img = cv2.imdecode(raw, flags)
 
     return img
+
 
 def cv2_imwrite(filename : str, img : np.ndarray, params : list = None):
     ext = os.path.splitext(filename)[1]
@@ -16,6 +18,7 @@ def cv2_imwrite(filename : str, img : np.ndarray, params : list = None):
     if ret:
         with open(filename, "w+b") as f:
             raw_img.tofile(f)
+
 
 def cv2_putText(img, text, org, fontScale, color, thickness=..., lineType=..., bottomLeftOrigin=...):
     fontpath = "fonts/gulim.ttc"

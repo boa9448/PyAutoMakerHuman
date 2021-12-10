@@ -102,8 +102,20 @@ class HandResult:
         return landmarks
 
     def get_boxes(self) -> list:
-        landmarks = self.get_landmarks()
-        pass
+        """발견된 손의 박스 좌표를 리턴하는 함수
+        """
+        box_list = []
+
+        landmarks = self.get_abs_landmarks()
+        for label, landmark in landmarks:
+            minX = min(landmark, key = lambda x : x[0])[0]
+            minY = min(landmark, key = lambda x : x[1])[1]
+            maxX = max(landmark, key = lambda x : x[0])[0]
+            maxY = max(landmark, key = lambda x : x[1])[1]
+            box = [minX, minY, maxX - minX, maxY - minY]
+            box_list.append((label, box))
+
+        return box_list
 
 
 def test_draw(img : np.ndarray, landmarks : list) -> None:
@@ -131,6 +143,17 @@ def test_abs_draw(img : np.ndarray, landmarks : list) -> None:
     cv2.imshow("view", img)
     cv2.waitKey()
     cv2.destroyAllWindows()
+
+def test_box_draw(img : np.ndarray, box_list : list) -> None:
+    img = img.copy()
+    for label, box in box_list:
+        x, y, w, h = box
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(img, label, (x, y - 20), cv2.FONT_HERSHEY_PLAIN, 2.0, (0, 0, 255), 2)
+
+    cv2.imshow("view", img)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
     
 
 hand_result = HandResult((hand_img.shape), hand_proc_result)
@@ -144,3 +167,6 @@ test_abs_draw(hand_img, landmarks)
 
 landmarks = hand_result.get_abs_landmarks()
 test_abs_draw(hand_img, landmarks)
+
+box_list = hand_result.get_boxes()
+test_box_draw(hand_img, box_list)

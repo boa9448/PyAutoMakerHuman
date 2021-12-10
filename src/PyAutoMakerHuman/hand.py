@@ -13,135 +13,101 @@ mp_hands = mp.solutions.hands
 
 
 class HandResult:
-    def __init__(self, img_size : tuple, result):
-        self.img_size = img_size
-        self.width : int = img_size[0]
-        self.height : int = img_size[1]
+    def __init__(self, img_shape : tuple, result):
+        self.height :int = img_shape[0]
+        self.width : int = img_shape[1]
+        self.channel : int = img_shape[2]
+
         self.result = result
 
     def __del__(self):
         pass
 
-    def __iter__(self):
-        data_list = []
-        count = self.count()
-        if count == 0:
-            return
-
-        labels = self.labels()
-        scores = self.scores()
-        boxes = self.get_box_list()
-        landmark_list = self.get_box_landmark_list()
-
-        for label, score, box, landmark in zip(labels, scores, boxes, landmark_list):
-            data_list.append({
-                "label" : label
-                , "score" : score
-                , "box" : box
-                , "landmark" : landmark
-            })
-
-        for data in data_list:
-            yield data
-
     def count(self) -> int:
-        if not self.result.multi_hand_landmarks:
+        """발견된 손의 갯수를 리턴하는 함수
+        """
+        if self.result.multi_handedness is None:
             return 0
 
-        return len(self.result.multi_hand_landmarks)
+        return len(self.result.multi_handedness)
 
     def scores(self) -> list:
-        if self.count() == 0:
-            return None
+        """발견된 손의 스코어를 리턴하는 함수
+        """
+        if self.result.multi_handedness is None:
+            return list()
 
-        return [hand.classification[0].score for hand in self.result.multi_handedness]
+        hand_score = [(info.classification[0].label, info.classification[0].score)
+                        for info in self.result.multi_handedness]
+        return hand_score
 
     def labels(self) -> list:
+        """발견된 손의 라벨을 리턴하는 함수
+        """
+
+        if self.result.multi_handedness is None:
+            return list()
+
+        hand_labels = [info.classification[0].label
+                        for info in self.result.multi_handedness]
+
+        return hand_labels
+
+    def get_landmarks(self) -> list:
+        """발견된 손의 랜드마크를 리턴하는 함수
+        """
         if self.count() == 0:
-            return None
+            return list()
 
-        return [hand.classification[0].label for hand in self.result.multi_handedness]
 
-    def indices(self):
+        landmarks = []
+        for label, hand_landmark in zip(self.labels(), self.result.multi_hand_landmarks):
+            norm_landmarks = list(hand_landmark.landmark)
+
+            landmarks.append((label, [[landmark.x, landmark.y, landmark.z]
+                                    for landmark in norm_landmarks]))
+
+        return landmarks
+
+    def landmarks_to_abs_landmarks(self, landmarks : list) -> list:
+        abs_landmarks = []
+        for landmark in landmarks:
+            abs_landmarks.append((landmark[0], [[int(x * self.width), int(y * self.height), z]
+                                                for x, y, z in landmark[-1]]))
+
+        return abs_landmarks
+
+    def get_abs_landmarks(self) -> list:
+        """발견된 손의 랜드마크의 절대좌표를 리턴하는 함수
+        """
         if self.count() == 0:
-            return None
+            return list()
 
-        return [hand.classification[0].index for hand in self.result.multi_handedness]
 
-    def get_box_list(self, bRelative : bool = False) -> list:
-        if self.count() == 0:
-            return None
+        landmarks = []
+        for label, hand_landmark in zip(self.labels(), self.result.multi_hand_landmarks):
+            norm_landmarks = list(hand_landmark.landmark)
 
+            landmarks.append((label, [[int(landmark.x * self.width), int(landmark.y * self.height), landmark.z]
+                                for landmark in norm_landmarks]))
+
+        return landmarks
+
+    def get_boxes(self) -> list:
+        """발견된 손의 박스 좌표를 리턴하는 함수
+        """
         box_list = []
-        landmark_list = self.get_landmark_list(bRelative)
-        for landmark in landmark_list:
+
+        landmarks = self.get_abs_landmarks()
+        for label, landmark in landmarks:
             minX = min(landmark, key = lambda x : x[0])[0]
             minY = min(landmark, key = lambda x : x[1])[1]
             maxX = max(landmark, key = lambda x : x[0])[0]
             maxY = max(landmark, key = lambda x : x[1])[1]
             box = [minX, minY, maxX - minX, maxY - minY]
-            box_list.append(box)
+            box_list.append((label, box))
 
         return box_list
-
-    def get_landmark_list(self, bRelative : bool = False) -> list:
-        """
-        랜드마크의 리트스를 리턴하는 함수
-        bRelative가 True라면 정규화된 좌표를 리턴함
-        """
-
-        result_list = []
-        if self.count() == 0:
-            return None
-
-        
-        for hand_landmark in self.result.multi_hand_landmarks:
-            landmark_list = list(hand_landmark.landmark)
-
-            result_list.append([(landmark.x, landmark.y, landmark.z) for landmark in landmark_list])
-
-
-        if not bRelative:
-            width, height = self.img_size
-            for idx in range(len(result_list)):
-                result = result_list[idx]
-                result_list[idx] = [
-                    (int(mark[0] * width), int(mark[1] * height), int(mark[2] * 10000)) for mark in result
-                ]
-
-        return result_list
-
-    def get_box_landmark_list(self, bRelative : bool = False):
-        box_list = self.get_box_list(False)
-        landmark_list = self.get_landmark_list(False)
-
-        new_landmark_list = []
-
-        for box, landmark in zip(box_list, landmark_list):
-            new_landmark = map(lambda landmark : (landmark[0] - box[0], landmark[1] - box[1], landmark[2]), landmark)
-            new_landmark_list.append(list(new_landmark))
-
-        if bRelative:
-            idx = 0
-            for box, landmark in zip(box_list, new_landmark_list):
-                new_landmark = map(lambda landmark : (landmark[0] / box[2], landmark[1] / box[3], landmark[2] / 10000), landmark)
-                new_landmark_list[idx] = tuple(new_landmark)
-                idx += 1
-
-        return new_landmark_list
-
-
-    def draw(self, img : np.ndarray):
-        if self.count() == 0:
-            return
-
-        box_list = self.get_box_list()
-        for box in box_list:
-            cv2.rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]), (255, 0, 0), 2)
-
-        for hand_landmarks in self.result.multi_hand_landmarks:
-            mp_drawing.draw_landmarks(
-                    img, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
 class HandUtil:
     def __init__(self, static_image_mode = True, max_num_hands = 2,
@@ -155,20 +121,9 @@ class HandUtil:
     def __del__(self):
         self.detector.close()
 
-    def set_logger(self, logger):
-        self.logger = logger
-
-    def log(self, log : str, color : tuple = (255, 255, 255)) -> None:
-        if self.logger is None:
-            print(log)
-            return
-
-        self.logger(log, color)
-
-    def detect(self, img):
+    def detect(self, img : np.ndarray) -> HandResult:
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        height, width, _ = img.shape
-        return HandResult((width, height), result)
+        return HandResult(img.shape, result)
 
     def extract(self, img):
         result = self.detect(img)
