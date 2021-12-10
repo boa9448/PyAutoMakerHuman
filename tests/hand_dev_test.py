@@ -72,7 +72,7 @@ class HandResult:
         for label, hand_landmark in zip(self.labels(), self.result.multi_hand_landmarks):
             norm_landmarks = list(hand_landmark.landmark)
 
-            landmarks.append((label, [[landmark.x, landmark.y, landmark.z]
+            landmarks.append((label, [(landmark.x, landmark.y, landmark.z)
                                     for landmark in norm_landmarks]))
 
         return landmarks
@@ -80,7 +80,7 @@ class HandResult:
     def landmarks_to_abs_landmarks(self, landmarks : list) -> list:
         abs_landmarks = []
         for landmark in landmarks:
-            abs_landmarks.append((landmark[0], [[int(x * self.width), int(y * self.height), z]
+            abs_landmarks.append((landmark[0], [(int(x * self.width), int(y * self.height), z)
                                                 for x, y, z in landmark[-1]]))
 
         return abs_landmarks
@@ -91,12 +91,11 @@ class HandResult:
         if self.count() == 0:
             return list()
 
-
         landmarks = []
         for label, hand_landmark in zip(self.labels(), self.result.multi_hand_landmarks):
             norm_landmarks = list(hand_landmark.landmark)
 
-            landmarks.append((label, [[int(landmark.x * self.width), int(landmark.y * self.height), landmark.z]
+            landmarks.append((label, [(int(landmark.x * self.width), int(landmark.y * self.height), landmark.z)
                                 for landmark in norm_landmarks]))
 
         return landmarks
@@ -104,7 +103,7 @@ class HandResult:
     def get_boxes(self) -> list:
         """발견된 손의 박스 좌표를 리턴하는 함수
         """
-        box_list = []
+        boxes = []
 
         landmarks = self.get_abs_landmarks()
         for label, landmark in landmarks:
@@ -112,10 +111,27 @@ class HandResult:
             minY = min(landmark, key = lambda x : x[1])[1]
             maxX = max(landmark, key = lambda x : x[0])[0]
             maxY = max(landmark, key = lambda x : x[1])[1]
-            box = [minX, minY, maxX - minX, maxY - minY]
-            box_list.append((label, box))
+            box = (minX, minY, maxX - minX, maxY - minY)
+            boxes.append((label, box))
 
-        return box_list
+        return boxes
+
+    def get_landmark_from_box(self) -> list:
+        """박스를 기준으로 랜드마크의 정규좌표를 리턴하는 함수
+        """
+        boxes = self.get_boxes()
+        landmarks= self.get_abs_landmarks()
+
+        new_landmarks = []
+        for box, landmark in zip(boxes, landmarks):
+            box_label, box = box
+            start_x, start_y, box_width, box_height = box
+            landmark_label, landmark = landmark
+            new_landmarks.append((landmark_label, [((x - start_x) / box_width, (y - start_y) / box_height, z)
+                                                     for x, y, z in landmark]))
+
+        return new_landmarks
+
 
 
 def test_draw(img : np.ndarray, landmarks : list) -> None:
@@ -154,9 +170,31 @@ def test_box_draw(img : np.ndarray, box_list : list) -> None:
     cv2.imshow("view", img)
     cv2.waitKey()
     cv2.destroyAllWindows()
+
+def test_landmark_from_box_draw(img : np.ndarray, boxes : list, landmarks : list) -> None:
+    img = img.copy()
+    
+    for box, landmark in zip(boxes, landmarks):
+        box_label, box = box
+        landmark_label, landmark = landmark
+
+        x, y, w, h = box
+        box_img = img[y : y + h, x : x + w]
+
+        for mark in landmark:
+            x, y, z = mark
+            center_x = int(x * w)
+            center_y = int(y * h)
+            cv2.circle(box_img, (center_x, center_y), 2, (255, 0, 0), 2)
+
+        cv2.imshow(f"box {box_label}", box_img)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
     
 
 hand_result = HandResult((hand_img.shape), hand_proc_result)
+#hand_img = no_hand_img
+#hand_result = HandResult((hand_img.shape), no_hand_proc_result)
 
 landmarks = hand_result.get_landmarks()
 test_draw(hand_img, landmarks)
@@ -170,3 +208,6 @@ test_abs_draw(hand_img, landmarks)
 
 box_list = hand_result.get_boxes()
 test_box_draw(hand_img, box_list)
+
+landmarks_from_box = hand_result.get_landmark_from_box()
+test_landmark_from_box_draw(hand_img, box_list, landmarks_from_box)

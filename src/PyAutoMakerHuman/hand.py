@@ -109,6 +109,23 @@ class HandResult:
 
         return box_list
 
+    def get_landmark_from_box(self) -> list:
+        """박스를 기준으로 랜드마크의 정규좌표를 리턴하는 함수
+        """
+        boxes = self.get_boxes()
+        landmarks= self.get_abs_landmarks()
+
+        new_landmarks = []
+        for box, landmark in zip(boxes, landmarks):
+            box_label, box = box
+            start_x, start_y, box_width, box_height = box
+            landmark_label, landmark = landmark
+            new_landmarks.append((landmark_label, [((x - start_x) / box_width, (y - start_y) / box_height, z)
+                                                     for x, y, z in landmark]))
+
+        return new_landmarks
+
+
 class HandUtil:
     def __init__(self, static_image_mode = True, max_num_hands = 2,
                 min_detection_confidence = 0.5):
@@ -130,8 +147,8 @@ class HandUtil:
         if result.count() == 0:
             return None
 
-        box_list = result.get_box_list(False)
-        landmark_list = result.get_box_landmark_list(True)
+        box_list = result.get_boxes()
+        landmark_list = result.get_landmark_from_box()
         return [(box, np.asarray(landmark).flatten()) for box, landmark in zip(box_list, landmark_list)]
 
     def extract_dataset(self, dataset_path : str or list, exit_event : Event = Event()) -> dict:
