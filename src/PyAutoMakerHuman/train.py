@@ -1,9 +1,6 @@
 import os
 import pickle
-import cv2
-import imutils
 import numpy as np
-from imutils import paths
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
 
