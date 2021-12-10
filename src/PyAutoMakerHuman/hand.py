@@ -138,20 +138,22 @@ class HandUtil:
     def __del__(self):
         self.detector.close()
 
+    def log(self, log_message : str):
+        print(log_message)
+
     def detect(self, img : np.ndarray) -> HandResult:
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         return HandResult(img.shape, result)
 
-    def extract(self, img):
+    def extract(self, img : np.ndarray) -> list:
         result = self.detect(img)
         if result.count() == 0:
             return None
 
-        box_list = result.get_boxes()
-        landmark_list = result.get_landmark_from_box()
-        return [(box, np.asarray(landmark).flatten()) for box, landmark in zip(box_list, landmark_list)]
+        landmarks = result.get_landmark_from_box()
+        return [(label, np.asarray(landmark).flatten()) for label, landmark in landmarks]
 
-    def extract_dataset(self, dataset_path : str or list, exit_event : Event = Event()) -> dict:
+    def extract_dataset(self, dataset_path : str or list) -> dict:
         file_list = []
         
         def get_file_list() -> list:
@@ -163,10 +165,6 @@ class HandUtil:
         name_list = []
         data_list = []
         for idx, file in enumerate(file_list):
-            if exit_event.is_set():
-                self.log("[INFO] exit event set")
-                return dict()
-
             self.log(f"[INFO] process... {idx + 1}/{len(file_list)}")
             name = file.split(os.path.sep)[-2]
 
@@ -177,11 +175,17 @@ class HandUtil:
                 continue
 
             name_list.append(name)
-            data_list.append(np.asarray(data[0][1]).flatten()) #맨 처음 등록된 1개의 정보만, 박스 정보는 제외
+            data_list.append(np.asarray(data[0][1]).flatten()) #맨 처음 등록된 1개의 정보만, 라벨 정보는 제외
 
         self.log("done")
         return {"name" : name_list, "data" : data_list}
 
 
 if __name__ == "__main__":
-    pass
+    cur_dir = os.path.dirname(__file__)
+    dataset_dir = os.path.join(cur_dir, "..", "..", "dataset")
+    dataset_dir = os.path.abspath(dataset_dir)
+
+    hand = HandUtil()
+    dataset = hand.extract_dataset(dataset_dir)
+    print(dataset)
