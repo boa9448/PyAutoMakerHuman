@@ -7,23 +7,29 @@ from sklearn.svm import SVC
 
 class SvmUtil:
     def __init__(self):
-        pass
+        self.logger = print
 
     def __del__(self):
         pass
 
-    def train_svm(self, data, label):
+    def set_logger(self, logger) -> None:
+        self.logger = logger
+
+    def log(self, log_message : str) -> None:
+        self.logger(log_message)
+
+    def train_svm(self, data : list, label : list) -> SVC:
         self.le = LabelEncoder()
         labels = self.le.fit_transform(label)
         
-        print("[INFO] training model...")
+        self.logger("[INFO] training model...")
         self.model = SVC(C=1.0, kernel="linear", probability=True)
         self.model.fit(data, labels)
-        print("[INFO] train end")
+        self.logger("[INFO] train end")
 
         return self.model
 
-    def save_svm(self, save_path):
+    def save_svm(self, save_path : str) -> None:
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
 
@@ -35,11 +41,11 @@ class SvmUtil:
             f.write(pickle.dumps(self.le))
             f.close()
 
-    def load_svm(self, load_path):
+    def load_svm(self, load_path : str) -> None:
         self.model = pickle.loads(open(os.path.join(load_path, "svm_model"), "rb").read())
         self.le = pickle.loads(open(os.path.join(load_path, "le"), "rb").read())
 
-    def predict(self, data):
+    def predict(self, data) -> tuple:
         result = self.model.predict_proba(data)[0]
         idx = np.argmax(result)
 

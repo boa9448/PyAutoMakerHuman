@@ -129,7 +129,7 @@ class HandUtil:
     def __init__(self, static_image_mode = True, max_num_hands = 2,
                 min_detection_confidence = 0.5):
 
-        self.logger = None
+        self.logger = print
         self.detector = mp_hands.Hands(static_image_mode = static_image_mode,
                                         max_num_hands = max_num_hands,
                                         min_detection_confidence = min_detection_confidence)
@@ -137,8 +137,11 @@ class HandUtil:
     def __del__(self):
         self.detector.close()
 
+    def set_logger(self, logger) -> None:
+        self.logger = logger
+
     def log(self, log_message : str):
-        print(log_message)
+        self.logger(log_message)
 
     def detect(self, img : np.ndarray) -> HandResult:
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
