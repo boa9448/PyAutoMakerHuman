@@ -17,3 +17,7 @@ class HandTrainer:
 
     def log(self, log_message: str) -> None:
         self.logger(log_message)
+
+
+    def train(self, dataset_path : str) -> None:
+        pass
