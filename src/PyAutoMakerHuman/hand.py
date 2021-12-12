@@ -1,5 +1,5 @@
 import os
-import fnmatch
+import math
 from glob import glob
 
 import imutils
@@ -10,6 +10,11 @@ from image import cv2_imread
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
+HAND_DISTANCE_NONE = 0
+HAND_DISTANCE_UP = 1
+HAND_DISTANCE_DOWN = 2
+HAND_DISTANCE_LEFT = 3
+HAND_DISTANCE_RIGHT = 4
 
 class HandResult:
     def __init__(self, img_shape : tuple, result):
@@ -94,6 +99,7 @@ class HandResult:
 
     def get_boxes(self) -> list:
         """발견된 손의 박스 좌표를 리턴하는 함수
+        x, y, w, h
         """
         box_list = []
 
@@ -123,6 +129,45 @@ class HandResult:
                                                      for x, y, z in landmark]))
 
         return new_landmarks
+
+    def get_degree(self) -> list:
+        def get_degree_(start, end):
+            start_x, start_y = start
+            end_x, end_y = end
+            dx = end_x - start_x
+            dy = end_y - start_y
+            degree = math.atan2(dy, dx) * (180.0 / math.pi) + 90
+            degree = degree + 360 if degree < 0 else degree
+
+            return int(degree)
+
+        landmarks = self.get_landmark_from_box()
+        if not landmarks:
+            return list()
+            #return HAND_DISTANCE_NONE
+
+        #손목, 손바닥과 중지가 만나는 지점
+        #추후에 정확한 이름으로 수정
+        degrees = [get_degree_(landmark[0][:2], landmark[9][:2]) for _, landmark in landmarks]
+        return degrees
+
+    def get_direction(self) -> list:
+        directions = []
+        degrees = self.get_degree()
+
+        for deg in degrees:
+            if deg > 315 and deg <= 360 or deg > 0 and deg <= 45:
+                directions.append(HAND_DISTANCE_UP)
+            elif deg > 45 and deg <= 135:
+                directions.append(HAND_DISTANCE_RIGHT)
+            elif deg > 135 and deg <= 225:
+                directions.append(HAND_DISTANCE_DOWN)
+            else:
+                directions.append(HAND_DISTANCE_LEFT)
+
+        return directions
+        
+
 
 
 class HandUtil:
@@ -192,3 +237,41 @@ if __name__ == "__main__":
     hand = HandUtil()
     dataset = hand.extract_dataset(dataset_dir)
     print(dataset)
+
+    cap = cv2.VideoCapture(0)
+    while cap.isOpened():
+        try:
+            success, frame = cap.read()
+            if not success:
+                continue
+            
+            frame = cv2.flip(frame, 1)
+            result = hand.detect(frame)
+            degree = result.get_degree()
+            directions = result.get_direction()
+            boxes = result.get_boxes()
+            landmarks = result.get_landmark_from_box()
+            for (_, box), (_, landmark) in zip(boxes, landmarks):
+                start, end = landmark[0][:2], landmark[9][:2]
+                x, y, w, h = box
+                x = 0 if x < 0 else x
+                y = 0 if y < 0 else y
+
+                start_x, start_y = int(start[0] * w), int(start[1] * h)
+                end_x, end_y = int(end[0] *w), int(end[1] * h)
+                frame_box = frame[y : y + h, x : x + w]
+
+                start = (start_x, start_y)
+                end = (end_x, end_y)
+                cv2.line(frame_box, start, end, (0, 255, 0), 3)
+                cv2.imshow("box", frame_box)
+                cv2.waitKey(1)
+            cv2.putText(frame, f"degree : {degree} directions : {directions}", (0, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 3)
+            cv2.imshow("view", frame)
+            cv2.waitKey(1)
+
+        except KeyboardInterrupt as e:
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
