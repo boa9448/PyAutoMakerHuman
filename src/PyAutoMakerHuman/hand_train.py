@@ -43,11 +43,36 @@ class HandTrainer:
             return list()
 
         results = []
-        for label, box, data in datas:
+        for hand_label, box, data in datas:
             name, proba = self.trainer.predict([data])
-            results.append((box, name, proba))
+            results.append((hand_label, box, name, proba))
 
         return results
+
+    def test_camera(self, idx : int = 0) -> None:
+        cap = cv2.VideoCapture(idx)
+        while cap.isOpened():
+            try:
+                success, frame = cap.read()
+                if not success:
+                    continue
+
+                frame = cv2.flip(frame, 1)
+                results = util.predict(frame)
+                for hand_label, box, name, proba in results:
+                    x, y, w, h = box
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
+                    cv2.putText(frame, f"name : {name}, proba : {proba:.2f}", (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+
+                cv2.imshow("test_camera", frame)
+                if cv2.waitKey(1) & 0xff == ord('q'):
+                    break
+                
+            except KeyboardInterrupt as e:
+                break
+
+        cv2.destroyAllWindows()
+        cap.release()
 
 if __name__ == "__main__":
     cur_dir = os.path.dirname(__file__)
@@ -57,24 +82,4 @@ if __name__ == "__main__":
     util = HandTrainer()
     util.train(dataset_dir)
 
-    cap = cv2.VideoCapture(0)
-    while cap.isOpened():
-        try:
-            success, frame = cap.read()
-            if not success:
-                continue
-
-            frame = cv2.flip(frame, 1)
-            results = util.predict(frame)
-            for box, name, proba in results:
-                x, y, w, h = box
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
-                cv2.putText(frame, f"name : {name}, proba : {proba:.2f}", (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-
-            cv2.imshow("view", frame)
-            cv2.waitKey(1)
-        except KeyboardInterrupt as e:
-            break
-
-    cv2.destroyAllWindows()
-    cap.release()
+    util.test_camera()
