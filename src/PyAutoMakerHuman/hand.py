@@ -8,6 +8,7 @@ import cv2
 import mediapipe as mp
 from image import cv2_imread
 mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
 HAND_DISTANCE_NONE = 0
@@ -22,7 +23,7 @@ class HandResult:
         self.width : int = img_shape[1]
         self.channel : int = img_shape[2]
 
-        self.result = result
+        self.results = result
 
     def __del__(self):
         pass
@@ -30,30 +31,30 @@ class HandResult:
     def count(self) -> int:
         """발견된 손의 갯수를 리턴하는 함수
         """
-        if self.result.multi_handedness is None:
+        if self.results.multi_handedness is None:
             return 0
 
-        return len(self.result.multi_handedness)
+        return len(self.results.multi_handedness)
 
     def scores(self) -> list:
         """발견된 손의 스코어를 리턴하는 함수
         """
-        if self.result.multi_handedness is None:
+        if self.results.multi_handedness is None:
             return list()
 
         hand_score = [(info.classification[0].label, info.classification[0].score)
-                        for info in self.result.multi_handedness]
+                        for info in self.results.multi_handedness]
         return hand_score
 
     def labels(self) -> list:
         """발견된 손의 라벨을 리턴하는 함수
         """
 
-        if self.result.multi_handedness is None:
+        if self.results.multi_handedness is None:
             return list()
 
         hand_labels = [info.classification[0].label
-                        for info in self.result.multi_handedness]
+                        for info in self.results.multi_handedness]
 
         return hand_labels
 
@@ -65,7 +66,7 @@ class HandResult:
 
 
         landmarks = []
-        for label, hand_landmark in zip(self.labels(), self.result.multi_hand_landmarks):
+        for label, hand_landmark in zip(self.labels(), self.results.multi_hand_landmarks):
             norm_landmarks = list(hand_landmark.landmark)
 
             landmarks.append((label, [[landmark.x, landmark.y, landmark.z]
@@ -89,7 +90,7 @@ class HandResult:
 
 
         landmarks = []
-        for label, hand_landmark in zip(self.labels(), self.result.multi_hand_landmarks):
+        for label, hand_landmark in zip(self.labels(), self.results.multi_hand_landmarks):
             norm_landmarks = list(hand_landmark.landmark)
 
             landmarks.append((label, [[int(landmark.x * self.width), int(landmark.y * self.height), landmark.z]
@@ -166,6 +167,20 @@ class HandResult:
                 directions.append(HAND_DISTANCE_LEFT)
 
         return directions
+
+    def test_landmark_draw(self, img : np.ndarray) -> np.ndarray:
+        if self.results.multi_hand_landmarks:
+            img = img.copy()
+            
+            for hand_landmarks in self.results.multi_hand_landmarks:
+                mp_drawing.draw_landmarks(
+                    img,
+                    hand_landmarks,
+                    mp_hands.HAND_CONNECTIONS,
+                    mp_drawing_styles.get_default_hand_landmarks_style(),
+                    mp_drawing_styles.get_default_hand_connections_style())
+
+        return img
         
 
 
