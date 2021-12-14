@@ -243,6 +243,14 @@ class HandUtil:
         self.log("done")
         return {"name" : name_list, "data" : data_list}
 
+    def extract(self, img : np.ndarray) -> list:
+        result = self.detect(img)
+        if result.count() == 0:
+            return None
+
+        landmarks = result.get_landmark_from_box()
+        return [(label, box, np.asarray(landmark).flatten()) for (_, box), (label, landmark) in zip(boxes, landmarks)]
+
 
 if __name__ == "__main__":
     cur_dir = os.path.dirname(__file__)
