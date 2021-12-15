@@ -6,6 +6,7 @@ import imutils
 import numpy as np
 import cv2
 import mediapipe as mp
+from numpy.core.fromnumeric import resize
 from image import cv2_imread
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -64,7 +65,6 @@ class HandResult:
         if self.count() == 0:
             return list()
 
-
         landmarks = []
         for label, hand_landmark in zip(self.labels(), self.results.multi_hand_landmarks):
             norm_landmarks = list(hand_landmark.landmark)
@@ -121,15 +121,15 @@ class HandResult:
         boxes = self.get_boxes()
         landmarks= self.get_abs_landmarks()
 
-        new_landmarks = []
+        label_box_landmarks = []
         for box, landmark in zip(boxes, landmarks):
             box_label, box = box
             start_x, start_y, box_width, box_height = box
             landmark_label, landmark = landmark
-            new_landmarks.append((landmark_label, [((x - start_x) / box_width, (y - start_y) / box_height, z)
+            label_box_landmarks.append((landmark_label, box, [((x - start_x) / box_width, (y - start_y) / box_height, z)
                                                      for x, y, z in landmark]))
 
-        return new_landmarks
+        return label_box_landmarks
 
     def get_degree(self) -> list:
         def get_degree_(start, end):
@@ -149,7 +149,7 @@ class HandResult:
 
         #손목, 손바닥과 중지가 만나는 지점
         #추후에 정확한 이름으로 수정
-        degrees = [get_degree_(landmark[0][:2], landmark[9][:2]) for _, landmark in landmarks]
+        degrees = [get_degree_(landmark[0][:2], landmark[9][:2]) for _, _, landmark in landmarks]
         return degrees
 
     def get_direction(self) -> list:
@@ -181,8 +181,6 @@ class HandResult:
                     mp_drawing_styles.get_default_hand_connections_style())
 
         return img
-        
-
 
 
 class HandUtil:
@@ -214,7 +212,7 @@ class HandUtil:
 
         boxes = result.get_boxes()
         landmarks = result.get_landmark_from_box()
-        return [(label, box, np.asarray(landmark).flatten()) for (_, box), (label, landmark) in zip(boxes, landmarks)]
+        return [(label, box, np.asarray(landmark).flatten()) for (_, box), (label, box, landmark) in zip(boxes, landmarks)]
 
     def extract_dataset(self, dataset_path : str or list) -> dict:
         file_list = []
@@ -249,7 +247,7 @@ class HandUtil:
             return None
 
         landmarks = result.get_landmark_from_box()
-        return [(label, box, np.asarray(landmark).flatten()) for (_, box), (label, landmark) in zip(boxes, landmarks)]
+        return [(label, box, np.asarray(landmark).flatten()) for label, box, landmark in landmarks]
 
 
 if __name__ == "__main__":
@@ -258,10 +256,8 @@ if __name__ == "__main__":
     dataset_dir = os.path.abspath(dataset_dir)
 
     hand = HandUtil()
-    dataset = hand.extract_dataset(dataset_dir)
-    print(dataset)
-
     cap = cv2.VideoCapture(0)
+
     while cap.isOpened():
         try:
             success, frame = cap.read()
@@ -270,26 +266,6 @@ if __name__ == "__main__":
             
             frame = cv2.flip(frame, 1)
             result = hand.detect(frame)
-            degree = result.get_degree()
-            directions = result.get_direction()
-            boxes = result.get_boxes()
-            landmarks = result.get_landmark_from_box()
-            for (_, box), (_, landmark) in zip(boxes, landmarks):
-                start, end = landmark[0][:2], landmark[9][:2]
-                x, y, w, h = box
-                x = 0 if x < 0 else x
-                y = 0 if y < 0 else y
-
-                start_x, start_y = int(start[0] * w), int(start[1] * h)
-                end_x, end_y = int(end[0] *w), int(end[1] * h)
-                frame_box = frame[y : y + h, x : x + w]
-
-                start = (start_x, start_y)
-                end = (end_x, end_y)
-                cv2.line(frame_box, start, end, (0, 255, 0), 3)
-                cv2.imshow("box", frame_box)
-                cv2.waitKey(1)
-            cv2.putText(frame, f"degree : {degree} directions : {directions}", (0, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 3)
             cv2.imshow("view", frame)
             cv2.waitKey(1)
 
