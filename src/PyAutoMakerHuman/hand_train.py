@@ -166,14 +166,26 @@ class HandTrainer:
     def test_char_predict(self, camera_idx : int = 0) -> None:
         cap = self.camera_predict(camera_idx)
         char_list = []
+        def add_char(cur_time, box, name):
+            if char_list:
+                last_cur_time, last_box, last_name = char_list[-1]
+                 
+
+            char_list.append((cur_time, box, name))
+
         while True:
             try:
                 frame, results = next(cap)
+                cur_time = time.time()
                 
+                frame = image.cv2_putText(frame, f"str : {char_list}", (0, 20), 1, (0, 255, 0), 2)
                 for hand_label, box, name, proba in results:
                         x, y, w, h = box
+                        #center_x = x + int(w / 2)
+                        #center_y = y + int(h / 2)
+                        add_char(cur_time, box, name)
+
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
-                        #cv2.putText(frame, f"name : {name}, proba : {proba:.2f}", (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                         frame = image.cv2_putText(frame, f"name : {name}, proba : {proba:.2f}", (x, y - 20), 1, (0, 0, 255), 2)
 
                 cv2.imshow("test_char_predict", frame)
