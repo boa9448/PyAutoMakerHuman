@@ -22,7 +22,7 @@ def cv2_imwrite(filename : str, img : np.ndarray, params : list = None):
 
 def cv2_putText(img, text, org, fontScale, color, thickness=..., lineType=..., bottomLeftOrigin=...):
     fontpath = "fonts/gulim.ttc"
-    font = ImageFont.truetype(fontpath, 30)
+    font = ImageFont.truetype(fontpath, int(10 * fontScale))
     img_pil = Image.fromarray(img)
     draw = ImageDraw.Draw(img_pil)
     draw.text(org,  text, font=font, fill=color, stroke_width=thickness)

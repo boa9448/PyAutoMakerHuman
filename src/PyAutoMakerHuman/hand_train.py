@@ -166,31 +166,93 @@ class HandTrainer:
     def test_char_predict(self, camera_idx : int = 0) -> None:
         cap = self.camera_predict(camera_idx)
         char_list = []
+        input_delay_time = 1 #다른 단어 입력
+        combination_delay = 2 #조합 임계 시간
+        double_char_dict = {"ㄱ" : "ㄲ", "ㄷ" : "ㄸ", "ㅂ" : "ㅃ", "ㅅ" : "ㅆ", "ㅈ" : "ㅉ"}
+        combination_char_dict = {hash("ㅗㅏ") : "ㅘ", hash("ㅗㅐ") : "ㅙ", hash("ㅜㅓ") : "ㅝ", hash("ㅜㅔ") : "ㅞ"
+                                , hash("ㄱㅅ") : "ㄳ", hash("ㄴㅈ") : "ㄵ", hash("ㄴㅎ") : "ㄶ", hash("ㄹㄱ") : "ㄺ"
+                                , hash("ㄹㅁ") : "ㄻ", hash("ㄹㅂ") : "ㄼ", hash("ㄹㅅ") : "ㄽ", hash("ㄹㅌ") : "ㄾ"
+                                , hash("ㄹㅍ") : "ㄿ", hash("ㄹㅎ") : "ㅀ", hash("ㅂㅅ") : "ㅄ"}
+
         def add_char(cur_time, box, name):
             if char_list:
                 last_cur_time, last_box, last_name = char_list[-1]
-                 
 
-            char_list.append((cur_time, box, name))
+                diff_time = cur_time - last_cur_time
+                if name == last_name:
+                    #현재 단어와 이전 단어가 같은 경우
+                    if diff_time < combination_delay:
+                        #조합 임계시간을 넘지 않았을 경우
+                        x, y, w, h = box
+                        last_x, last_y, last_w, last_h = last_box
+                        move_range_x, move_range_y = int(w / 2), int(h / 2)
+                        move_range = move_range_x if move_range_x < move_range_y else move_range_y
+
+                        center_x, center_y = x + int(w / 2), y + int(h / 2)
+                        last_center_x, last_center_y = last_x + int(last_w / 2), last_y + int(last_h / 2)
+                        diff_x = abs(center_x - last_center_x)
+                        diff_y = abs(center_y - last_center_y)
+
+                        if diff_x > move_range or diff_y > move_range:
+                            #중심점이 이동 임계를 넘었다면 추가
+                            char_list[-1] = (cur_time, box, double_char_dict.get(name, name))
+
+                    else:
+                        #조합 임계시간을 초과했을 경우엔 등록 작업 시작
+                        if diff_time > input_delay_time:
+                            #입력 시간차이가 입력 임계시간을 초과했을 때만 등록
+                            char_list.append((cur_time, box, name))
+
+                else:
+                    #현재 단어와 이전 단어가 다른 경우
+                    combination_char = combination_char_dict.get(hash(last_name + name))
+                    if combination_char and diff_time < combination_delay:
+                        #조합 가능한 글자가 있는 경우와 조합 임계시간을 넘지 않았을 경우엔 조합
+                        char_list[-1] = (cur_time, box, combination_char)
+
+                    else:
+                        #조합 가능한 글자가 없거나 조합 임계시간을 초과했을 경우는 등록 작업 시작
+                        if diff_time > input_delay_time:
+                            char_list.append((cur_time, box, name))
+                        
+            else:
+                char_list.append((cur_time, box, name))
+
+        def get_str() -> str:
+            name_list = [name for t, box, name in char_list]
+            return "".join(name_list)
+
+        def remove_char(target_list, count : int or None = None) -> list:
+            if count is None:
+                target_list.clear()
+            else:
+                target_list = target_list[:-count]
+
+            return target_list
 
         while True:
             try:
-                frame, results = next(cap)
                 cur_time = time.time()
+                frame, results = next(cap)
                 
-                frame = image.cv2_putText(frame, f"str : {char_list}", (0, 20), 1, (0, 255, 0), 2)
+                frame = image.cv2_putText(frame, f"str : {get_str()}", (0, 20), 3, (0, 255, 0), 1)
                 for hand_label, box, name, proba in results:
                         x, y, w, h = box
-                        #center_x = x + int(w / 2)
-                        #center_y = y + int(h / 2)
                         add_char(cur_time, box, name)
 
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
-                        frame = image.cv2_putText(frame, f"name : {name}, proba : {proba:.2f}", (x, y - 20), 1, (0, 0, 255), 2)
+                        frame = image.cv2_putText(frame, f"name : {name}, proba : {proba:.2f}", (x, y - 20), 3, (0, 0, 255), 1)
+
+                #print(f"time : {time.time() - cur_time}")
 
                 cv2.imshow("test_char_predict", frame)
-                if cv2.waitKey(1) & 0xff == ord('q'):
+                key_code =cv2.waitKey(1) & 0xff
+                if key_code == ord('q'):
                     break
+                elif key_code == ord('c'):
+                    remove_char(char_list)
+                elif key_code == ord('x'):
+                    char_list = remove_char(char_list, 1)
 
             except KeyboardInterrupt as e:
                 break
@@ -204,7 +266,9 @@ if __name__ == "__main__":
     dataset_dir = os.path.abspath(dataset_dir)
 
     util = HandTrainer()
-    util.train(dataset_dir)
+    #util.train(dataset_dir)
+    #util.save("models")
+    util.load("models")
 
     util.test_char_predict()
     #util.camera_predict_capture()
