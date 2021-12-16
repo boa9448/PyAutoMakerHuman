@@ -266,9 +266,9 @@ if __name__ == "__main__":
     dataset_dir = os.path.abspath(dataset_dir)
 
     util = HandTrainer()
-    #util.train(dataset_dir)
-    #util.save("models")
-    util.load("models")
+    util.train(dataset_dir)
+    util.save("models_new")
+    util.load("models_new")
 
     util.test_char_predict()
     #util.camera_predict_capture()
