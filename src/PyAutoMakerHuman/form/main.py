@@ -1,16 +1,20 @@
 import sys
 
+from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QMainWindow, QApplication, QFrame, QStackedLayout
 from qt_material import apply_stylesheet
 
 from main_form import Ui_MainWindow
 from game import GameWindow
+from camera import CameraDialog
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
+
+        self.camera_dialog = CameraDialog()
         self.game_frame = GameWindow(self)
 
         self.stack_layout = QStackedLayout()
@@ -28,12 +32,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lang_mode_button.clicked.connect(self.lang_mode_button_handler)
         self.mirror_mode_button.clicked.connect(self.mirror_mode_button_handler)
 
+    @Slot()
     def study_mode_button_handler(self) -> None:
         self.stack_layout.setCurrentIndex(0)
 
+    @Slot()
     def lang_mode_button_handler(self) -> None:
         self.stack_layout.setCurrentIndex(1)
 
+    @Slot()
     def mirror_mode_button_handler(self) -> None:
         pass
 

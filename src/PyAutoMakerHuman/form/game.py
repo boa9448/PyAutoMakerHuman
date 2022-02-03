@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, Slot
 from PySide6.QtWidgets import QFrame
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent
 
@@ -38,6 +38,7 @@ class GameWindow(QFrame, Ui_Frame):
             img_label.setPixmap(pixmap)
             img_label.setScaledContents(True)
 
+    @Slot(int)
     def char_combo_change_handler(self, idx : int) -> None:
         if self.sender() == self.char_child_combo:
             target_list = self.CHAR_CHILD_COMBO_ITEMS
