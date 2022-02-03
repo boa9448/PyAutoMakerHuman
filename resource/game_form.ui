@@ -104,10 +104,36 @@
         <enum>QLayout::SetDefaultConstraint</enum>
        </property>
        <item>
-        <widget class="QComboBox" name="char_child_combo"/>
+        <widget class="QComboBox" name="char_child_combo">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+        </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="char_parent_combo"/>
+        <widget class="QComboBox" name="char_parent_combo">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -143,7 +169,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>351</width>
+       <width>289</width>
        <height>20</height>
       </size>
      </property>

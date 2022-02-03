@@ -70,11 +70,20 @@ class Ui_Frame(object):
         self.horizontalLayout_2.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.char_child_combo = QComboBox(Frame)
         self.char_child_combo.setObjectName(u"char_child_combo")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.char_child_combo.sizePolicy().hasHeightForWidth())
+        self.char_child_combo.setSizePolicy(sizePolicy2)
+        self.char_child_combo.setMinimumSize(QSize(100, 0))
 
         self.horizontalLayout_2.addWidget(self.char_child_combo)
 
         self.char_parent_combo = QComboBox(Frame)
         self.char_parent_combo.setObjectName(u"char_parent_combo")
+        sizePolicy2.setHeightForWidth(self.char_parent_combo.sizePolicy().hasHeightForWidth())
+        self.char_parent_combo.setSizePolicy(sizePolicy2)
+        self.char_parent_combo.setMinimumSize(QSize(100, 0))
 
         self.horizontalLayout_2.addWidget(self.char_parent_combo)
 
@@ -94,7 +103,7 @@ class Ui_Frame(object):
 
         self.gridLayout_2.addItem(self.horizontalSpacer_3, 2, 0, 1, 1)
 
-        self.horizontalSpacer_2 = QSpacerItem(351, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.horizontalSpacer_2 = QSpacerItem(289, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.gridLayout_2.addItem(self.horizontalSpacer_2, 3, 0, 1, 1)
 
@@ -106,11 +115,11 @@ class Ui_Frame(object):
 
         self.direction_label = QLabel(Frame)
         self.direction_label.setObjectName(u"direction_label")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.direction_label.sizePolicy().hasHeightForWidth())
-        self.direction_label.setSizePolicy(sizePolicy2)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.direction_label.sizePolicy().hasHeightForWidth())
+        self.direction_label.setSizePolicy(sizePolicy3)
         self.direction_label.setMinimumSize(QSize(150, 25))
         self.direction_label.setAlignment(Qt.AlignCenter)
 
@@ -118,8 +127,8 @@ class Ui_Frame(object):
 
         self.shape_label = QLabel(Frame)
         self.shape_label.setObjectName(u"shape_label")
-        sizePolicy2.setHeightForWidth(self.shape_label.sizePolicy().hasHeightForWidth())
-        self.shape_label.setSizePolicy(sizePolicy2)
+        sizePolicy3.setHeightForWidth(self.shape_label.sizePolicy().hasHeightForWidth())
+        self.shape_label.setSizePolicy(sizePolicy3)
         self.shape_label.setMinimumSize(QSize(150, 25))
         self.shape_label.setAlignment(Qt.AlignCenter)
 
