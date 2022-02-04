@@ -4,12 +4,13 @@ from threading import Thread, Event, Lock
 import cv2
 import numpy as np
 from PySide6.QtCore import QSize, Slot, QObject, Signal
-from PySide6.QtWidgets import QFrame
+from PySide6.QtWidgets import QFrame, QComboBox
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
 from .game_form import Ui_Frame
 from .utils import numpy_to_pixmap
-from .. import hand
+from .. import hand_lang
+from ..image import cv2_putText
 
 DRAW_SIGNAL_FAIL = 0
 DRAW_SIGNAL_FRONT = 1
@@ -22,7 +23,7 @@ class DrawSignal(QObject):
     def send_front(self, pixmap : QPixmap):
         self.sig.emit(DRAW_SIGNAL_FRONT, pixmap)
 
-class WorkThread(Thread):
+class GameThread(Thread):
     def __init__(self, front_camera : cv2.VideoCapture, side_camera : cv2.VideoCapture
                 , draw_signal : DrawSignal, mirror_mode : bool = True):
         super().__init__()
@@ -34,7 +35,7 @@ class WorkThread(Thread):
 
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
-        hand_detector = hand.HandUtil(False)
+        lang = hand_lang.HandLang()
         while not self.exit_event.is_set():
             success, frame = self.front_camera.read()
             if not success:
@@ -43,9 +44,12 @@ class WorkThread(Thread):
             if self.mirror_mode:
                 frame = cv2.flip(frame, 1)
 
-            result = hand_detector.detect(frame)
-            if result.count():
-                frame = result.test_landmark_draw(frame)
+            results = lang.predict(frame)
+            if results:
+                for hand_label, box, name, proba in results:
+                    x, y, w, h = box
+                    frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                    frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 0), 2)
 
             pixmap = numpy_to_pixmap(frame)
             self.draw_signal.send_front(pixmap)
@@ -67,7 +71,7 @@ class GameWindow(QFrame, Ui_Frame):
     CHAR_CHILD_COMBO_ITEMS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅍ", "ㅎ"
                                 , "ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ", "ㄳ", "ㄵ", "ㄶ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅄ"]
     CHAR_PARENT_COMBO_ITEMS = ["ㅏ", "ㅐ", "ㅑ" , "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ"
-                                , "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ," "ㅡ", "ㅢ", "ㅣ"]
+                                , "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"]
 
     def __init__(self, parent = None):
         super(GameWindow, self).__init__(parent)
@@ -105,7 +109,7 @@ class GameWindow(QFrame, Ui_Frame):
     def init_data(self) -> None:
         self.draw_signal = DrawSignal()
         self.draw_signal.sig.connect(self.draw_signal_handler)
-        self.work_thraed = WorkThread(*self.cameras , self.draw_signal, self.mirror_mode)
+        self.work_thraed = GameThread(*self.cameras , self.draw_signal, self.mirror_mode)
         self.work_thraed.start()
 
     def dispose_data(self) -> None:
@@ -129,8 +133,15 @@ class GameWindow(QFrame, Ui_Frame):
             target_list = self.CHAR_CHILD_COMBO_ITEMS
         else:
             target_list = self.CHAR_PARENT_COMBO_ITEMS
-            
-        print(target_list[idx])
+
+        char = target_list[idx]
+        label_size = self.study_img_label.size().toTuple()
+        img = np.ndarray((*label_size, 3), np.uint8)
+        img.fill(255)
+        img = cv2_putText(img, char, (0, 0), 20, (0, 0, 0), 4, center=True)
+
+        pixmap = numpy_to_pixmap(img)
+        self.study_img_label.setPixmap(pixmap)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         width = self.study_img_label.width()

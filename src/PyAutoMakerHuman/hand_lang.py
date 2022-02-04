@@ -81,7 +81,10 @@ class HandLang:
         else:
             self.char_list = self.char_list[:-count]
 
-    def predict(self, img : np.ndarray) -> str:
+    def predict(self, img : np.ndarray) -> list:
+        return self.classifier.predict(img)
+
+    def predict_str(self, img : np.ndarray) -> str:
         cur_time = time.time()
         results = self.classifier.predict(img)
         for hand_label, box, name, proba in results:

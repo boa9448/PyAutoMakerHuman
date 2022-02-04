@@ -11,12 +11,12 @@ while cap.isOpened():
         if not success:
             continue
 
-        result = lang.predict(frame)
+        result = lang.predict_str(frame)
         print(result)
 
         cv2.imshow("view", frame)
-        if cv2.waitKey(1) & 0xff == ord('q'):
-            break
+        if cv2.waitKey(1) & 0xff == ord('c'):
+            lang.remove_char()
 
     except KeyboardInterrupt:
         break
