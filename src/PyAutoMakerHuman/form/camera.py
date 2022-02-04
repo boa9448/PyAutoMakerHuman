@@ -7,8 +7,8 @@ from PySide6.QtCore import QSize, Slot, Signal, QObject
 from PySide6.QtWidgets import QDialog, QMessageBox
 from PySide6.QtGui import QPixmap, QColor, QCloseEvent
 
-from camera_form import Ui_Dialog
-from utils import numpy_to_pixmap
+from .camera_form import Ui_Dialog
+from .utils import numpy_to_pixmap
 
 CAMERA_SIGNAL_FAIL = 0
 CAMERA_SIGNAL_FRONT = 1

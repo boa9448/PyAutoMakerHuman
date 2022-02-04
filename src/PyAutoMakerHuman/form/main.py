@@ -6,9 +6,9 @@ from PySide6.QtWidgets import QMainWindow, QApplication, QFrame, QStackedLayout
 from PySide6.QtGui import QPixmap
 from qt_material import apply_stylesheet
 
-from main_form import Ui_MainWindow
-from game import GameWindow
-from camera import CameraDialog
+from .main_form import Ui_MainWindow
+from .game import GameWindow
+from .camera import CameraDialog
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -56,9 +56,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         text = "거울모드 {}".format("On" if self.game_frame.get_mirror_mode() else "Off")
         self.mirror_mode_button.setText(text)
 
-if __name__ == "__main__":
+def start_main():
     app = QApplication(sys.argv)
     apply_stylesheet(app, theme='dark_teal.xml')
     window = MainWindow()
     window.show()
     app.exec()
+
+if __name__ == "__main__":
+    start_main()

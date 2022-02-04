@@ -7,11 +7,9 @@ from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
-from game_form import Ui_Frame
-from camera import CameraDialog
-
-
-from utils import numpy_to_pixmap
+from .game_form import Ui_Frame
+from .utils import numpy_to_pixmap
+from .. import hand
 
 DRAW_SIGNAL_FAIL = 0
 DRAW_SIGNAL_FRONT = 1
@@ -36,6 +34,7 @@ class WorkThread(Thread):
 
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
+        hand_detector = hand.HandUtil(False)
         while not self.exit_event.is_set():
             success, frame = self.front_camera.read()
             if not success:
@@ -43,6 +42,10 @@ class WorkThread(Thread):
 
             if self.mirror_mode:
                 frame = cv2.flip(frame, 1)
+
+            result = hand_detector.detect(frame)
+            if result.count():
+                frame = result.test_landmark_draw(frame)
 
             pixmap = numpy_to_pixmap(frame)
             self.draw_signal.send_front(pixmap)
@@ -106,7 +109,6 @@ class GameWindow(QFrame, Ui_Frame):
         self.work_thraed.start()
 
     def dispose_data(self) -> None:
-        self.draw_signal.sig.disconnect()
         self.work_thraed.join()
 
     def showEvent(self, event: QShowEvent) -> None:
