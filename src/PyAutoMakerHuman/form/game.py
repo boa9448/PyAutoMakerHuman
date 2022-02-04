@@ -1,8 +1,63 @@
-from PySide6.QtCore import QSize, Slot
+import logging
+from threading import Thread, Event, Lock
+
+from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame
-from PySide6.QtGui import QPixmap, QColor, QResizeEvent
+from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
 from game_form import Ui_Frame
+from camera import CameraDialog
+
+
+from utils import numpy_to_pixmap
+
+DRAW_SIGNAL_FAIL = 0
+DRAW_SIGNAL_FRONT = 1
+
+logging.basicConfig(level=logging.DEBUG)
+
+class DrawSignal(QObject):
+    sig = Signal(int, QPixmap)
+
+    def send_front(self, pixmap : QPixmap):
+        self.sig.emit(DRAW_SIGNAL_FRONT, pixmap)
+
+class WorkThread(Thread):
+    def __init__(self, camera_dialog : CameraDialog, draw_signal : DrawSignal, mirror_mode : bool = True):
+        super().__init__()
+        self.mirror_mode = mirror_mode
+        self.camera_dialog = camera_dialog
+        self.draw_signal = draw_signal
+        self.change_lock = Lock()
+        self.exit_event = Event()
+
+    def run(self) -> None:
+        logging.debug("[+] 게임 스레드 시작")
+        while not self.exit_event.is_set():
+            success, frame = self.camera_dialog.front()
+            if not success:
+                continue
+
+            if self.change_lock.acquire(False):
+                self.change_lock.release()
+
+            pixmap = numpy_to_pixmap(frame)
+            self.draw_signal.send_front(pixmap)
+        
+        logging.debug("[+] 게임 스레드 종료")
+
+    def set_mirror_mode(self, mirror_mode : bool) -> None:
+        if self.change_lock.acquire(True):
+            self.mirror_mode = mirror_mode
+            self.change_lock.release()
+
+    def exit(self) -> None:
+        self.exit_event.set()
+
+    def join(self, timeout = None) -> None:
+        self.exit()
+        return super().join(timeout)
+
 
 class GameWindow(QFrame, Ui_Frame):
     CHAR_CHILD_COMBO_ITEMS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅍ", "ㅎ"
@@ -14,7 +69,12 @@ class GameWindow(QFrame, Ui_Frame):
         super(GameWindow, self).__init__(parent)
         self.setupUi(self)
         self.img_label_list = [self.screen_img_label, self.shape_img_label, self.study_img_label, self.direction_img_label]
+        self.mirror_mode = True
+        self.camera_dialog = parent.get_camera_dialog()
         self.show()
+
+    def __del__(self):
+        self.dispose_data()
 
     def init(self) -> None:
         self.init_handler()
@@ -38,6 +98,28 @@ class GameWindow(QFrame, Ui_Frame):
             img_label.setPixmap(pixmap)
             img_label.setScaledContents(True)
 
+    def init_data(self) -> None:
+        self.draw_signal = DrawSignal()
+        self.draw_signal.sig.connect(self.draw_signal_handler)
+        self.work_thraed = WorkThread(self.camera_dialog, self.draw_signal, self.mirror_mode)
+        self.work_thraed.start()
+
+    def dispose_data(self) -> None:
+        self.draw_signal.sig.disconnect()
+        self.work_thraed.join()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self.init_data()
+        return super().showEvent(event)
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        self.dispose_data()
+        return super().hideEvent(event)
+
+    @Slot(int, QPixmap)
+    def draw_signal_handler(self, code : int, pixmap : QPixmap) -> None:
+        self.screen_img_label.setPixmap(pixmap)
+
     @Slot(int)
     def char_combo_change_handler(self, idx : int) -> None:
         if self.sender() == self.char_child_combo:
@@ -55,3 +137,10 @@ class GameWindow(QFrame, Ui_Frame):
         self.study_img_label.setPixmap(pixmap)
 
         return super().resizeEvent(event)
+
+    def set_mirror_mode(self, mirror_mode : bool) -> None:
+        self.mirror_mode = mirror_mode
+        self.work_thraed.set_mirror_mode(mirror_mode)
+
+    def get_mirror_mode(self) -> bool:
+        return self.mirror_mode

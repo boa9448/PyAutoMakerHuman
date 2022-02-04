@@ -1,7 +1,9 @@
 import sys
+from threading import Thread, Event
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Slot, Signal, QObject
 from PySide6.QtWidgets import QMainWindow, QApplication, QFrame, QStackedLayout
+from PySide6.QtGui import QPixmap
 from qt_material import apply_stylesheet
 
 from main_form import Ui_MainWindow
@@ -14,6 +16,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__()
         self.setupUi(self)
 
+        self.init_handler()
+        self.init_display()
+
+    def init_handler(self):
+        self.study_mode_button.clicked.connect(self.study_mode_button_handler)
+        self.lang_mode_button.clicked.connect(self.lang_mode_button_handler)
+        self.mirror_mode_button.clicked.connect(self.mirror_mode_button_handler)
+
+    def init_display(self) -> None:
         self.camera_dialog = CameraDialog()
         self.game_frame = GameWindow(self)
 
@@ -23,14 +34,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.stack_layout.addWidget(QFrame())
         self.frame.setLayout(self.stack_layout)
 
-        self.init_handler()
-
         self.game_frame.init()
+        text = "거울모드 {}".format("On" if self.game_frame.get_mirror_mode() else "Off")
+        self.mirror_mode_button.setText(text)
 
-    def init_handler(self):
-        self.study_mode_button.clicked.connect(self.study_mode_button_handler)
-        self.lang_mode_button.clicked.connect(self.lang_mode_button_handler)
-        self.mirror_mode_button.clicked.connect(self.mirror_mode_button_handler)
+    def get_camera_dialog(self) -> CameraDialog:
+        return self.camera_dialog
 
     @Slot()
     def study_mode_button_handler(self) -> None:
@@ -42,7 +51,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot()
     def mirror_mode_button_handler(self) -> None:
-        pass
+        mode = self.game_frame.get_mirror_mode()
+        self.game_frame.set_mirror_mode(not mode)
+        text = "거울모드 {}".format("On" if self.game_frame.get_mirror_mode() else "Off")
+        self.mirror_mode_button.setText(text)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
