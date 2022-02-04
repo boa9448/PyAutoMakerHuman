@@ -160,8 +160,12 @@ class CameraDialog(QDialog, Ui_Dialog):
         if code == CAMERA_SIGNAL_FAIL:
             pass
         elif code == CAMERA_SIGNAL_FRONT:
+            size = self.front_camera_img_label.size()
+            pixmap = pixmap.scaled(size)
             self.front_camera_img_label.setPixmap(pixmap)
         elif code == CAMERA_SIGNAL_SIDE:
+            size = self.side_camera_img_label.size()
+            pixmap = pixmap.scaled(size)
             self.side_camera_img_label.setPixmap(pixmap)
 
     @Slot()
