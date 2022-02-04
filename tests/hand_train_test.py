@@ -2,14 +2,14 @@ import os
 import sys
 
 cur_dir = os.path.dirname(__file__)
-lib_dir = os.path.join(cur_dir, "..", "src", "PyAutoMakerHuman")
+lib_dir = os.path.join(cur_dir, "..", "src")
 lib_dir = os.path.abspath(lib_dir)
 
 sys.path.append(lib_dir)
 
 
-import hand
-import train
+from PyAutoMakerHuman import hand
+from PyAutoMakerHuman import train
 import cv2
 
 dataset_dir = os.path.join(cur_dir, "..", "dataset")

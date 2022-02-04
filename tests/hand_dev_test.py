@@ -1,20 +1,11 @@
-import os
-import sys
-
-root_dir = os.path.abspath(os.path.join(__file__, ".."))
-root_dir = os.path.split(root_dir)[0]
-
-img_dir = os.path.join(root_dir, "tests", "imgs")
-root_dir = os.path.join(root_dir, "src", "PyAutoMakerHuman")
-
-sys.path.append(root_dir)
+import env
 
 import cv2
 import numpy as np
-import hand
+from PyAutoMakerHuman import hand
 
-hand_img = cv2.imread(os.path.join(img_dir, "2_hand.jpg"))
-no_hand_img = cv2.imread(os.path.join(img_dir, "person.jpg"))
+hand_img = cv2.imread(os.path.join(env.img_dir, "2_hand.jpg"))
+no_hand_img = cv2.imread(os.path.join(env.img_dir, "person.jpg"))
 
 proc = hand.HandUtil()
 hand_proc_result = proc.detector.process(cv2.cvtColor(hand_img, cv2.COLOR_BGR2RGB))
