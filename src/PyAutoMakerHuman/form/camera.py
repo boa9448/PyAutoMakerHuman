@@ -63,7 +63,7 @@ class CaptureThread(Thread):
             for proc, camera in zip([self.send_front, self.send_side], self.cameras):
                 if not camera.isOpened():
                     self.send_fail()
-                    continue
+                    return
 
                 success, frame = camera.read()
                 pixmap = numpy_to_pixmap(frame) if success else QPixmap()
@@ -146,11 +146,14 @@ class CameraDialog(QDialog, Ui_Dialog):
 
         return True
 
-    def front(self) -> tuple:
-        return self.front_camera.read()
+    def front(self) -> cv2.VideoCapture:
+        return self.front_camera
 
-    def side(self) -> tuple:
-        return self.side_camera.read()
+    def side(self) -> cv2.VideoCapture:
+        return self.side_camera
+
+    def cameras(self) -> tuple:
+        return self.front(), self.side()
 
     @Slot(int, QPixmap)
     def camera_signal_handler(self, code : int, pixmap : QPixmap) -> None:
@@ -170,6 +173,8 @@ class CameraDialog(QDialog, Ui_Dialog):
 
     @Slot()
     def camera_change_button_handler(self) -> None:
+        if not self.capture_thread.is_alive():
+            return
         self.capture_thread.setCameras((self.side_camera, self.front_camera))
         self.front_camera, self.side_camera = self.side_camera, self.front_camera
 

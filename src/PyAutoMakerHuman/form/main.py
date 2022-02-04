@@ -38,8 +38,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         text = "거울모드 {}".format("On" if self.game_frame.get_mirror_mode() else "Off")
         self.mirror_mode_button.setText(text)
 
-    def get_camera_dialog(self) -> CameraDialog:
-        return self.camera_dialog
+    def get_cameras(self) -> tuple:
+        return self.camera_dialog.cameras()
 
     @Slot()
     def study_mode_button_handler(self) -> None:

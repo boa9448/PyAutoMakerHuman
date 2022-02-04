@@ -1,6 +1,8 @@
 import logging
 from threading import Thread, Event, Lock
 
+import cv2
+import numpy as np
 from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
@@ -23,23 +25,24 @@ class DrawSignal(QObject):
         self.sig.emit(DRAW_SIGNAL_FRONT, pixmap)
 
 class WorkThread(Thread):
-    def __init__(self, camera_dialog : CameraDialog, draw_signal : DrawSignal, mirror_mode : bool = True):
+    def __init__(self, front_camera : cv2.VideoCapture, side_camera : cv2.VideoCapture
+                , draw_signal : DrawSignal, mirror_mode : bool = True):
         super().__init__()
         self.mirror_mode = mirror_mode
-        self.camera_dialog = camera_dialog
+        self.front_camera = front_camera
+        self.side_camera = side_camera
         self.draw_signal = draw_signal
-        self.change_lock = Lock()
         self.exit_event = Event()
 
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
         while not self.exit_event.is_set():
-            success, frame = self.camera_dialog.front()
+            success, frame = self.front_camera.read()
             if not success:
                 continue
 
-            if self.change_lock.acquire(False):
-                self.change_lock.release()
+            if self.mirror_mode:
+                frame = cv2.flip(frame, 1)
 
             pixmap = numpy_to_pixmap(frame)
             self.draw_signal.send_front(pixmap)
@@ -47,9 +50,7 @@ class WorkThread(Thread):
         logging.debug("[+] 게임 스레드 종료")
 
     def set_mirror_mode(self, mirror_mode : bool) -> None:
-        if self.change_lock.acquire(True):
-            self.mirror_mode = mirror_mode
-            self.change_lock.release()
+        self.mirror_mode = mirror_mode
 
     def exit(self) -> None:
         self.exit_event.set()
@@ -70,7 +71,7 @@ class GameWindow(QFrame, Ui_Frame):
         self.setupUi(self)
         self.img_label_list = [self.screen_img_label, self.shape_img_label, self.study_img_label, self.direction_img_label]
         self.mirror_mode = True
-        self.camera_dialog = parent.get_camera_dialog()
+        self.cameras = parent.get_cameras()
         self.show()
 
     def __del__(self):
@@ -101,7 +102,7 @@ class GameWindow(QFrame, Ui_Frame):
     def init_data(self) -> None:
         self.draw_signal = DrawSignal()
         self.draw_signal.sig.connect(self.draw_signal_handler)
-        self.work_thraed = WorkThread(self.camera_dialog, self.draw_signal, self.mirror_mode)
+        self.work_thraed = WorkThread(*self.cameras , self.draw_signal, self.mirror_mode)
         self.work_thraed.start()
 
     def dispose_data(self) -> None:
