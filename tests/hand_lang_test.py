@@ -10,7 +10,8 @@ while cap.isOpened():
         success, frame = cap.read()
         if not success:
             continue
-
+        
+        frame = cv2.flip(frame, 1)
         result = lang.predict_str(frame)
         print(result)
 

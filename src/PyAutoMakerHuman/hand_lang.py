@@ -11,10 +11,11 @@ from . import model_dir
 
 class HandLang:
     char_list = []
+    add_thresh = 0.5
     input_delay = 1 #다른 단어 입력
     combination_delay = 2 #조합 임계 시간
     double_char_dict = {"ㄱ" : "ㄲ", "ㄷ" : "ㄸ", "ㅂ" : "ㅃ", "ㅅ" : "ㅆ", "ㅈ" : "ㅉ"}
-    combination_char_dict = {hash("ㅗㅏ") : "ㅘ", hash("ㅗㅐ") : "ㅙ", hash("ㅜㅓ") : "ㅝ", hash("ㅜㅔ") : "ㅞ"
+    combination_char_dict = {hash("ㅗㅏ") : "ㅘ", hash("ㅗㅐ") : "ㅙ", hash("ㅜㅣ") : "ㅟ", hash("ㅜㅓ") : "ㅝ", hash("ㅜㅔ") : "ㅞ"
                             , hash("ㄱㅅ") : "ㄳ", hash("ㄴㅈ") : "ㄵ", hash("ㄴㅎ") : "ㄶ", hash("ㄹㄱ") : "ㄺ"
                             , hash("ㄹㅁ") : "ㄻ", hash("ㄹㅂ") : "ㄼ", hash("ㄹㅅ") : "ㄽ", hash("ㄹㅌ") : "ㄾ"
                             , hash("ㄹㅍ") : "ㄿ", hash("ㄹㅎ") : "ㅀ", hash("ㅂㅅ") : "ㅄ"}
@@ -32,6 +33,9 @@ class HandLang:
 
     def set_combination_delay(self, delay : float) -> None:
         self.combination_delay = delay
+
+    def set_add_thresh(self, thresh : float) -> None:
+        self.add_thresh = thresh
 
     def add_char(self, cur_time, box, name):
         if self.char_list:
@@ -93,6 +97,7 @@ class HandLang:
     def predict_str(self, img : np.ndarray) -> str:
         cur_time = time.time()
         results = self.classifier.predict(img)
+        results = list(filter(lambda x : x[-1] > self.add_thresh, results))
         for hand_label, box, name, proba in results:
             self.add_char(cur_time, box, name)
 
