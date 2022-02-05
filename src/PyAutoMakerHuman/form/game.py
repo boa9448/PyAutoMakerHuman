@@ -4,7 +4,7 @@ from threading import Thread, Event, Lock
 import cv2
 import numpy as np
 from PySide6.QtCore import QSize, Slot, QObject, Signal
-from PySide6.QtWidgets import QFrame, QComboBox
+from PySide6.QtWidgets import QFrame, QComboBox, QLabel
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
 from .game_form import Ui_Frame
@@ -28,6 +28,7 @@ class GameThread(Thread):
                 , draw_signal : DrawSignal, mirror_mode : bool = True):
         super().__init__()
         self.mirror_mode = mirror_mode
+        self.answer = str()
         self.front_camera = front_camera
         self.side_camera = side_camera
         self.draw_signal = draw_signal
@@ -46,10 +47,12 @@ class GameThread(Thread):
 
             results = lang.predict(frame)
             if results:
-                for hand_label, box, name, proba in results:
-                    x, y, w, h = box
-                    frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                    frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 0), 2)
+                result = max(results, key = lambda x : x[-1])
+                hand_label, box, name, proba = result
+                x, y, w, h = box
+                color = (0, 255, 0) if name == self.answer else (0, 0, 255)
+                frame = cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+                frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
 
             pixmap = numpy_to_pixmap(frame)
             self.draw_signal.send_front(pixmap)
@@ -58,6 +61,9 @@ class GameThread(Thread):
 
     def set_mirror_mode(self, mirror_mode : bool) -> None:
         self.mirror_mode = mirror_mode
+
+    def set_answer(self, answer : str) -> None:
+        self.answer = answer
 
     def exit(self) -> None:
         self.exit_event.set()
@@ -109,11 +115,11 @@ class GameWindow(QFrame, Ui_Frame):
     def init_data(self) -> None:
         self.draw_signal = DrawSignal()
         self.draw_signal.sig.connect(self.draw_signal_handler)
-        self.work_thraed = GameThread(*self.cameras , self.draw_signal, self.mirror_mode)
-        self.work_thraed.start()
+        self.game_thraed = GameThread(*self.cameras , self.draw_signal, self.mirror_mode)
+        self.game_thraed.start()
 
     def dispose_data(self) -> None:
-        self.work_thraed.join()
+        self.game_thraed.join()
 
     def showEvent(self, event: QShowEvent) -> None:
         self.init_data()
@@ -127,6 +133,15 @@ class GameWindow(QFrame, Ui_Frame):
     def draw_signal_handler(self, code : int, pixmap : QPixmap) -> None:
         self.screen_img_label.setPixmap(pixmap)
 
+    def draw_char_img(self, target_img_label : QLabel, char : str) -> None:
+        label_size = target_img_label.size().toTuple()
+        img = np.ndarray((*label_size, 3), np.uint8)
+        img.fill(255)
+        img = cv2_putText(img, char, (0, 0), 20, (0, 0, 0), 4, center=True)
+
+        pixmap = numpy_to_pixmap(img)
+        target_img_label.setPixmap(pixmap)
+
     @Slot(int)
     def char_combo_change_handler(self, idx : int) -> None:
         if self.sender() == self.char_child_combo:
@@ -135,13 +150,8 @@ class GameWindow(QFrame, Ui_Frame):
             target_list = self.CHAR_PARENT_COMBO_ITEMS
 
         char = target_list[idx]
-        label_size = self.study_img_label.size().toTuple()
-        img = np.ndarray((*label_size, 3), np.uint8)
-        img.fill(255)
-        img = cv2_putText(img, char, (0, 0), 20, (0, 0, 0), 4, center=True)
-
-        pixmap = numpy_to_pixmap(img)
-        self.study_img_label.setPixmap(pixmap)
+        self.draw_char_img(self.study_img_label, char)
+        self.set_answer(char)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         width = self.study_img_label.width()
@@ -154,7 +164,11 @@ class GameWindow(QFrame, Ui_Frame):
 
     def set_mirror_mode(self, mirror_mode : bool) -> None:
         self.mirror_mode = mirror_mode
-        self.work_thraed.set_mirror_mode(mirror_mode)
+        self.game_thraed.set_mirror_mode(mirror_mode)
 
     def get_mirror_mode(self) -> bool:
         return self.mirror_mode
+
+    def set_answer(self, answer : str) -> None:
+        if getattr(self, "game_thread", None):
+            self.game_thraed.set_answer(answer)
