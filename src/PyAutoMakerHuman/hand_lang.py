@@ -11,7 +11,7 @@ from . import model_dir
 
 class HandLang:
     char_list = []
-    input_delay_time = 1 #다른 단어 입력
+    input_delay = 1 #다른 단어 입력
     combination_delay = 2 #조합 임계 시간
     double_char_dict = {"ㄱ" : "ㄲ", "ㄷ" : "ㄸ", "ㅂ" : "ㅃ", "ㅅ" : "ㅆ", "ㅈ" : "ㅉ"}
     combination_char_dict = {hash("ㅗㅏ") : "ㅘ", hash("ㅗㅐ") : "ㅙ", hash("ㅜㅓ") : "ㅝ", hash("ㅜㅔ") : "ㅞ"
@@ -26,6 +26,12 @@ class HandLang:
 
     def __del__(self):
         pass
+
+    def set_input_delay(self, delay : float) -> None:
+        self.input_delay = delay
+
+    def set_combination_delay(self, delay : float) -> None:
+        self.combination_delay = delay
 
     def add_char(self, cur_time, box, name):
         if self.char_list:
@@ -52,7 +58,7 @@ class HandLang:
 
                 else:
                     #조합 임계시간을 초과했을 경우엔 등록 작업 시작
-                    if diff_time > self.input_delay_time:
+                    if diff_time > self.input_delay:
                         #입력 시간차이가 입력 임계시간을 초과했을 때만 등록
                         self.char_list.append((cur_time, box, name))
 
@@ -65,7 +71,7 @@ class HandLang:
 
                 else:
                     #조합 가능한 글자가 없거나 조합 임계시간을 초과했을 경우는 등록 작업 시작
-                    if diff_time > self.input_delay_time:
+                    if diff_time > self.input_delay:
                         self.char_list.append((cur_time, box, name))
                     
         else:
