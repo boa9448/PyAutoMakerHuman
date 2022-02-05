@@ -40,6 +40,10 @@ class GameThread(Thread):
         pixmap = numpy_to_pixmap(img)
         self.draw_signal.send_img(pixmap, answer_char)
 
+    def predict(self) -> tuple:
+        f_success, f_frame = self.front_camera.read()
+        s_success, s_frame = self.side_camera.read()
+
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
         while not self.exit_event.is_set():

@@ -24,6 +24,8 @@ class HandLang:
                             , "ㄹㅁ" : "ㄻ", "ㄹㅂ" : "ㄼ", "ㄹㅅ" : "ㄽ", "ㄹㅌ" : "ㄾ"
                             , "ㄹㅍ" : "ㄿ", "ㄹㅎ" : "ㅀ", "ㅂㅅ" : "ㅄ"}
 
+    char_black_list = ["ㅓ", "ㅕ", "ㅔ", "ㅖ"]
+
 
     def __init__(self):
         self.classifier = hand_train.HandTrainer()
