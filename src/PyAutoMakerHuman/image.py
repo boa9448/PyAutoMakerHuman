@@ -26,7 +26,8 @@ def cv2_putText(img, text, org, fontScale, color, thickness=..., lineType=..., b
     img_pil = Image.fromarray(img)
     draw = ImageDraw.Draw(img_pil)
     if center is True:
-        W, H, _ = img.shape
+        H, W, _ = img.shape
+        #x, y = W / 2, H / 2
         w, h = draw.textsize(text, font = font)
         org = (W - w) / 2, (H - h) / 2
 

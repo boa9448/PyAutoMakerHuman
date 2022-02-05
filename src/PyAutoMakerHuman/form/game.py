@@ -18,10 +18,10 @@ DRAW_SIGNAL_FRONT = 1
 logging.basicConfig(level=logging.DEBUG)
 
 class DrawSignal(QObject):
-    sig = Signal(int, QPixmap)
+    sig = Signal(int, QPixmap, int)
 
-    def send_front(self, pixmap : QPixmap):
-        self.sig.emit(DRAW_SIGNAL_FRONT, pixmap)
+    def send_img(self, pixmap : QPixmap, answer_enter : bool = True):
+        self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_enter)
 
 class GameThread(Thread):
     def __init__(self, front_camera : cv2.VideoCapture, side_camera : cv2.VideoCapture
@@ -46,16 +46,18 @@ class GameThread(Thread):
                 frame = cv2.flip(frame, 1)
 
             results = lang.predict(frame)
+            answer = False
             if results:
                 result = max(results, key = lambda x : x[-1])
                 hand_label, box, name, proba = result
                 x, y, w, h = box
-                color = (0, 255, 0) if name == self.answer else (0, 0, 255)
+                answer = name == self.answer
+                color = (0, 255, 0) if answer else (0, 0, 255)
                 frame = cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
                 frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
 
             pixmap = numpy_to_pixmap(frame)
-            self.draw_signal.send_front(pixmap)
+            self.draw_signal.send_img(pixmap, answer)
         
         logging.debug("[+] 게임 스레드 종료")
 
@@ -115,11 +117,11 @@ class GameWindow(QFrame, Ui_Frame):
     def init_data(self) -> None:
         self.draw_signal = DrawSignal()
         self.draw_signal.sig.connect(self.draw_signal_handler)
-        self.game_thraed = GameThread(*self.cameras , self.draw_signal, self.mirror_mode)
-        self.game_thraed.start()
+        self.game_thread = GameThread(*self.cameras , self.draw_signal, self.mirror_mode)
+        self.game_thread.start()
 
     def dispose_data(self) -> None:
-        self.game_thraed.join()
+        self.game_thread.join()
 
     def showEvent(self, event: QShowEvent) -> None:
         self.init_data()
@@ -129,15 +131,16 @@ class GameWindow(QFrame, Ui_Frame):
         self.dispose_data()
         return super().hideEvent(event)
 
-    @Slot(int, QPixmap)
-    def draw_signal_handler(self, code : int, pixmap : QPixmap) -> None:
+    @Slot(int, QPixmap, int)
+    def draw_signal_handler(self, code : int, pixmap : QPixmap, answer_enter : bool) -> None:
         self.screen_img_label.setPixmap(pixmap)
+        self.draw_char_img(self.shape_img_label ,"O" if answer_enter else "X", 10)
 
-    def draw_char_img(self, target_img_label : QLabel, char : str) -> None:
+    def draw_char_img(self, target_img_label : QLabel, char : str, font_scale = 20) -> None:
         label_size = target_img_label.size().toTuple()
-        img = np.ndarray((*label_size, 3), np.uint8)
+        img = np.ndarray((*label_size[::-1], 3), np.uint8)
         img.fill(255)
-        img = cv2_putText(img, char, (0, 0), 20, (0, 0, 0), 4, center=True)
+        img = cv2_putText(img, char, (0, 0), font_scale, (0, 0, 0), 4, center=True)
 
         pixmap = numpy_to_pixmap(img)
         target_img_label.setPixmap(pixmap)
@@ -164,11 +167,11 @@ class GameWindow(QFrame, Ui_Frame):
 
     def set_mirror_mode(self, mirror_mode : bool) -> None:
         self.mirror_mode = mirror_mode
-        self.game_thraed.set_mirror_mode(mirror_mode)
+        self.game_thread.set_mirror_mode(mirror_mode)
 
     def get_mirror_mode(self) -> bool:
         return self.mirror_mode
 
     def set_answer(self, answer : str) -> None:
         if getattr(self, "game_thread", None):
-            self.game_thraed.set_answer(answer)
+            self.game_thread.set_answer(answer)
