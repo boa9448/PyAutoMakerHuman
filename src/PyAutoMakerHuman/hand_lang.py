@@ -11,14 +11,18 @@ from . import model_dir
 
 class HandLang:
     char_list = []
-    add_thresh = 0.5
+    add_thresh = 0.7
     input_delay = 1 #다른 단어 입력
     combination_delay = 2 #조합 임계 시간
     double_char_dict = {"ㄱ" : "ㄲ", "ㄷ" : "ㄸ", "ㅂ" : "ㅃ", "ㅅ" : "ㅆ", "ㅈ" : "ㅉ"}
-    combination_char_dict = {hash("ㅗㅏ") : "ㅘ", hash("ㅗㅐ") : "ㅙ", hash("ㅜㅣ") : "ㅟ", hash("ㅜㅓ") : "ㅝ", hash("ㅜㅔ") : "ㅞ"
+    """combination_char_dict = {hash("ㅗㅏ") : "ㅘ", hash("ㅗㅐ") : "ㅙ", hash("ㅜㅣ") : "ㅟ", hash("ㅜㅓ") : "ㅝ", hash("ㅜㅔ") : "ㅞ"
                             , hash("ㄱㅅ") : "ㄳ", hash("ㄴㅈ") : "ㄵ", hash("ㄴㅎ") : "ㄶ", hash("ㄹㄱ") : "ㄺ"
                             , hash("ㄹㅁ") : "ㄻ", hash("ㄹㅂ") : "ㄼ", hash("ㄹㅅ") : "ㄽ", hash("ㄹㅌ") : "ㄾ"
-                            , hash("ㄹㅍ") : "ㄿ", hash("ㄹㅎ") : "ㅀ", hash("ㅂㅅ") : "ㅄ"}
+                            , hash("ㄹㅍ") : "ㄿ", hash("ㄹㅎ") : "ㅀ", hash("ㅂㅅ") : "ㅄ"}"""
+    combination_char_dict = {"ㅗㅏ" : "ㅘ", "ㅗㅐ" : "ㅙ", "ㅜㅣ" : "ㅟ", "ㅜㅓ" : "ㅝ", "ㅜㅔ" : "ㅞ"
+                            , "ㄱㅅ" : "ㄳ", "ㄴㅈ" : "ㄵ", "ㄴㅎ" : "ㄶ", "ㄹㄱ" : "ㄺ"
+                            , "ㄹㅁ" : "ㄻ", "ㄹㅂ" : "ㄼ", "ㄹㅅ" : "ㄽ", "ㄹㅌ" : "ㄾ"
+                            , "ㄹㅍ" : "ㄿ", "ㄹㅎ" : "ㅀ", "ㅂㅅ" : "ㅄ"}
 
 
     def __init__(self):
@@ -36,6 +40,16 @@ class HandLang:
 
     def set_add_thresh(self, thresh : float) -> None:
         self.add_thresh = thresh
+
+    def get_key(self, value : str) -> str:
+        def find_helper(target_dict : dict, value : str) -> str or None:
+            for key, item in target_dict.items():
+                if value == item:
+                    return key
+
+            return None
+
+        return find_helper(self.combination_char_dict, value) or find_helper(self.double_char_dict, value)
 
     def add_char(self, cur_time, box, name):
         if self.char_list:
@@ -68,7 +82,8 @@ class HandLang:
 
             else:
                 #현재 단어와 이전 단어가 다른 경우
-                combination_char = self.combination_char_dict.get(hash(last_name + name))
+                #combination_char = self.combination_char_dict.get(hash(last_name + name))
+                combination_char = self.combination_char_dict.get(last_name + name)
                 if combination_char and diff_time < self.combination_delay:
                     #조합 가능한 글자가 있는 경우와 조합 임계시간을 넘지 않았을 경우엔 조합
                     self.char_list[-1] = (cur_time, box, combination_char)
