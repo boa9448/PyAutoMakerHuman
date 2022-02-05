@@ -18,10 +18,10 @@ DRAW_SIGNAL_FRONT = 1
 logging.basicConfig(level=logging.DEBUG)
 
 class DrawSignal(QObject):
-    sig = Signal(int, QPixmap, int)
+    sig = Signal(int, QPixmap, str)
 
-    def send_img(self, pixmap : QPixmap, answer_enter : bool = True):
-        self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_enter)
+    def send_img(self, pixmap : QPixmap, answer_char : str = ""):
+        self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_char)
 
 class GameThread(Thread):
     def __init__(self, front_camera : cv2.VideoCapture, side_camera : cv2.VideoCapture
@@ -33,10 +33,15 @@ class GameThread(Thread):
         self.side_camera = side_camera
         self.draw_signal = draw_signal
         self.exit_event = Event()
+        self.stop_event = Event()
+        self.lang = hand_lang.HandLang()
+
+    def send_img(self, img : np.ndarray, answer_char : str):
+        pixmap = numpy_to_pixmap(img)
+        self.draw_signal.send_img(pixmap, answer_char)
 
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
-        lang = hand_lang.HandLang()
         while not self.exit_event.is_set():
             success, frame = self.front_camera.read()
             if not success:
@@ -45,19 +50,21 @@ class GameThread(Thread):
             if self.mirror_mode:
                 frame = cv2.flip(frame, 1)
 
-            results = lang.predict(frame)
             answer = False
-            if results:
-                result = max(results, key = lambda x : x[-1])
-                hand_label, box, name, proba = result
-                x, y, w, h = box
-                answer = name == self.answer
-                color = (0, 255, 0) if answer else (0, 0, 255)
-                frame = cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-                frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
+            results = self.lang.predict(frame)
+            if not results:
+                self.send_img(frame, "-")
+                continue
 
-            pixmap = numpy_to_pixmap(frame)
-            self.draw_signal.send_img(pixmap, answer)
+            result = max(results, key = lambda x : x[-1])
+            hand_label, box, name, proba = result
+            x, y, w, h = box
+            answer = name in self.answer
+            color = (0, 255, 0) if answer else (0, 0, 255)
+            frame = cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
+
+            self.send_img(frame, "O" if answer else "X")
         
         logging.debug("[+] 게임 스레드 종료")
 
@@ -65,7 +72,8 @@ class GameThread(Thread):
         self.mirror_mode = mirror_mode
 
     def set_answer(self, answer : str) -> None:
-        self.answer = answer
+        self.answer = self.lang.get_key(answer) or answer
+        logging.debug(f"[+] change answer : {self.answer}")
 
     def exit(self) -> None:
         self.exit_event.set()
@@ -131,10 +139,10 @@ class GameWindow(QFrame, Ui_Frame):
         self.dispose_data()
         return super().hideEvent(event)
 
-    @Slot(int, QPixmap, int)
-    def draw_signal_handler(self, code : int, pixmap : QPixmap, answer_enter : bool) -> None:
+    @Slot(int, QPixmap, str)
+    def draw_signal_handler(self, code : int, pixmap : QPixmap, answer_char : bool) -> None:
         self.screen_img_label.setPixmap(pixmap)
-        self.draw_char_img(self.shape_img_label ,"O" if answer_enter else "X", 10)
+        self.draw_char_img(self.shape_img_label, answer_char, 10)
 
     def draw_char_img(self, target_img_label : QLabel, char : str, font_scale = 20) -> None:
         label_size = target_img_label.size().toTuple()
