@@ -36,20 +36,22 @@ class GameThread(Thread):
         self.exit_event = Event()
         self.stop_event = Event()
         self.lang = hand_lang.HandLang()
+        self.last_name = None
+        self.last_color = (0, 0, 255)
 
     def sleep(self, timeout : float) -> None:
         self.exit_event.wait(timeout)
 
-    def draw_box(self, img : np.ndarray, box : tuple, box_color : tuple, name : str = None) -> None:
+    def draw_box(self, img : np.ndarray, box : tuple, box_color : tuple, name : str = None) -> np.ndarray:
         x, y, w, h = box
         frame = cv2.rectangle(img, (x, y), (x + w, y + h), box_color, 2)
         if name:
             frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
-        
+
         return frame
 
     @property
-    def front_camera(self) -> np.ndarray:
+    def front_frame(self) -> np.ndarray:
         while True:
             success, frame = self._front_camera.read()
             if success:
@@ -61,7 +63,7 @@ class GameThread(Thread):
         return frame
 
     @property
-    def side_camera(self) -> np.ndarray:
+    def side_frame(self) -> np.ndarray:
         while True:
             success, frame = self._side_camera.read()
             if success:
@@ -80,7 +82,7 @@ class GameThread(Thread):
         TIME_OUT = 2
         DURATION = 0.8
         while time.time() - passed_time < TIME_OUT:
-            frame = self.front_camera
+            frame = self.front_frame
 
             results = self.lang.predict(frame)
             if not results:
@@ -96,8 +98,7 @@ class GameThread(Thread):
                 last_name = name
                 last_time = time.time()
             
-            color = self.last_color if name == self.last_name else (0, 0, 255)
-            self.draw_box(frame, box, color, name)
+            frame = self.draw_box(frame, box, self.last_color, name)
             self.send_img(frame)
 
         return None
@@ -105,8 +106,7 @@ class GameThread(Thread):
 
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
-        self.last_name = None
-        self.last_color = (0, 0, 255)
+        char_list = []
         while not self.exit_event.is_set():
             result = self.predict()
             if not result:
@@ -114,10 +114,14 @@ class GameThread(Thread):
 
             frame, name, box = result
             answer = name in self.answer
-            self.last_color = (0, 255, 0) if answer else (0, 0, 255)
-            self.draw_box(frame, box, self.last_color, name)
-            self.send_img(frame, "O" if answer else "X")
+            char_list.append(name)
+        
+            frame = self.draw_box(frame, box, self.last_color, name)
+            answer_char = "O" if answer else "△"
+            answer_char = "O" if self.answer in char_list else "X"
+            self.send_img(frame, answer_char)
             self.last_name = name
+            self.last_color = (0, 255, 0) if answer else (0, 0, 255)
 
         logging.debug("[+] 게임 스레드 종료")
 
@@ -125,7 +129,9 @@ class GameThread(Thread):
         self.mirror_mode = mirror_mode
 
     def set_answer(self, answer : str) -> None:
-        self.answer = self.lang.get_key(answer) or answer
+        self.answer = list(self.lang.get_key(answer) or answer)
+        self.last_name = None
+        self.last_color = (0, 0, 255)
         logging.debug(f"[+] change answer : {self.answer}")
 
     def exit(self) -> None:
