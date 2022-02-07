@@ -1,4 +1,5 @@
 import logging
+import time
 from threading import Thread, Event, Lock
 
 import cv2
@@ -29,47 +30,95 @@ class GameThread(Thread):
         super().__init__()
         self.mirror_mode = mirror_mode
         self.answer = str()
-        self.front_camera = front_camera
-        self.side_camera = side_camera
+        self._front_camera = front_camera
+        self._side_camera = side_camera
         self.draw_signal = draw_signal
         self.exit_event = Event()
         self.stop_event = Event()
         self.lang = hand_lang.HandLang()
 
-    def send_img(self, img : np.ndarray, answer_char : str):
+    def sleep(self, timeout : float) -> None:
+        self.exit_event.wait(timeout)
+
+    def draw_box(self, img : np.ndarray, box : tuple, box_color : tuple, name : str = None) -> None:
+        x, y, w, h = box
+        frame = cv2.rectangle(img, (x, y), (x + w, y + h), box_color, 2)
+        if name:
+            frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
+        
+        return frame
+
+    @property
+    def front_camera(self) -> np.ndarray:
+        while True:
+            success, frame = self._front_camera.read()
+            if success:
+                break
+
+        if self.mirror_mode:
+            frame = cv2.flip(frame, 1)
+
+        return frame
+
+    @property
+    def side_camera(self) -> np.ndarray:
+        while True:
+            success, frame = self._side_camera.read()
+            if success:
+                break
+
+        return frame
+
+    def send_img(self, img : np.ndarray, answer_char : str or None = None):
         pixmap = numpy_to_pixmap(img)
         self.draw_signal.send_img(pixmap, answer_char)
 
-    def predict(self) -> tuple:
-        f_success, f_frame = self.front_camera.read()
-        s_success, s_frame = self.side_camera.read()
+    def predict(self) -> tuple or None:
+        last_name = None
+        last_time = None
+        passed_time = time.time()
+        TIME_OUT = 2
+        DURATION = 0.8
+        while time.time() - passed_time < TIME_OUT:
+            frame = self.front_camera
 
-    def run(self) -> None:
-        logging.debug("[+] 게임 스레드 시작")
-        while not self.exit_event.is_set():
-            success, frame = self.front_camera.read()
-            if not success:
-                continue
-
-            if self.mirror_mode:
-                frame = cv2.flip(frame, 1)
-
-            answer = False
             results = self.lang.predict(frame)
             if not results:
-                self.send_img(frame, "-")
+                self.send_img(frame)
                 continue
 
             result = max(results, key = lambda x : x[-1])
             hand_label, box, name, proba = result
-            x, y, w, h = box
-            answer = name in self.answer
-            color = (0, 255, 0) if answer else (0, 0, 255)
-            frame = cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-            frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
+            if last_name and last_name == name:
+                if time.time() - last_time > DURATION:
+                    return frame, name, box
+            else:
+                last_name = name
+                last_time = time.time()
+            
+            color = self.last_color if name == self.last_name else (0, 0, 255)
+            self.draw_box(frame, box, color, name)
+            self.send_img(frame)
 
+        return None
+
+
+    def run(self) -> None:
+        logging.debug("[+] 게임 스레드 시작")
+        self.last_name = None
+        self.last_color = (0, 0, 255)
+        while not self.exit_event.is_set():
+            result = self.predict()
+            if not result:
+                continue
+
+            frame, name, box = result
+            answer = name in self.answer
+            self.last_color = (0, 255, 0) if answer else (0, 0, 255)
+            self.draw_box(frame, box, self.last_color, name)
             self.send_img(frame, "O" if answer else "X")
-        
+            self.last_name = name
+
         logging.debug("[+] 게임 스레드 종료")
 
     def set_mirror_mode(self, mirror_mode : bool) -> None:
@@ -146,7 +195,8 @@ class GameWindow(QFrame, Ui_Frame):
     @Slot(int, QPixmap, str)
     def draw_signal_handler(self, code : int, pixmap : QPixmap, answer_char : bool) -> None:
         self.screen_img_label.setPixmap(pixmap)
-        self.draw_char_img(self.shape_img_label, answer_char, 10)
+        if answer_char:
+            self.draw_char_img(self.shape_img_label, answer_char, 10)
 
     def draw_char_img(self, target_img_label : QLabel, char : str, font_scale = 20) -> None:
         label_size = target_img_label.size().toTuple()
