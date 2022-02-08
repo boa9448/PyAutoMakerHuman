@@ -24,15 +24,19 @@ class DrawSignal(QObject):
     def send_img(self, pixmap : QPixmap, answer_char : str = ""):
         self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_char)
 
+MODE_STUDY = 1
+MODE_GAME = 2
+
 class WorkThread(Thread):
     COLOR_GREEN = (0, 255, 0)
     COLOR_ORENGE = (0, 255, 255)
     COLOR_RED = (0, 0, 255)
 
     def __init__(self, front_camera : cv2.VideoCapture, side_camera : cv2.VideoCapture
-                , draw_signal : DrawSignal, mirror_mode : bool = True):
+                , draw_signal : DrawSignal, mirror_mode : bool = True, run_mode : int = MODE_STUDY):
         super().__init__()
         self.mirror_mode = mirror_mode
+        self.run_mode = run_mode
         self.answer = str()
         self._front_camera = front_camera
         self._side_camera = side_camera
@@ -79,6 +83,12 @@ class WorkThread(Thread):
         pixmap = numpy_to_pixmap(img)
         self.draw_signal.send_img(pixmap, answer_char)
 
+    def add_char(self, cur_time: float, box: tuple, name: str) -> None:
+        if len(self.lang.get_str()) > 2:
+            self.lang.remove_char()
+
+        self.lang.add_char(cur_time, box, name)
+
     def predict(self) -> tuple or None:
         last_name = None
         last_time = None
@@ -95,7 +105,7 @@ class WorkThread(Thread):
 
             result = max(results, key = lambda x : x[-1])
             hand_label, box, name, proba = result
-            self.lang.add_char(last_time or time.time(), box, name)
+            self.add_char(last_time or time.time(), box, name)
 
             if last_name and last_name == name:
                 if time.time() - last_time > DURATION:
@@ -104,7 +114,7 @@ class WorkThread(Thread):
                 last_name = name
                 last_time = time.time()
             
-            frame = self.draw_box(frame, box, self.last_color, name)
+            frame = self.draw_box(frame, box, self.last_color, self.lang.get_str())
             self.send_img(frame)
 
         return None
@@ -113,20 +123,28 @@ class WorkThread(Thread):
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
         while not self.exit_event.is_set():
+            if self.stop_event.is_set():
+                continue
+
             result = self.predict()
             if not result:
+                self.lang.remove_char()
                 continue
 
             frame, name, box = result
-            answer = self.answer in self.lang.get_str()
-            answer_char = "O" if answer else "X"
+            answer = self.answer == self.lang.get_str()[-1]
+            success = "O" if answer else "X"
             color = self.COLOR_GREEN if answer else self.COLOR_RED
-        
-            frame = self.draw_box(frame, box, self.last_color, name)
-            self.send_img(frame, answer_char)
-            self.last_name = name
+
+            answer_char = self.lang.get_str()
+            answer_char = answer_char[-1] if answer else answer_char
+            frame = self.draw_box(frame, box, color, answer_char)
+            self.send_img(frame, success)
             self.last_color = color
+            print(color)
             logging.debug(f"[+] 문자열 : {self.lang.get_str()}")
+            if answer:
+                self.stop_event.set()
 
         logging.debug("[+] 게임 스레드 종료")
 
@@ -135,8 +153,9 @@ class WorkThread(Thread):
 
     def set_answer(self, answer : str) -> None:
         self.answer = answer
-        self.last_name = None
         self.last_color = self.COLOR_RED
+        self.lang.remove_char()
+        self.stop_event.clear()
         logging.debug(f"[+] change answer : {self.answer}")
 
     def exit(self) -> None:
@@ -187,6 +206,7 @@ class StudyWindow(QFrame, Ui_Frame):
             img_label.setScaledContents(True)
 
     def init_data(self) -> None:
+        self.set_answer("")
         self.draw_signal = DrawSignal()
         self.draw_signal.sig.connect(self.draw_signal_handler)
         self.game_thread = WorkThread(*self.cameras , self.draw_signal, self.mirror_mode)

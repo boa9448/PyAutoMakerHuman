@@ -44,12 +44,12 @@ class HandLang:
         self.add_thresh = thresh
 
     def get_key(self, value : str) -> str:
-        def find_helper(target_dict : dict, value : str) -> str or None:
+        def find_helper(target_dict : dict, value : str) -> str:
             for key, item in target_dict.items():
                 if value == item:
                     return key
 
-            return None
+            return ""
 
         return find_helper(self.combination_char_dict, value) or find_helper(self.double_char_dict, value)
 
