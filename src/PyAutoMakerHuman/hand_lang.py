@@ -53,7 +53,21 @@ class HandLang:
 
         return find_helper(self.combination_char_dict, value) or find_helper(self.double_char_dict, value)
 
-    def add_char(self, cur_time, box, name):
+    def add_char(self, cur_time : float, box : tuple, name : str):
+        def check_diff_range(box : tuple, last_box : tuple) -> bool:
+            x, y, w, h = box
+            move_range_x, move_range_y = int(w / 2), int(h / 2)
+            move_range = move_range_x if move_range_x < move_range_y else move_range_y
+            last_x, last_y, last_w, last_h = last_box
+
+            center_x, center_y = x + int(w / 2), y + int(h / 2)
+            last_center_x, last_center_y = last_x + int(last_w / 2), last_y + int(last_h / 2)
+            diff_x = abs(center_x - last_center_x)
+            diff_y = abs(center_y - last_center_y)
+
+            return diff_x > move_range or diff_y > move_range
+
+
         if self.char_list:
             last_cur_time, last_box, last_name = self.char_list[-1]
 
@@ -62,24 +76,15 @@ class HandLang:
                 #현재 단어와 이전 단어가 같은 경우
                 if diff_time < self.combination_delay:
                     #조합 임계시간을 넘지 않았을 경우
-                    x, y, w, h = box
-                    last_x, last_y, last_w, last_h = last_box
-                    move_range_x, move_range_y = int(w / 2), int(h / 2)
-                    move_range = move_range_x if move_range_x < move_range_y else move_range_y
 
-                    center_x, center_y = x + int(w / 2), y + int(h / 2)
-                    last_center_x, last_center_y = last_x + int(last_w / 2), last_y + int(last_h / 2)
-                    diff_x = abs(center_x - last_center_x)
-                    diff_y = abs(center_y - last_center_y)
-
-                    if diff_x > move_range or diff_y > move_range:
+                    if check_diff_range(box, last_box):
                         #중심점이 이동 임계를 넘었다면 추가
                         self.char_list[-1] = (cur_time, box, self.double_char_dict.get(name, name))
 
                 else:
-                    #조합 임계시간을 초과했을 경우엔 등록 작업 시작
-                    if diff_time > self.input_delay:
-                        #입력 시간차이가 입력 임계시간을 초과했을 때만 등록
+                    #조합 임계시간을 초과했을 경우엔 일반 등록 작업 시작
+                    if check_diff_range(box, last_box):
+                        # 이동좌표가 임계 좌표를 초과했을 때만 등록
                         self.char_list.append((cur_time, box, name))
 
             else:

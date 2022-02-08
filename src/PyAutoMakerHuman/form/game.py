@@ -25,6 +25,10 @@ class DrawSignal(QObject):
         self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_char)
 
 class GameThread(Thread):
+    COLOR_GREEN = (0, 255, 0)
+    COLOR_ORENGE = (0, 255, 255)
+    COLOR_RED = (0, 0, 255)
+
     def __init__(self, front_camera : cv2.VideoCapture, side_camera : cv2.VideoCapture
                 , draw_signal : DrawSignal, mirror_mode : bool = True):
         super().__init__()
@@ -37,7 +41,7 @@ class GameThread(Thread):
         self.stop_event = Event()
         self.lang = hand_lang.HandLang()
         self.last_name = None
-        self.last_color = (0, 0, 255)
+        self.last_color = self.COLOR_RED
 
     def sleep(self, timeout : float) -> None:
         self.exit_event.wait(timeout)
@@ -91,6 +95,8 @@ class GameThread(Thread):
 
             result = max(results, key = lambda x : x[-1])
             hand_label, box, name, proba = result
+            self.lang.add_char(last_time or time.time(), box, name)
+
             if last_name and last_name == name:
                 if time.time() - last_time > DURATION:
                     return frame, name, box
@@ -106,22 +112,21 @@ class GameThread(Thread):
 
     def run(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
-        char_list = []
         while not self.exit_event.is_set():
             result = self.predict()
             if not result:
                 continue
 
             frame, name, box = result
-            answer = name in self.answer
-            char_list.append(name)
+            answer = self.answer in self.lang.get_str()
+            answer_char = "O" if answer else "X"
+            color = self.COLOR_GREEN if answer else self.COLOR_RED
         
             frame = self.draw_box(frame, box, self.last_color, name)
-            answer_char = "O" if answer else "△"
-            answer_char = "O" if self.answer in char_list else "X"
             self.send_img(frame, answer_char)
             self.last_name = name
-            self.last_color = (0, 255, 0) if answer else (0, 0, 255)
+            self.last_color = color
+            logging.debug(f"[+] 문자열 : {self.lang.get_str()}")
 
         logging.debug("[+] 게임 스레드 종료")
 
@@ -129,9 +134,9 @@ class GameThread(Thread):
         self.mirror_mode = mirror_mode
 
     def set_answer(self, answer : str) -> None:
-        self.answer = list(self.lang.get_key(answer) or answer)
+        self.answer = answer
         self.last_name = None
-        self.last_color = (0, 0, 255)
+        self.last_color = self.COLOR_RED
         logging.debug(f"[+] change answer : {self.answer}")
 
     def exit(self) -> None:
