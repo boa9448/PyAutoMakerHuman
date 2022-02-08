@@ -31,13 +31,16 @@ class WorkThread(Thread):
     COLOR_GREEN = (0, 255, 0)
     COLOR_ORENGE = (0, 255, 255)
     COLOR_RED = (0, 0, 255)
+    FRAME_GET_TIME_OUT = 2
+
 
     def __init__(self, front_camera : cv2.VideoCapture, side_camera : cv2.VideoCapture
                 , draw_signal : DrawSignal, mirror_mode : bool = True, run_mode : int = MODE_STUDY):
         super().__init__()
         self.mirror_mode = mirror_mode
         self.run_mode = run_mode
-        self.answer = str()
+        self._answer = list()
+        self.answer_change_lock = Lock()
         self._front_camera = front_camera
         self._side_camera = side_camera
         self.draw_signal = draw_signal
@@ -60,7 +63,9 @@ class WorkThread(Thread):
 
     @property
     def front_frame(self) -> np.ndarray:
-        while True:
+        start_time = time.time()
+        frame = None
+        while time.time() - start_time < self.FRAME_GET_TIME_OUT:
             success, frame = self._front_camera.read()
             if success:
                 break
@@ -72,12 +77,27 @@ class WorkThread(Thread):
 
     @property
     def side_frame(self) -> np.ndarray:
-        while True:
+        start_time = time.time()
+        frame = None
+        while time.time() - start_time < self.FRAME_GET_TIME_OUT:
             success, frame = self._side_camera.read()
             if success:
                 break
 
         return frame
+
+    @property
+    def answer(self) -> list:
+        answer = list()
+        with self.answer_change_lock:
+            answer = self._answer
+
+        return answer
+
+    @answer.setter
+    def answer(self, value : list) -> None:
+        with self.answer_change_lock:
+            self._answer = value
 
     def send_img(self, img : np.ndarray, answer_char : str or None = None):
         pixmap = numpy_to_pixmap(img)
@@ -90,37 +110,40 @@ class WorkThread(Thread):
         self.lang.add_char(cur_time, box, name)
 
     def predict(self) -> tuple or None:
-        last_name = None
+        """frame, box, name"""
+        last_name = ""
         last_time = None
-        passed_time = time.time()
+
         TIME_OUT = 2
         DURATION = 0.8
-        while time.time() - passed_time < TIME_OUT:
-            frame = self.front_frame
+        
+        start_time = time.time()
+        while time.time() - start_time < TIME_OUT:
+            f_frame = self.front_frame
+            if f_frame is None:
+                return None
 
-            results = self.lang.predict(frame)
+            results = self.lang.predict(f_frame)
             if not results:
-                self.send_img(frame)
+                self.send_img(f_frame)
                 continue
 
             result = max(results, key = lambda x : x[-1])
             hand_label, box, name, proba = result
-            self.add_char(last_time or time.time(), box, name)
 
             if last_name and last_name == name:
-                if time.time() - last_time > DURATION:
-                    return frame, name, box
+                if time.time() - last_time < DURATION:
+                    return f_frame, box, name
             else:
                 last_name = name
                 last_time = time.time()
-            
-            frame = self.draw_box(frame, box, self.last_color, self.lang.get_str())
-            self.send_img(frame)
+
+            f_frame = self.draw_box(f_frame, box, self.last_color, name)
+            self.send_img(f_frame)
 
         return None
 
-
-    def run(self) -> None:
+    def study_proc(self) -> None:
         logging.debug("[+] 게임 스레드 시작")
         while not self.exit_event.is_set():
             if self.stop_event.is_set():
@@ -132,7 +155,7 @@ class WorkThread(Thread):
                 continue
 
             frame, name, box = result
-            answer = self.answer == self.lang.get_str()[-1]
+            answer = self._answer == self.lang.get_str()[-1]
             success = "O" if answer else "X"
             color = self.COLOR_GREEN if answer else self.COLOR_RED
 
@@ -148,11 +171,57 @@ class WorkThread(Thread):
 
         logging.debug("[+] 게임 스레드 종료")
 
+    def study_proc_ex(self):
+        def check_char(target_char : str) -> tuple:
+            while not self.exit_event.is_set():
+                result = self.predict()
+                if not result:
+                    continue
+
+                frame, box, name = result
+                if target_char == name:
+                    # 각도까지 체크해서 맞다면 True리턴
+                    frame = self.draw_box(frame, box, self.COLOR_GREEN, name)
+                    self.send_img(frame, "△")
+                    logging.debug(f"[+] char cmp : {target_char}")
+                    return True, frame
+
+            return False, None
+
+        logging.debug("[+] 학습 스레드 시작")
+        while not self.exit_event.is_set():
+            if self.stop_event.is_set():
+                continue
+
+            char_list = self.answer
+            for char in char_list:
+                success, frame = check_char(char)
+                if not success:
+                    break
+
+                self.send_img(frame, "O")
+                self.stop_event.set()
+            else:
+                if self.stop_event.is_set():
+                    continue
+
+                frame = self.front_frame
+                self.send_img(frame)
+
+
+        logging.debug("[+] 학습 스레드 종료")
+
+    def run(self) -> None:
+        if self.run_mode == MODE_STUDY:
+            self.study_proc_ex()
+        elif self.run_mode == MODE_GAME:
+            pass
+
     def set_mirror_mode(self, mirror_mode : bool) -> None:
         self.mirror_mode = mirror_mode
 
-    def set_answer(self, answer : str) -> None:
-        self.answer = answer
+    def set_answer(self, answer : str or list) -> None:
+        self.answer = list(self.lang.get_key(answer)) if self.run_mode == MODE_STUDY else answer
         self.last_color = self.COLOR_RED
         self.lang.remove_char()
         self.stop_event.clear()

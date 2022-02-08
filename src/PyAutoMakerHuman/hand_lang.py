@@ -51,7 +51,7 @@ class HandLang:
 
             return ""
 
-        return find_helper(self.combination_char_dict, value) or find_helper(self.double_char_dict, value)
+        return find_helper(self.combination_char_dict, value) or find_helper(self.double_char_dict, value) or value
 
     def add_char(self, cur_time : float, box : tuple, name : str):
         def check_diff_range(box : tuple, last_box : tuple) -> bool:
