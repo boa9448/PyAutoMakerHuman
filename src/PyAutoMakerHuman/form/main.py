@@ -7,7 +7,7 @@ from PySide6.QtGui import QPixmap
 from qt_material import apply_stylesheet
 
 from .main_form import Ui_MainWindow
-from .game import GameWindow
+from .study import StudyWindow
 from .camera import CameraDialog
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_display(self) -> None:
         self.camera_dialog = CameraDialog()
-        self.game_frame = GameWindow(self)
+        self.game_frame = StudyWindow(self)
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.game_frame)

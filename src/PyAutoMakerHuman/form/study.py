@@ -8,7 +8,7 @@ from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame, QComboBox, QLabel
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
-from .game_form import Ui_Frame
+from .study_form import Ui_Frame
 from .utils import numpy_to_pixmap
 from .. import hand_lang
 from ..image import cv2_putText
@@ -24,7 +24,7 @@ class DrawSignal(QObject):
     def send_img(self, pixmap : QPixmap, answer_char : str = ""):
         self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_char)
 
-class GameThread(Thread):
+class WorkThread(Thread):
     COLOR_GREEN = (0, 255, 0)
     COLOR_ORENGE = (0, 255, 255)
     COLOR_RED = (0, 0, 255)
@@ -147,14 +147,14 @@ class GameThread(Thread):
         return super().join(timeout)
 
 
-class GameWindow(QFrame, Ui_Frame):
+class StudyWindow(QFrame, Ui_Frame):
     CHAR_CHILD_COMBO_ITEMS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅍ", "ㅎ"
                                 , "ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ", "ㄳ", "ㄵ", "ㄶ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅄ"]
     CHAR_PARENT_COMBO_ITEMS = ["ㅏ", "ㅐ", "ㅑ" , "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ"
                                 , "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"]
 
     def __init__(self, parent = None):
-        super(GameWindow, self).__init__(parent)
+        super(StudyWindow, self).__init__(parent)
         self.setupUi(self)
         self.img_label_list = [self.screen_img_label, self.shape_img_label, self.study_img_label, self.direction_img_label]
         self.mirror_mode = True
@@ -189,7 +189,7 @@ class GameWindow(QFrame, Ui_Frame):
     def init_data(self) -> None:
         self.draw_signal = DrawSignal()
         self.draw_signal.sig.connect(self.draw_signal_handler)
-        self.game_thread = GameThread(*self.cameras , self.draw_signal, self.mirror_mode)
+        self.game_thread = WorkThread(*self.cameras , self.draw_signal, self.mirror_mode)
         self.game_thread.start()
 
     def dispose_data(self) -> None:
