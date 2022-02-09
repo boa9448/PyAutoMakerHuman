@@ -56,9 +56,9 @@ class HandTrainer:
             return list()
 
         results = []
-        for hand_label, box, degree, data in result:
+        for hand_label, box, degree, landmark, data in result:
             name, proba = self.trainer.predict([data])
-            results.append((hand_label, box, degree, name, proba))
+            results.append((hand_label, box, degree, landmark, name, proba))
 
         return results
 

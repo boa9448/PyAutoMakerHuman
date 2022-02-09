@@ -248,7 +248,8 @@ class HandUtil:
 
         landmarks = result.get_landmark_from_box()
         degrees = result.get_degree()
-        return [(label, box, degree, np.asarray(landmark).flatten()) for degree, (label, box, landmark) in zip(degrees, landmarks)]
+        return [(label, box, degree, landmark, np.asarray(landmark).flatten())
+                    for degree, (label, box, landmark) in zip(degrees, landmarks)]
 
 
 if __name__ == "__main__":

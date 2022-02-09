@@ -120,7 +120,7 @@ class HandLang:
         cur_time = time.time()
         results = self.classifier.predict(img)
         results = list(filter(lambda x : x[-1] > self.add_thresh, results))
-        for hand_label, box, name, proba in results:
+        for hand_label, box, degree, landmark, name, proba in results:
             self.add_char(cur_time, box, name)
 
         return self.get_str()
