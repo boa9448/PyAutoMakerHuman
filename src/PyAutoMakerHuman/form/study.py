@@ -1,5 +1,4 @@
 import logging
-from math import degrees
 import time
 from threading import Thread, Event, Lock
 
@@ -130,11 +129,11 @@ class WorkThread(Thread):
                 continue
 
             result = max(results, key = lambda x : x[-1])
-            hand_label, box, degree, name, proba = result
+            hand_label, box, degree, landmark, name, proba = result
 
             if last_name and last_name == name:
                 if time.time() - last_time > DURATION:
-                    return f_frame, box, degree, name
+                    return f_frame, box, degree, landmark, name
             else:
                 last_name = name
                 last_time = time.time()
@@ -173,15 +172,34 @@ class WorkThread(Thread):
         logging.debug("[+] 게임 스레드 종료")
 
     def study_proc_ex(self):
+        def check_degree(base_degree : int, target_degree : int, error_range : int) -> bool:
+            right = base_degree + error_range
+            right = right if right <= 360 else right - 360
+            left = base_degree - error_range
+            left = left if left > 0 else left + 360
+
+            print(left, right)
+
+            if (target_degree >= left and target_degree <= 360 
+                and 360 - target_degree <= right and 360- target_degree >= 0):
+                return True
+            elif left <= target_degree and target_degree <= right:
+                return True
+
+            return False
+            
+
         def check_char(target_char : str) -> tuple:
             while not self.exit_event.is_set():
                 result = self.predict()
                 if not result:
                     continue
 
-                frame, box, degree, name = result
+                frame, box, degree, landmark, name = result
+                print(check_degree(360, degree, 10))
                 if target_char == name:
                     # 각도까지 체크해서 맞다면 True리턴
+
                     frame = self.draw_box(frame, box, self.COLOR_GREEN, name)
                     self.send_img(frame, "△")
                     logging.debug(f"[+] char cmp : {target_char}")
