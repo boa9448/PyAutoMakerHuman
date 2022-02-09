@@ -29,7 +29,7 @@ MODE_GAME = 2
 
 class WorkThread(Thread):
     COLOR_GREEN = (0, 255, 0)
-    COLOR_ORENGE = (0, 255, 255)
+    COLOR_ORENGE = (0, 127, 255)
     COLOR_RED = (0, 0, 255)
     FRAME_GET_TIME_OUT = 2
 
@@ -132,7 +132,7 @@ class WorkThread(Thread):
             hand_label, box, name, proba = result
 
             if last_name and last_name == name:
-                if time.time() - last_time < DURATION:
+                if time.time() - last_time > DURATION:
                     return f_frame, box, name
             else:
                 last_name = name
@@ -184,6 +184,7 @@ class WorkThread(Thread):
                     frame = self.draw_box(frame, box, self.COLOR_GREEN, name)
                     self.send_img(frame, "△")
                     logging.debug(f"[+] char cmp : {target_char}")
+                    self.last_color = self.COLOR_ORENGE
                     return True, frame
 
             return False, None
@@ -202,11 +203,13 @@ class WorkThread(Thread):
                 self.send_img(frame, "O")
                 self.stop_event.set()
             else:
+                # 중지 이벤트가 활성화 되있다면 화면을 더이상 그리지 않게함
                 if self.stop_event.is_set():
                     continue
 
                 frame = self.front_frame
                 self.send_img(frame)
+                self.last_color = self.COLOR_RED
 
 
         logging.debug("[+] 학습 스레드 종료")
