@@ -1,4 +1,5 @@
 import logging
+from math import degrees
 import time
 from threading import Thread, Event, Lock
 
@@ -129,11 +130,11 @@ class WorkThread(Thread):
                 continue
 
             result = max(results, key = lambda x : x[-1])
-            hand_label, box, name, proba = result
+            hand_label, box, degree, name, proba = result
 
             if last_name and last_name == name:
                 if time.time() - last_time > DURATION:
-                    return f_frame, box, name
+                    return f_frame, box, degree, name
             else:
                 last_name = name
                 last_time = time.time()
@@ -178,7 +179,7 @@ class WorkThread(Thread):
                 if not result:
                     continue
 
-                frame, box, name = result
+                frame, box, degree, name = result
                 if target_char == name:
                     # 각도까지 체크해서 맞다면 True리턴
                     frame = self.draw_box(frame, box, self.COLOR_GREEN, name)

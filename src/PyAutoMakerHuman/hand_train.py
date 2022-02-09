@@ -51,14 +51,14 @@ class HandTrainer:
         return result.get_boxes(), result.test_landmark_draw(img)
 
     def predict(self, img : np.ndarray) -> list:
-        datas = self.detector.extract(img)
-        if datas is None:
+        result = self.detector.extract(img)
+        if not result:
             return list()
 
         results = []
-        for hand_label, box, data in datas:
+        for hand_label, box, degree, data in result:
             name, proba = self.trainer.predict([data])
-            results.append((hand_label, box, name, proba))
+            results.append((hand_label, box, degree, name, proba))
 
         return results
 

@@ -205,14 +205,14 @@ class HandUtil:
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         return HandResult(img.shape, result)
 
-    def extract(self, img : np.ndarray) -> list:
-        result = self.detect(img)
-        if result.count() == 0:
-            return None
-
-        boxes = result.get_boxes()
-        landmarks = result.get_landmark_from_box()
-        return [(label, box, np.asarray(landmark).flatten()) for (_, box), (label, box, landmark) in zip(boxes, landmarks)]
+    #def extract(self, img : np.ndarray) -> list:
+    #    result = self.detect(img)
+    #    if result.count() == 0:
+    #        return None
+    #
+    #    boxes = result.get_boxes()
+    #    landmarks = result.get_landmark_from_box()
+    #    return [(label, box, np.asarray(landmark).flatten()) for (_, box), (label, box, landmark) in zip(boxes, landmarks)]
 
     def extract_dataset(self, dataset_path : str or list) -> dict:
         file_list = []
@@ -244,10 +244,11 @@ class HandUtil:
     def extract(self, img : np.ndarray) -> list:
         result = self.detect(img)
         if result.count() == 0:
-            return None
+            return list()
 
         landmarks = result.get_landmark_from_box()
-        return [(label, box, np.asarray(landmark).flatten()) for label, box, landmark in landmarks]
+        degrees = result.get_degree()
+        return [(label, box, degree, np.asarray(landmark).flatten()) for degree, (label, box, landmark) in zip(degrees, landmarks)]
 
 
 if __name__ == "__main__":
