@@ -58,12 +58,13 @@ class CaptureThread(Thread):
         self.camera_signal.fail()
 
     def run(self) -> None:
+        logging.debug("[+] 캡쳐 스레드 시작")
         while not self.exit_event.is_set():
             self.camera_change_lock.acquire(True)
             for proc, camera in zip([self.send_front, self.send_side], self.cameras):
                 if not camera.isOpened():
                     self.send_fail()
-                    return
+                    continue
 
                 success, frame = camera.read()
                 pixmap = numpy_to_pixmap(frame) if success else QPixmap()
