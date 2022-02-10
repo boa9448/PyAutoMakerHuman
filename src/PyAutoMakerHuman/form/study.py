@@ -19,10 +19,10 @@ DRAW_SIGNAL_FRONT = 1
 logging.basicConfig(level=logging.DEBUG)
 
 class DrawSignal(QObject):
-    sig = Signal(int, QPixmap, str)
+    sig = Signal(int, QPixmap, str, str)
 
-    def send_img(self, pixmap : QPixmap, answer_char : str = ""):
-        self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_char)
+    def send_img(self, pixmap : QPixmap, answer_char : str = "", answer_direction : str = ""):
+        self.sig.emit(DRAW_SIGNAL_FRONT, pixmap, answer_char, answer_direction)
 
 MODE_STUDY = 1
 MODE_GAME = 2
@@ -60,6 +60,35 @@ class WorkThread(Thread):
             frame = cv2_putText(frame, name, (x, y - 50), 4, (0, 255, 255), 2)
 
         return frame
+
+    def draw_landmark(self, img : np.ndarray, base_box : tuple, landmarks : list) -> np.ndarray:
+        box_x, box_y, box_w, box_h = base_box
+
+        connects = ((0, 1), (1, 2), (2, 3), (3, 4)
+                    , (0, 5), (5, 6), (6, 7), (7, 8)
+                    , (5, 9), (9, 13), (13, 17)
+                    , (9, 10), (10, 11), (11, 12)
+                    , (13, 14), (14, 15), (15, 16)
+                    , (17, 18), (18, 19), (19, 20), (0, 17))
+
+        for start_pt, end_pt in connects:
+            start_x, start_y, _ = landmarks[start_pt]
+            end_x, end_y, _ = landmarks[end_pt]
+
+            start_x = box_x + int(start_x * box_w)
+            start_y = box_y + int(start_y * box_h)
+
+            end_x = box_x + int(end_x * box_w)
+            end_y = box_y + int(end_y * box_h)
+
+            cv2.line(img, (start_x, start_y), (end_x, end_y), (255, 255, 255), 2)
+
+        for x, y, z in landmarks:
+            x = box_x + int(x * box_w)
+            y = box_y + int(y * box_h)
+            cv2.circle(img, (x, y), 6, (255, 0, 0), -1)
+
+        return img
 
     @property
     def front_frame(self) -> np.ndarray:
@@ -99,9 +128,9 @@ class WorkThread(Thread):
         with self.answer_change_lock:
             self._answer = value
 
-    def send_img(self, img : np.ndarray, answer_char : str or None = None):
+    def send_img(self, img : np.ndarray, answer_char : str = "", answer_direction: str = ""):
         pixmap = numpy_to_pixmap(img)
-        self.draw_signal.send_img(pixmap, answer_char)
+        self.draw_signal.send_img(pixmap, answer_char, answer_direction)
 
     def add_char(self, cur_time: float, box: tuple, name: str) -> None:
         if len(self.lang.get_str()) > 2:
@@ -129,82 +158,59 @@ class WorkThread(Thread):
                 continue
 
             result = max(results, key = lambda x : x[-1])
-            hand_label, box, degree, landmark, name, proba = result
+            hand_label, box, degree, landmarks, name, proba = result
 
             if last_name and last_name == name:
                 if time.time() - last_time > DURATION:
-                    return f_frame, box, degree, landmark, name
+                    return f_frame, hand_label, box, degree, landmarks, name
             else:
                 last_name = name
                 last_time = time.time()
 
             f_frame = self.draw_box(f_frame, box, self.last_color, name)
+            f_frame = self.draw_landmark(f_frame, box, landmarks)
             self.send_img(f_frame)
 
         return None
 
-    def study_proc(self) -> None:
-        logging.debug("[+] 게임 스레드 시작")
-        while not self.exit_event.is_set():
-            if self.stop_event.is_set():
-                continue
-
-            result = self.predict()
-            if not result:
-                self.lang.remove_char()
-                continue
-
-            frame, name, box = result
-            answer = self._answer == self.lang.get_str()[-1]
-            success = "O" if answer else "X"
-            color = self.COLOR_GREEN if answer else self.COLOR_RED
-
-            answer_char = self.lang.get_str()
-            answer_char = answer_char[-1] if answer else answer_char
-            frame = self.draw_box(frame, box, color, answer_char)
-            self.send_img(frame, success)
-            self.last_color = color
-            print(color)
-            logging.debug(f"[+] 문자열 : {self.lang.get_str()}")
-            if answer:
-                self.stop_event.set()
-
-        logging.debug("[+] 게임 스레드 종료")
-
     def study_proc_ex(self):
-        def check_degree(base_degree : int, target_degree : int, error_range : int) -> bool:
-            right = base_degree + error_range
-            right = right if right <= 360 else right - 360
+        DEGREE_DIRECTION_RIGHT = 1
+        DEGREE_DIRECTION_DOWN = 2
+        DEGREE_DIRECTION_LEFT = 3
+        DEGREE_DIRECTION_UP = 4
+
+        def diff_degree(base_direction : int, target_degree : int, error_range : int) -> int:
+            base_degree = 90 * base_direction
             left = base_degree - error_range
-            left = left if left > 0 else left + 360
+            right = base_degree + error_range
 
-            print(left, right)
+            diff = 0
+            if target_degree < left:
+                diff = left - target_degree
 
-            if (target_degree >= left and target_degree <= 360 
-                and 360 - target_degree <= right and 360- target_degree >= 0):
-                return True
-            elif left <= target_degree and target_degree <= right:
-                return True
+            if target_degree > right:
+                diff = target_degree - right
 
-            return False
-            
+            print(f"target : {target_degree}, diff : {diff}")
+
+            return diff
 
         def check_char(target_char : str) -> tuple:
-            while not self.exit_event.is_set():
-                result = self.predict()
-                if not result:
-                    continue
+            result = self.predict()
+            if not result:
+                return False, None
 
-                frame, box, degree, landmark, name = result
-                print(check_degree(360, degree, 10))
-                if target_char == name:
-                    # 각도까지 체크해서 맞다면 True리턴
+            frame, hand_label, box, degree, landmarks, name = result
+            diff = diff_degree(DEGREE_DIRECTION_UP, degree, 10)            
+            if target_char == name and hand_label == "Right":
+                # 이름, 오른손이 일치할 경우
 
-                    frame = self.draw_box(frame, box, self.COLOR_GREEN, name)
-                    self.send_img(frame, "△")
-                    logging.debug(f"[+] char cmp : {target_char}")
-                    self.last_color = self.COLOR_ORENGE
-                    return True, frame
+                frame = self.draw_box(frame, box, self.COLOR_GREEN, name)
+                frame = self.draw_landmark(frame, box, landmarks)
+                self.send_img(frame, "△")
+                logging.debug(f"[+] char cmp : {target_char}")
+                self.last_color = self.COLOR_ORENGE
+                return True, frame
 
             return False, None
 
@@ -315,10 +321,13 @@ class StudyWindow(QFrame, Ui_Frame):
         return super().hideEvent(event)
 
     @Slot(int, QPixmap, str)
-    def draw_signal_handler(self, code : int, pixmap : QPixmap, answer_char : bool) -> None:
+    def draw_signal_handler(self, code : int, pixmap : QPixmap, answer_char : str, answer_direction : str) -> None:
         self.screen_img_label.setPixmap(pixmap)
         if answer_char:
             self.draw_char_img(self.shape_img_label, answer_char, 10)
+
+        if answer_direction:
+            self.draw_char_img(self.direction_img_label, answer_direction, 10)
 
     def draw_char_img(self, target_img_label : QLabel, char : str, font_scale = 20) -> None:
         label_size = target_img_label.size().toTuple()
