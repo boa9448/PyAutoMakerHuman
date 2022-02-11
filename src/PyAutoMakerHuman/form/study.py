@@ -1,5 +1,6 @@
 import logging
 import time
+import asyncio
 from threading import Thread, Event, Lock
 
 import cv2
@@ -46,7 +47,8 @@ class WorkThread(Thread):
         self.draw_signal = draw_signal
         self.exit_event = Event()
         self.stop_event = Event()
-        self.lang = hand_lang.HandLang()
+        self.front_lang = hand_lang.HandLang()
+        self.side_lang = hand_lang.HandLang()
         self.last_name = None
         self.last_color = self.COLOR_RED
 
@@ -133,13 +135,12 @@ class WorkThread(Thread):
         self.draw_signal.send_img(pixmap, answer_char, answer_direction)
 
     def add_char(self, cur_time: float, box: tuple, name: str) -> None:
-        if len(self.lang.get_str()) > 2:
-            self.lang.remove_char()
+        if len(self.front_lang.get_str()) > 2:
+            self.front_lang.remove_char()
 
-        self.lang.add_char(cur_time, box, name)
+        self.front_lang.add_char(cur_time, box, name)
 
-    def predict(self) -> tuple or None:
-        """frame, box, name"""
+    def predict(self, draw_target : str) -> tuple or None:
         last_name = ""
         last_time = None
 
@@ -152,9 +153,9 @@ class WorkThread(Thread):
             if f_frame is None:
                 return None
 
-            results = self.lang.predict(f_frame)
+            results = self.front_lang.predict(f_frame)
             if not results:
-                self.send_img(f_frame)
+                self.send_img(f_frame, "X")
                 continue
 
             result = max(results, key = lambda x : x[-1])
@@ -167,7 +168,7 @@ class WorkThread(Thread):
                 last_name = name
                 last_time = time.time()
 
-            f_frame = self.draw_box(f_frame, box, self.last_color, name)
+            f_frame = self.draw_box(f_frame, box, self.last_color, name if draw_target == name else None)
             f_frame = self.draw_landmark(f_frame, box, landmarks)
             self.send_img(f_frame)
 
@@ -178,64 +179,73 @@ class WorkThread(Thread):
         DEGREE_DIRECTION_DOWN = 2
         DEGREE_DIRECTION_LEFT = 3
         DEGREE_DIRECTION_UP = 4
+        DIRECTION_NONE = 0
+        DIRECTION_LEFT = 1
+        DIRECTION_RIGHT = 2
 
         def diff_degree(base_direction : int, target_degree : int, error_range : int) -> int:
             base_degree = 90 * base_direction
             left = base_degree - error_range
-            right = base_degree + error_range
+            right = (base_degree + error_range) % 360
 
-            diff = 0
-            if target_degree < left:
-                diff = left - target_degree
+            direction = DIRECTION_NONE
+            if target_degree < left and target_degree > right:
+                left_diff = target_degree - left
+                right_diff = target_degree - right
+                #print(f"left_diff : {left_diff}, right_diff : {right_diff}")
+                direction = DIRECTION_LEFT if abs(left_diff) > abs(right_diff) else DIRECTION_RIGHT
 
-            if target_degree > right:
-                diff = target_degree - right
+            #print(f"left : {left}, right : {right}")
+            #print("left" if direction == DIRECTION_LEFT else "right")
 
-            print(f"target : {target_degree}, diff : {diff}")
-
-            return diff
+            return direction
 
         def check_char(target_char : str) -> tuple:
-            result = self.predict()
-            if not result:
-                return False, None
+            while not self.stop_event.is_set():
+                result = self.predict(target_char)
+                if not result:
+                    return False, None
 
-            frame, hand_label, box, degree, landmarks, name = result
-            diff = diff_degree(DEGREE_DIRECTION_UP, degree, 10)            
-            if target_char == name and hand_label == "Right":
-                # 이름, 오른손이 일치할 경우
+                frame, hand_label, box, degree, landmarks, name = result
+                direction = diff_degree(DEGREE_DIRECTION_UP, degree, 10)
+                if target_char == name and hand_label == "Right":
+                    # 이름, 오른손이 일치할 경우
+                    frame = self.draw_box(frame, box, self.COLOR_RED if direction else self.COLOR_GREEN, name)
+                    frame = self.draw_landmark(frame, box, landmarks)
+                    
+                    if direction:
+                        self.send_img(frame, "△", "<-" if direction == DIRECTION_LEFT else "->")
+                        continue
+                    
+                    self.send_img(frame, "△", "O")
+                    logging.debug(f"[+] char cmp : {target_char}")
+                    self.last_color = self.COLOR_ORENGE
 
-                frame = self.draw_box(frame, box, self.COLOR_GREEN, name)
-                frame = self.draw_landmark(frame, box, landmarks)
-                self.send_img(frame, "△")
-                logging.debug(f"[+] char cmp : {target_char}")
-                self.last_color = self.COLOR_ORENGE
-                return True, frame
+                    return True, frame
 
             return False, None
 
         logging.debug("[+] 학습 스레드 시작")
         while not self.exit_event.is_set():
             if self.stop_event.is_set():
+                self.sleep(0.1)
                 continue
 
             char_list = self.answer
+            if not char_list:
+                # 아직 문제가 설정되지 않았다면 화면을 그리기만함
+                frame = self.front_frame
+                self.send_img(frame)
+                continue
+
             for char in char_list:
                 success, frame = check_char(char)
                 if not success:
                     break
 
+            if success:
                 self.send_img(frame, "O")
                 self.stop_event.set()
-            else:
-                # 중지 이벤트가 활성화 되있다면 화면을 더이상 그리지 않게함
-                if self.stop_event.is_set():
-                    continue
-
-                frame = self.front_frame
-                self.send_img(frame)
-                self.last_color = self.COLOR_RED
-
 
         logging.debug("[+] 학습 스레드 종료")
 
@@ -249,9 +259,10 @@ class WorkThread(Thread):
         self.mirror_mode = mirror_mode
 
     def set_answer(self, answer : str or list) -> None:
-        self.answer = list(self.lang.get_key(answer)) if self.run_mode == MODE_STUDY else answer
+        self.stop_event.set()
+        self.answer = list(self.front_lang.get_key(answer)) if self.run_mode == MODE_STUDY else answer
         self.last_color = self.COLOR_RED
-        self.lang.remove_char()
+        self.front_lang.remove_char()
         self.stop_event.clear()
         logging.debug(f"[+] change answer : {self.answer}")
 
