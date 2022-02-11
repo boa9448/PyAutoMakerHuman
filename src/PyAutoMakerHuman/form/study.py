@@ -298,6 +298,7 @@ class StudyWindow(QFrame, Ui_Frame):
     def init_handler(self) -> None:
         self.char_child_combo.currentIndexChanged.connect(self.char_combo_change_handler)
         self.char_parent_combo.currentIndexChanged.connect(self.char_combo_change_handler)
+        self.reset_button.clicked.connect(self.reset_button_clicked_handler)
 
     def init_display(self) -> None:
         self.char_child_combo.addItems(self.CHAR_CHILD_COMBO_ITEMS)
@@ -314,7 +315,9 @@ class StudyWindow(QFrame, Ui_Frame):
             img_label.setScaledContents(True)
 
     def init_data(self) -> None:
-        self.set_answer("")
+        self.set_answer("ㄱ")
+        self.last_changed_combobox = self.char_child_combo
+
         self.draw_signal = DrawSignal()
         self.draw_signal.sig.connect(self.draw_signal_handler)
         self.game_thread = WorkThread(*self.cameras , self.draw_signal, self.mirror_mode)
@@ -353,12 +356,19 @@ class StudyWindow(QFrame, Ui_Frame):
     def char_combo_change_handler(self, idx : int) -> None:
         if self.sender() == self.char_child_combo:
             target_list = self.CHAR_CHILD_COMBO_ITEMS
+            self.last_changed_combobox = self.char_child_combo
         else:
             target_list = self.CHAR_PARENT_COMBO_ITEMS
+            self.last_changed_combobox = self.char_parent_combo
 
         char = target_list[idx]
         self.draw_char_img(self.study_img_label, char)
         self.set_answer(char)
+
+    @Slot()
+    def reset_button_clicked_handler(self) -> None:
+        cur_idx = self.last_changed_combobox.currentIndex()
+        self.char_combo_change_handler(cur_idx)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         width = self.study_img_label.width()

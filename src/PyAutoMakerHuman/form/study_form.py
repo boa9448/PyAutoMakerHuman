@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'game_form.ui'
+## Form generated from reading UI file 'study_form.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.2.2
 ##
@@ -16,8 +16,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
-    QHBoxLayout, QLabel, QLayout, QSizePolicy,
-    QSpacerItem, QVBoxLayout, QWidget)
+    QHBoxLayout, QLabel, QLayout, QPushButton,
+    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 class Ui_Frame(object):
     def setupUi(self, Frame):
@@ -64,6 +64,11 @@ class Ui_Frame(object):
 
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
+
+        self.reset_button = QPushButton(Frame)
+        self.reset_button.setObjectName(u"reset_button")
+
+        self.verticalLayout_2.addWidget(self.reset_button)
 
         self.study_img_label = QLabel(Frame)
         self.study_img_label.setObjectName(u"study_img_label")
@@ -152,6 +157,7 @@ class Ui_Frame(object):
     def retranslateUi(self, Frame):
         Frame.setWindowTitle(QCoreApplication.translate("Frame", u"Frame", None))
         self.study_select_label.setText(QCoreApplication.translate("Frame", u"\ud559\uc2b5\ud560 \uc9c0\ubb38\uc790 \uc120\ud0dd", None))
+        self.reset_button.setText(QCoreApplication.translate("Frame", u"\ub2e4\uc2dc\ud558\uae30", None))
         self.study_img_label.setText(QCoreApplication.translate("Frame", u"\ud559\uc2b5\ud560 \uc774\ubbf8\uc9c0", None))
         self.direction_label.setText(QCoreApplication.translate("Frame", u"\ubc29\ud5a5", None))
         self.screen_img_label.setText(QCoreApplication.translate("Frame", u"\uc601\uc0c1\uc774 \ubcf4\uc774\ub294 \uc601\uc5ed", None))

@@ -78,6 +78,13 @@
       </layout>
      </item>
      <item>
+      <widget class="QPushButton" name="reset_button">
+       <property name="text">
+        <string>다시하기</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="study_img_label">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
