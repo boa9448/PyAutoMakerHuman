@@ -26,16 +26,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_display(self) -> None:
         self.camera_dialog = CameraDialog()
-        self.game_frame = StudyWindow(self)
+        self.study_frame = StudyWindow(self)
 
         self.stack_layout = QStackedLayout()
-        self.stack_layout.addWidget(self.game_frame)
+        self.stack_layout.addWidget(self.study_frame)
 
         self.stack_layout.addWidget(QFrame())
         self.frame.setLayout(self.stack_layout)
 
-        self.game_frame.init()
-        text = "거울모드 {}".format("On" if self.game_frame.get_mirror_mode() else "Off")
+        self.study_frame.init()
+        text = "거울모드 {}".format("On" if self.study_frame.get_mirror_mode() else "Off")
         self.mirror_mode_button.setText(text)
 
     def get_cameras(self) -> tuple:
@@ -51,9 +51,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot()
     def mirror_mode_button_handler(self) -> None:
-        mode = self.game_frame.get_mirror_mode()
-        self.game_frame.set_mirror_mode(not mode)
-        text = "거울모드 {}".format("On" if self.game_frame.get_mirror_mode() else "Off")
+        mode = self.study_frame.get_mirror_mode()
+        self.study_frame.set_mirror_mode(not mode)
+        text = "거울모드 {}".format("On" if self.study_frame.get_mirror_mode() else "Off")
         self.mirror_mode_button.setText(text)
 
 def start_main():
