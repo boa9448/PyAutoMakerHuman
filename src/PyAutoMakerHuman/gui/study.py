@@ -1,6 +1,7 @@
+import os
 import logging
 import time
-import asyncio
+import json
 from threading import Thread, Event, Lock
 
 import cv2
@@ -12,7 +13,7 @@ from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 from .form.study_form import Ui_Frame
 from .utils import numpy_to_pixmap
 from .. import hand_lang
-from ..image import cv2_putText
+from ..image import cv2_imread, cv2_putText
 
 DRAW_SIGNAL_FAIL = 0
 DRAW_SIGNAL_FRONT = 1
@@ -275,21 +276,12 @@ class WorkThread(Thread):
 
 
 class StudyWindow(QFrame, Ui_Frame):
-    #CHAR_CHILD_COMBO_ITEMS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅍ", "ㅎ"
-    #                            , "ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ", "ㄳ", "ㄵ", "ㄶ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅄ"]
-    CHAR_CHILD_COMBO_ITEMS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅍ", "ㅎ"
-                                , "ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ"]
-
-    CHAR_PARENT_COMBO_ITEMS = ["ㅏ", "ㅐ", "ㅑ" , "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ"
-                                , "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"]
-
-    def __init__(self, parent = None):
-        super(StudyWindow, self).__init__(parent)
+    def __init__(self, parernt, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]):
+        super(StudyWindow, self).__init__(parernt)
         self.setupUi(self)
         self.img_label_list = [self.screen_img_label, self.shape_img_label, self.study_img_label, self.direction_img_label]
         self.mirror_mode = True
-        self.cameras = parent.get_cameras()
-        self.show()
+        self.cameras = cameras
 
     def __del__(self):
         self.dispose_data()
@@ -303,9 +295,39 @@ class StudyWindow(QFrame, Ui_Frame):
         self.char_parent_combo.currentIndexChanged.connect(self.char_combo_change_handler)
         self.reset_button.clicked.connect(self.reset_button_clicked_handler)
 
-    def init_display(self) -> None:
-        self.char_child_combo.addItems(self.CHAR_CHILD_COMBO_ITEMS)
-        self.char_parent_combo.addItems(self.CHAR_PARENT_COMBO_ITEMS)
+    def load_img_info(self) -> tuple:
+        cur_dir = os.path.dirname(__file__)
+        img_dir = os.path.join(cur_dir, "imgs")
+        file_path = os.path.join(img_dir, "desc.json")
+        with open(file_path, "rb") as f:
+            file_data = f.read()
+
+        json_data = json.loads(file_data)
+
+        childs = json_data["child"]
+        parents = json_data["parent"]
+
+        def load_helper(json_data : dict) -> dict:
+            result_dict = dict()
+            for key, value in json_data.items():
+                img_path = os.path.join(img_dir, value)
+                img = cv2_imread(img_path)
+                img = numpy_to_pixmap(img)
+                result_dict[key] = img
+
+            return result_dict
+
+        child_img_dict = load_helper(childs)
+        parent_img_dict = load_helper(parents)
+        return child_img_dict, parent_img_dict
+
+    def init_display(self) -> None:            
+        child, parent = self.load_img_info()
+        self.CHAR_CHILD_COMBO_DICT : dict = child
+        self.CHAR_PARENT_COMBO_DICT : dict = parent
+
+        self.char_child_combo.addItems(list(self.CHAR_CHILD_COMBO_DICT.keys()))
+        self.char_parent_combo.addItems(list(self.CHAR_PARENT_COMBO_DICT.keys()))
 
         for img_label in self.img_label_list:
             rect = img_label.rect()
@@ -358,13 +380,13 @@ class StudyWindow(QFrame, Ui_Frame):
     @Slot(int)
     def char_combo_change_handler(self, idx : int) -> None:
         if self.sender() == self.char_child_combo:
-            target_list = self.CHAR_CHILD_COMBO_ITEMS
+            target_dict = self.CHAR_CHILD_COMBO_DICT
             self.last_changed_combobox = self.char_child_combo
         else:
-            target_list = self.CHAR_PARENT_COMBO_ITEMS
+            target_dict = self.CHAR_PARENT_COMBO_DICT
             self.last_changed_combobox = self.char_parent_combo
 
-        char = target_list[idx]
+        char = self.last_changed_combobox.currentText()
         self.draw_char_img(self.study_img_label, char)
         self.set_answer(char)
 

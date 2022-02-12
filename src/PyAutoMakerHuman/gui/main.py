@@ -26,7 +26,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_display(self) -> None:
         self.camera_dialog = CameraDialog()
-        self.study_frame = StudyWindow(self)
+        self.study_frame = StudyWindow(self, self.camera_dialog.cameras())
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.study_frame)
