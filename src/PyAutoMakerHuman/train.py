@@ -46,13 +46,13 @@ class SvmUtil:
         self.le = pickle.loads(open(os.path.join(load_path, "le"), "rb").read())
 
     def predict(self, data) -> tuple:
-        result = self.model.predict_proba(data)[0]
-        idx = np.argmax(result)
+        results = self.model.predict_proba(data)
+        indexes = [np.argmax(result) for result in results]
 
-        proba = result[idx]
-        name = self.le.classes_[idx]
+        probabilities = [float(result[idx]) for result, idx in zip(results, indexes)]
+        names = [str(self.le.classes_[idx]) for idx in indexes]
 
-        return str(name), float(proba)
+        return tuple(zip(names, probabilities))
 
     def get_labels(self) -> tuple:
         return self.le.classes_

@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from glob import glob
 
 import cv2
@@ -9,11 +10,13 @@ from . import hand
 from . import train
 from . import image
 
+logging.basicConfig(level = logging.DEBUG)
+
 class HandTrainer:
-    def __init__(self):
+    def __init__(self, trainer : train.SvmUtil = train.SvmUtil()):
         self.detector = hand.HandUtil()
-        self.trainer = train.SvmUtil()
-        self.logger = print
+        self.trainer = trainer
+        self.set_logger(logging.debug)
 
     def __del__(self):
         pass
@@ -24,8 +27,7 @@ class HandTrainer:
         self.trainer.set_logger(logger)
 
     def log(self, log_message: str) -> None:
-        self.logger(log_message)
-
+        self.logger(f"[HandTrainer] : {log_message}")
 
     def train(self, dataset_path : str) -> None:
         data = self.detector.extract_dataset(dataset_path)
@@ -50,17 +52,15 @@ class HandTrainer:
         result = self.detector.detect(img)
         return result.get_boxes(), result.test_landmark_draw(img)
 
-    def predict(self, img : np.ndarray) -> list:
+    def predict(self, img : np.ndarray) -> tuple:
         result = self.detector.extract(img)
         if not result:
             return list()
 
-        results = []
-        for hand_label, box, degree, landmark, data in result:
-            name, proba = self.trainer.predict([data])
-            results.append((hand_label, box, degree, landmark, name, proba))
+        hand_result, datas = result
+        predict_result = self.trainer.predict(datas)
 
-        return results
+        return hand_result, predict_result
 
 if __name__ == "__main__":
     pass

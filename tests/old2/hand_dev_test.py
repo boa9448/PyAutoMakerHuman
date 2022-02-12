@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 from PyAutoMakerHuman import hand
 
-hand_img = cv2.imread(os.path.join(env.img_dir, "2_hand.jpg"))
-no_hand_img = cv2.imread(os.path.join(env.img_dir, "person.jpg"))
+hand_img = cv2.imread(os.path.join(env.test_img_dir, "2_hand.jpg"))
+no_hand_img = cv2.imread(os.path.join(env.test_img_dir, "person.jpg"))
 
 proc = hand.HandUtil()
 hand_proc_result = proc.detector.process(cv2.cvtColor(hand_img, cv2.COLOR_BGR2RGB))

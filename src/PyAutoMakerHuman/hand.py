@@ -1,5 +1,6 @@
 import os
 import math
+import logging
 from glob import glob
 
 import imutils
@@ -7,6 +8,8 @@ import numpy as np
 import cv2
 import mediapipe as mp
 from .image import cv2_imread
+
+logging.basicConfig(level = logging.DEBUG)
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -47,7 +50,7 @@ class HandResult:
                         for info in self.results.multi_handedness]
         return hand_score
 
-    def labels(self) -> list:
+    def get_labels(self) -> list:
         """발견된 손의 라벨을 리턴하는 함수
         """
 
@@ -66,7 +69,7 @@ class HandResult:
             return list()
 
         landmarks = []
-        for label, hand_landmark in zip(self.labels(), self.results.multi_hand_landmarks):
+        for label, hand_landmark in zip(self.get_labels(), self.results.multi_hand_landmarks):
             norm_landmarks = list(hand_landmark.landmark)
 
             landmarks.append((label, [[landmark.x, landmark.y, landmark.z]
@@ -90,10 +93,10 @@ class HandResult:
 
 
         landmarks = []
-        for label, hand_landmark in zip(self.labels(), self.results.multi_hand_landmarks):
+        for hand_label, hand_landmark in zip(self.get_labels(), self.results.multi_hand_landmarks):
             norm_landmarks = list(hand_landmark.landmark)
 
-            landmarks.append((label, [[int(landmark.x * self.width), int(landmark.y * self.height), landmark.z]
+            landmarks.append((hand_label, [[int(landmark.x * self.width), int(landmark.y * self.height), landmark.z]
                                 for landmark in norm_landmarks]))
 
         return landmarks
@@ -105,13 +108,13 @@ class HandResult:
         box_list = []
 
         landmarks = self.get_abs_landmarks()
-        for label, landmark in landmarks:
+        for hand_label, landmark in landmarks:
             minX = min(landmark, key = lambda x : x[0])[0]
             minY = min(landmark, key = lambda x : x[1])[1]
             maxX = max(landmark, key = lambda x : x[0])[0]
             maxY = max(landmark, key = lambda x : x[1])[1]
             box = [minX, minY, maxX - minX, maxY - minY]
-            box_list.append((label, box))
+            box_list.append((hand_label, box))
 
         return box_list
 
@@ -125,8 +128,8 @@ class HandResult:
         for box, landmark in zip(boxes, landmarks):
             box_label, box = box
             start_x, start_y, box_width, box_height = box
-            landmark_label, landmark = landmark
-            label_box_landmarks.append((landmark_label, box, [((x - start_x) / box_width, (y - start_y) / box_height, z)
+            hand_label, landmark = landmark
+            label_box_landmarks.append((hand_label, box, [((x - start_x) / box_width, (y - start_y) / box_height, z)
                                                      for x, y, z in landmark]))
 
         return label_box_landmarks
@@ -187,7 +190,7 @@ class HandUtil:
     def __init__(self, static_image_mode = True, max_num_hands = 2,
                 min_detection_confidence = 0.5):
 
-        self.logger = print
+        self.logger = logging.debug
         self.detector = mp_hands.Hands(static_image_mode = static_image_mode,
                                         max_num_hands = max_num_hands,
                                         min_detection_confidence = min_detection_confidence)
@@ -199,20 +202,19 @@ class HandUtil:
         self.logger = logger
 
     def log(self, log_message : str):
-        self.logger(log_message)
+        self.logger(f"[HandUtil] : {log_message}")
 
     def detect(self, img : np.ndarray) -> HandResult:
         result = self.detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         return HandResult(img.shape, result)
 
-    #def extract(self, img : np.ndarray) -> list:
-    #    result = self.detect(img)
-    #    if result.count() == 0:
-    #        return None
-    #
-    #    boxes = result.get_boxes()
-    #    landmarks = result.get_landmark_from_box()
-    #    return [(label, box, np.asarray(landmark).flatten()) for (_, box), (label, box, landmark) in zip(boxes, landmarks)]
+    def extract(self, img : np.ndarray) -> tuple:
+        result = self.detect(img)
+        if result.count() == 0:
+            return tuple()
+
+        landmarks = result.get_landmark_from_box()
+        return result, [np.asarray(landmark).flatten() for _, _, landmark in landmarks]
 
     def extract_dataset(self, dataset_path : str or list) -> dict:
         file_list = []
@@ -231,25 +233,17 @@ class HandUtil:
 
             img = cv2_imread(file)
             img = imutils.resize(img, width=600)
-            data = self.extract(img)
-            if not data:
+            result = self.extract(img)
+            if not result:
                 continue
 
             name_list.append(name)
-            data_list.append(np.asarray(data[0][2]).flatten()) #맨 처음 등록된 1개의 정보만, 라벨, 박스 정보는 제외
+
+            hand_result, data = result
+            data_list.append(data[0]) #맨 처음 등록된 1개의 정보만 데이터로 등록
 
         self.log("done")
         return {"name" : name_list, "data" : data_list}
-
-    def extract(self, img : np.ndarray) -> list:
-        result = self.detect(img)
-        if result.count() == 0:
-            return list()
-
-        landmarks = result.get_landmark_from_box()
-        degrees = result.get_degree()
-        return [(label, box, degree, landmark, np.asarray(landmark).flatten())
-                    for degree, (label, box, landmark) in zip(degrees, landmarks)]
 
 
 if __name__ == "__main__":
