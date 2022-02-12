@@ -1,9 +1,7 @@
 import cv2
 import numpy as np
 
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QPixmap, QImage, QColor
-from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QPixmap, QImage
 
 def numpy_to_pixmap(img : np.ndarray) -> QPixmap:
     h, w, c = img.shape
