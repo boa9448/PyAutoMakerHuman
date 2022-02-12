@@ -9,7 +9,7 @@ from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame, QComboBox, QLabel
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
-from .study_form import Ui_Frame
+from .form.study_form import Ui_Frame
 from .utils import numpy_to_pixmap
 from .. import hand_lang
 from ..image import cv2_putText

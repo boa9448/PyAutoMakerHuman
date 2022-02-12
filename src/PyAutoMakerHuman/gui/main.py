@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QMainWindow, QApplication, QFrame, QStackedLayout
 from PySide6.QtGui import QPixmap
 from qt_material import apply_stylesheet
 
-from .main_form import Ui_MainWindow
+from .form.main_form import Ui_MainWindow
 from .study import StudyWindow
 from .camera import CameraDialog
 
