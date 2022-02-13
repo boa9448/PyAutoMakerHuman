@@ -10,7 +10,7 @@ from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame, QComboBox, QLabel
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
-import proc
+from . import proc
 from .form.study_form import Ui_Frame
 from .utils import numpy_to_pixmap, draw_char_img
 from .. import hand_lang
@@ -111,13 +111,13 @@ class StudyWindow(QFrame, Ui_Frame):
     def answer_handler(self, code : int) -> None:
         char_dict = {proc.ANSWER_FAIL : "X", proc.ANSWER_PROCESSING : "△", proc.ANSWER_SUCCESS : "O"}
         char = char_dict.get(code, "")
-        draw_char_img(self.shape_img_label, char, 10)
+        draw_char_img(self.answer_img_label, char, 10)
 
     @Slot(int)
     def direction_hander(self, code : int) -> None:
         shape_dict = {proc.DIRECTION_NONE : "O", proc.DIRECTION_LEFT : "<-", proc.DIRECTION_RIGHT : "->"}
         shape = shape_dict.get(code, "")
-        draw_char_img(self.shape_img_label, shape, 10)
+        draw_char_img(self.direction_img_label, shape, 10)
 
     @Slot(int)
     def char_combo_change_handler(self, idx : int) -> None:
@@ -128,7 +128,6 @@ class StudyWindow(QFrame, Ui_Frame):
 
         char = self.last_changed_combobox.currentText()
         draw_char_img(self.study_img_label, char)
-        self.set_answer(char)
 
     @Slot()
     def reset_button_clicked_handler(self) -> None:
