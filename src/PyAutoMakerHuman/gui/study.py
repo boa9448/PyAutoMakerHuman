@@ -22,7 +22,9 @@ class StudyWindow(QFrame, Ui_Frame):
     def __init__(self, parernt, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]):
         super(StudyWindow, self).__init__(parernt)
         self.setupUi(self)
-        self._img_label_list = [self.screen_img_label, self.shape_img_label, self.study_img_label, self.direction_img_label]
+        self._img_label_list = [self.screen_img_label, self.answer_img_label, self.example_img_label
+                                , self.study_img_label, self.direction_img_label]
+
         self._mirror_mode = True
         self._cameras = cameras
 
@@ -82,6 +84,8 @@ class StudyWindow(QFrame, Ui_Frame):
             img_label.setPixmap(pixmap)
             img_label.setScaledContents(True)
 
+        self.reset_button.click()
+
     def init_data(self) -> None:
         self.last_changed_combobox = self.char_child_combo
         self.study_thread = proc.WorkThread(self._cameras
@@ -128,6 +132,16 @@ class StudyWindow(QFrame, Ui_Frame):
 
         char = self.last_changed_combobox.currentText()
         draw_char_img(self.study_img_label, char)
+
+        target_dict = dict()
+        if self.last_changed_combobox == self.char_child_combo:
+            target_dict = self.CHAR_CHILD_COMBO_DICT
+        elif self.last_changed_combobox == self.char_parent_combo:
+            target_dict = self.CHAR_PARENT_COMBO_DICT
+        
+        img = target_dict.get(char)
+        if img:
+            self.example_img_label.setPixmap(img)
 
     @Slot()
     def reset_button_clicked_handler(self) -> None:
