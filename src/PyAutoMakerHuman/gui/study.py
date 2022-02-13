@@ -25,20 +25,17 @@ class StudyWindow(QFrame, Ui_Frame):
         self._img_label_list = [self.screen_img_label, self.answer_img_label, self.example_img_label
                                 , self.study_img_label, self.direction_img_label]
 
+        self.last_changed_combobox = self.char_child_combo
         self._mirror_mode = True
+        self._questions = "ㄱ"
         self._cameras = cameras
 
     def __del__(self):
         self.dispose_data()
 
     def init(self) -> None:
-        self.init_handler()
         self.init_display()
-
-    def init_handler(self) -> None:
-        self.char_child_combo.currentIndexChanged.connect(self.char_combo_change_handler)
-        self.char_parent_combo.currentIndexChanged.connect(self.char_combo_change_handler)
-        self.reset_button.clicked.connect(self.reset_button_clicked_handler)
+        self.init_handler()
 
     def load_img_info(self) -> tuple:
         cur_dir = os.path.dirname(__file__)
@@ -84,10 +81,13 @@ class StudyWindow(QFrame, Ui_Frame):
             img_label.setPixmap(pixmap)
             img_label.setScaledContents(True)
 
+    def init_handler(self) -> None:
+        self.char_child_combo.currentIndexChanged.connect(self.char_combo_change_handler)
+        self.char_parent_combo.currentIndexChanged.connect(self.char_combo_change_handler)
+        self.reset_button.clicked.connect(self.reset_button_clicked_handler)
         self.reset_button.click()
 
     def init_data(self) -> None:
-        self.last_changed_combobox = self.char_child_combo
         self.study_thread = proc.WorkThread(self._cameras
                                             , self.front_draw_handler
                                             , self.answer_handler
@@ -166,3 +166,5 @@ class StudyWindow(QFrame, Ui_Frame):
         self._mirror_mode = value
         if self.study_thread:
             self.study_thread.mirror_mode = value
+
+    
