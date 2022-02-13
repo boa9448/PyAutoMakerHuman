@@ -19,6 +19,8 @@ from ..image import cv2_imread
 logging.basicConfig(level=logging.DEBUG)
 
 class StudyWindow(QFrame, Ui_Frame):
+    QUESTION_DEFAUL = "ㄱ"
+
     def __init__(self, parernt, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]):
         super(StudyWindow, self).__init__(parernt)
         self.setupUi(self)
@@ -28,7 +30,7 @@ class StudyWindow(QFrame, Ui_Frame):
         self.last_changed_combobox = self.char_child_combo
         self.study_thread = None
         self._mirror_mode = True
-        self._questions = "ㄱ"
+        self._questions = self.QUESTION_DEFAUL
         self._cameras = cameras
 
     def __del__(self):
@@ -94,6 +96,7 @@ class StudyWindow(QFrame, Ui_Frame):
                                             , self.answer_handler
                                             , self.direction_hander)
         self.study_thread.mirror_mode = self.mirror_mode
+        self.study_thread.questions = self._questions
         self.study_thread.start()
 
     def dispose_data(self) -> None:
@@ -146,6 +149,8 @@ class StudyWindow(QFrame, Ui_Frame):
 
         if self.study_thread:
             self.study_thread.questions = char
+            
+        self._questions = char
 
     @Slot()
     def reset_button_clicked_handler(self) -> None:
