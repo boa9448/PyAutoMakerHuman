@@ -1,4 +1,5 @@
 import time
+import logging
 from threading import Thread, Event, Lock
 from typing import Callable
 
@@ -9,6 +10,21 @@ from PySide6.QtGui import QPixmap
 
 from .exception import FrameException
 from .utils import numpy_to_pixmap
+
+
+logging.basicConfig(level = logging.DEBUG)
+
+STUDY_COMBINATION_CHAR_DICT = {
+    "ㄲ" : "ㄱㄱ"
+    , "ㄸ" : "ㄷㄷ"
+    , "ㅃ" : "ㅂㅂ"
+    , "ㅆ" : "ㅅㅅ"
+    , "ㅉ" : "ㅈㅈ"
+    , "ㅘ" : "ㅗㅏ"
+    , "ㅙ" : "ㅗㅐ"
+    , "ㅝ" : "ㅜㅓ"
+    , "ㅞ" : "ㅜㅔ"
+}
 
 class FrontDrawSignal(QObject):
     sig = Signal(QPixmap)
@@ -51,17 +67,22 @@ class DirectionSignal(QObject):
 
 
 class WorkThread(Thread):
+    RUN_STUDY = 1
+    RUN_TEST = 2
     FRAME_READ_TIMEOUT = 2
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
-                    , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable):
+                    , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
+                    , run_mode : int = RUN_STUDY):
         super().__init__()
         # 이벤트, 락
         self._exit_event = Event()
+        self._stop_event = Event()
         self._mirror_modify_lock = Lock()
         self._question_modify_lock = Lock()
 
         # 작동 관련 변수
+        self._run_mode = run_mode
         self._mirror_mode = True
         self._questions = list()
 
@@ -85,6 +106,9 @@ class WorkThread(Thread):
     def join(self, timeout: float or None = None) -> None:
         self.exit()
         return super().join(timeout)
+
+    def reset(self) -> None:
+        self._stop_event.clear()
 
     def get_frame(self, target_camera : cv2.VideoCapture) -> np.ndarray:
         start_time = time.time()
@@ -119,6 +143,7 @@ class WorkThread(Thread):
     def mirror_mode(self, value : bool) -> None:
         with self._mirror_modify_lock:
             self._mirror_mode = value
+            logging.debug(f"[+] mirror mode change : {self._mirror_mode}")
 
     @property
     def questions(self) -> list:
@@ -130,7 +155,10 @@ class WorkThread(Thread):
     @questions.setter
     def questions(self, value : list) -> None:
         with self._question_modify_lock:
-            self._questions = value
+            if self._run_mode == self.RUN_STUDY:
+                value = list(STUDY_COMBINATION_CHAR_DICT.get(value, value))
+            self._questions = list(value)
+            logging.debug(f"[+] question change : {self._questions}")
 
     def run(self) -> None:
         while not self._exit_event.is_set():

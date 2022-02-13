@@ -26,6 +26,7 @@ class StudyWindow(QFrame, Ui_Frame):
                                 , self.study_img_label, self.direction_img_label]
 
         self.last_changed_combobox = self.char_child_combo
+        self.study_thread = None
         self._mirror_mode = True
         self._questions = "ㄱ"
         self._cameras = cameras
@@ -143,10 +144,15 @@ class StudyWindow(QFrame, Ui_Frame):
         if img:
             self.example_img_label.setPixmap(img)
 
+        if self.study_thread:
+            self.study_thread.questions = char
+
     @Slot()
     def reset_button_clicked_handler(self) -> None:
         cur_idx = self.last_changed_combobox.currentIndex()
         self.char_combo_change_handler(cur_idx)
+        if self.study_thread:
+            self.study_thread.reset()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         width = self.study_img_label.width()
