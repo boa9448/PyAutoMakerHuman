@@ -8,6 +8,10 @@ import numpy as np
 from PySide6.QtCore import QObject, Slot, Signal
 from PySide6.QtGui import QPixmap
 
+from ..hand import HandResult
+
+from .. import model_dir
+from ..hand_train import HandTrainer
 from .exception import FrameException
 from .utils import numpy_to_pixmap
 
@@ -69,7 +73,14 @@ class DirectionSignal(QObject):
 class WorkThread(Thread):
     RUN_STUDY = 1
     RUN_TEST = 2
+
     FRAME_READ_TIMEOUT = 2
+
+    PREDICT_TIMEOUT = 2
+
+    COLOR_RED = (0, 0, 255)
+    COLOR_GREEN = (0, 255, 0)
+    COLOR_ORENGE = (0, 127, 255)
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
                     , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
@@ -78,6 +89,7 @@ class WorkThread(Thread):
         # 이벤트, 락
         self._exit_event = Event()
         self._stop_event = Event()
+        self._question_modify_event = Event()
         self._mirror_modify_lock = Lock()
         self._question_modify_lock = Lock()
 
@@ -85,6 +97,8 @@ class WorkThread(Thread):
         self._run_mode = run_mode
         self._mirror_mode = True
         self._questions = list()
+        self._classifier = HandTrainer()
+        self._classifier.load(model_dir)
 
         # 카메라
         self._front_camera = cameras[0]
@@ -110,22 +124,18 @@ class WorkThread(Thread):
     def reset(self) -> None:
         self._stop_event.clear()
 
-    def get_frame(self, target_camera : cv2.VideoCapture) -> np.ndarray:
+    def get_frame(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> np.ndarray:
         start_time = time.time()
         while time.time() - start_time < self.FRAME_READ_TIMEOUT:
             success, frame = target_camera.read()
             if success:
-                return frame
+                return cv2.flip(frame, 1) if mirror_mode else frame
         
         raise FrameException("프레임을 가져오는데 실패했습니다")
 
     @property
     def front_frame(self) -> np.ndarray:
-        frame = self.get_frame(self._front_camera)
-        if self.mirror_mode:
-            frame = cv2.flip(frame, 1)
-
-        return frame
+        return self.get_frame(self._front_camera, True)
 
     @property
     def side_frame(self) -> np.ndarray:
@@ -158,9 +168,105 @@ class WorkThread(Thread):
             if self._run_mode == self.RUN_STUDY:
                 value = list(STUDY_COMBINATION_CHAR_DICT.get(value, value))
             self._questions = list(value)
+            self._question_modify_event.set()
             logging.debug(f"[+] question change : {self._questions}")
 
-    def run(self) -> None:
+    def predict(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> tuple[HandResult, tuple]:
+        while self._exit_event.is_set() == False and self._question_modify_event.is_set() == False:
+            frame = self.get_frame(target_camera, mirror_mode)
+            result = self._classifier.predict(frame)
+            if result:
+                return frame, result
+                
+            self._front_draw_signal.send(frame)
+
+        return tuple()
+
+    def draw_box(self, img : np.ndarray, box : tuple[int, int, int, int], color : tuple) -> np.ndarray:
+        hand_label, (x, y, w, h) = box
+        return cv2.rectangle(img, (x, y), (x + w, y + h), color, 3)
+    
+    def draw_boxes(self, img : np.ndarray, boxes : list[tuple], color : tuple) -> np.ndarray:
+        for box in boxes:
+            img = self.draw_box(img, box, color)
+
+        return img
+
+    def draw_landmark(self, img : np.ndarray, landmarks : list) -> np.ndarray:
+        h, w, c = img.shape
+        connects = ((0, 1), (1, 2), (2, 3), (3, 4)
+                    , (0, 5), (5, 6), (6, 7), (7, 8)
+                    , (5, 9), (9, 13), (13, 17)
+                    , (9, 10), (10, 11), (11, 12)
+                    , (13, 14), (14, 15), (15, 16)
+                    , (17, 18), (18, 19), (19, 20), (0, 17))
+
+        for start_pt, end_pt in connects:
+            start_x, start_y, _ = landmarks[start_pt]
+            end_x, end_y, _ = landmarks[end_pt]
+
+            start_x = int(start_x * w)
+            start_y = int(start_y * h)
+
+            end_x = int(end_x * w)
+            end_y = int(end_y * h)
+
+            cv2.line(img, (start_x, start_y), (end_x, end_y), (255, 255, 255), 2)
+
+        for x, y, z in landmarks:
+            x = int(x * w)
+            y = int(y * h)
+            cv2.circle(img, (x, y), 6, (255, 0, 0), -1)
+
+        return img
+
+    def draw_landmarks(self, img : np.ndarray, landmarks_list : list) -> np.ndarray:
+        for hand_label, landmarks in landmarks_list:
+            img = self.draw_landmark(img, landmarks)
+
+        return img
+
+    def study_proc(self):
+        break_events = (self._exit_event
+                        , self._stop_event
+                        , self._question_modify_event)
+
         while not self._exit_event.is_set():
-            f_frame = self.front_frame
-            self._front_draw_signal.send(f_frame)
+            if self._stop_event.is_set():
+                time.sleep(0.3)
+                continue
+
+            questions = self.questions
+            self._question_modify_event.clear()
+
+            questions_len = len(questions)
+            idx = 0
+            while True:
+                results = [e.is_set() for e in break_events]
+                if True in results:
+                    break
+
+                predict_result = self.predict(self._front_camera, True)
+                if not predict_result:
+                    continue
+
+                frame, result = predict_result
+                hand_result, predict_result = result
+
+                #hand_result : HandResult = hand_result
+                boxes = hand_result.get_boxes()
+                hand_labels = hand_result.get_labels()
+                landmarks = hand_result.get_landmarks()
+                
+                # 정답 체크
+            
+                frame = self.draw_boxes(frame, boxes, self.COLOR_GREEN)
+                frame = self.draw_landmarks(frame, landmarks)
+                self._front_draw_signal.send(frame)
+
+
+    def run(self) -> None:
+        if self._run_mode == self.RUN_STUDY:
+            self.study_proc()
+        elif self._run_mode == self.RUN_TEST:
+            pass
