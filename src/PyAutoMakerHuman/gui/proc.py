@@ -5,14 +5,16 @@ from typing import Callable
 import cv2
 import numpy as np
 from PySide6.QtCore import QObject, Slot, Signal
+from PySide6.QtGui import QPixmap
 
 from .exception import FrameException
-
+from .utils import numpy_to_pixmap
 
 class FrontDrawSignal(QObject):
-    sig = Signal(np.ndarray)
+    sig = Signal(QPixmap)
 
     def send(self, img : np.ndarray) -> None:
+        img = numpy_to_pixmap(img)
         self.sig.emit(img)
 
 
@@ -56,6 +58,10 @@ class WorkThread(Thread):
         super().__init__()
         # 이벤트, 락
         self._exit_event = Event()
+        self._mirror_modify_lock = Lock()
+
+        # 작동 관련 변수
+        self._mirror_mode = True
 
         # 카메라
         self._front_camera = cameras[0]
@@ -94,6 +100,18 @@ class WorkThread(Thread):
     @property
     def side_frame(self) -> np.ndarray:
         self.get_frame(self._side_camera)
+
+    @property
+    def mirror_mode(self) -> bool:
+        with self._mirror_modify_lock:
+            mode = self._mirror_mode
+
+        return mode
+
+    @mirror_mode.setter
+    def mirror_mode(self, value : bool) -> None:
+        with self._mirror_modify_lock:
+            self._mirror_mode = value
 
     def run(self) -> None:
         pass
