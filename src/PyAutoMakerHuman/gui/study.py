@@ -10,10 +10,11 @@ from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame, QComboBox, QLabel
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
+import proc
 from .form.study_form import Ui_Frame
-from .utils import numpy_to_pixmap
+from .utils import numpy_to_pixmap, draw_char_img
 from .. import hand_lang
-from ..image import cv2_imread, cv2_putText
+from ..image import cv2_imread
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -21,9 +22,9 @@ class StudyWindow(QFrame, Ui_Frame):
     def __init__(self, parernt, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]):
         super(StudyWindow, self).__init__(parernt)
         self.setupUi(self)
-        self.img_label_list = [self.screen_img_label, self.shape_img_label, self.study_img_label, self.direction_img_label]
-        self.mirror_mode = True
-        self.cameras = cameras
+        self._img_label_list = [self.screen_img_label, self.shape_img_label, self.study_img_label, self.direction_img_label]
+        self._mirror_mode = True
+        self._cameras = cameras
 
     def __del__(self):
         self.dispose_data()
@@ -71,7 +72,7 @@ class StudyWindow(QFrame, Ui_Frame):
         self.char_child_combo.addItems(list(self.CHAR_CHILD_COMBO_DICT.keys()))
         self.char_parent_combo.addItems(list(self.CHAR_PARENT_COMBO_DICT.keys()))
 
-        for img_label in self.img_label_list:
+        for img_label in self._img_label_list:
             rect = img_label.rect()
             width = rect.width()
             height = rect.height()
@@ -82,11 +83,17 @@ class StudyWindow(QFrame, Ui_Frame):
             img_label.setScaledContents(True)
 
     def init_data(self) -> None:
-        self.set_answer("ㄱ")
         self.last_changed_combobox = self.char_child_combo
+        self.study_thread = proc.WorkThread(self._cameras
+                                            , self.front_draw_handler
+                                            , self.answer_handler
+                                            , self.direction_hander)
+        self.study_thread.mirror_mode = self.mirror_mode
+        self.study_thread.start()
 
     def dispose_data(self) -> None:
-        pass
+        if self.study_thread:
+            self.study_thread.join()
 
     def showEvent(self, event: QShowEvent) -> None:
         self.init_data()
@@ -96,23 +103,21 @@ class StudyWindow(QFrame, Ui_Frame):
         self.dispose_data()
         return super().hideEvent(event)
 
-    @Slot(int, QPixmap, str)
-    def draw_signal_handler(self, code : int, pixmap : QPixmap, answer_char : str, answer_direction : str) -> None:
+    @Slot(QPixmap)
+    def front_draw_handler(self, pixmap) -> None:
         self.screen_img_label.setPixmap(pixmap)
-        if answer_char:
-            self.draw_char_img(self.shape_img_label, answer_char, 10)
 
-        if answer_direction:
-            self.draw_char_img(self.direction_img_label, answer_direction, 10)
+    @Slot(int)
+    def answer_handler(self, code : int) -> None:
+        char_dict = {proc.ANSWER_FAIL : "X", proc.ANSWER_PROCESSING : "△", proc.ANSWER_SUCCESS : "O"}
+        char = char_dict.get(code, "")
+        draw_char_img(self.shape_img_label, char, 10)
 
-    def draw_char_img(self, target_img_label : QLabel, char : str, font_scale = 20) -> None:
-        label_size = target_img_label.size().toTuple()
-        img = np.ndarray((*label_size[::-1], 3), np.uint8)
-        img.fill(255)
-        img = cv2_putText(img, char, (0, 0), font_scale, (0, 0, 0), 4, center=True)
-
-        pixmap = numpy_to_pixmap(img)
-        target_img_label.setPixmap(pixmap)
+    @Slot(int)
+    def direction_hander(self, code : int) -> None:
+        shape_dict = {proc.DIRECTION_NONE : "O", proc.DIRECTION_LEFT : "<-", proc.DIRECTION_RIGHT : "->"}
+        shape = shape_dict.get(code, "")
+        draw_char_img(self.shape_img_label, shape, 10)
 
     @Slot(int)
     def char_combo_change_handler(self, idx : int) -> None:
@@ -122,7 +127,7 @@ class StudyWindow(QFrame, Ui_Frame):
             self.last_changed_combobox = self.char_parent_combo
 
         char = self.last_changed_combobox.currentText()
-        self.draw_char_img(self.study_img_label, char)
+        draw_char_img(self.study_img_label, char)
         self.set_answer(char)
 
     @Slot()
@@ -139,11 +144,12 @@ class StudyWindow(QFrame, Ui_Frame):
 
         return super().resizeEvent(event)
 
-    def set_mirror_mode(self, mirror_mode : bool) -> None:
-        self.mirror_mode = mirror_mode
+    @property
+    def mirror_mode(self) -> bool:
+        return self._mirror_mode
 
-    def get_mirror_mode(self) -> bool:
-        return self.mirror_mode
-
-    def set_answer(self, answer : str) -> None:
-        pass
+    @mirror_mode.setter
+    def mirror_mode(self, value : bool) -> None:
+        self._mirror_mode = value
+        if self.study_thread:
+            self.study_thread.mirror_mode = value
