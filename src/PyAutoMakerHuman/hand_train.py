@@ -52,7 +52,7 @@ class HandTrainer:
         result = self.detector.detect(img)
         return result.get_boxes(), result.test_landmark_draw(img)
 
-    def predict(self, img : np.ndarray) -> tuple:
+    def predict(self, img : np.ndarray) -> tuple[hand.HandResult, tuple]:
         result = self.detector.extract(img)
         if not result:
             return list()
