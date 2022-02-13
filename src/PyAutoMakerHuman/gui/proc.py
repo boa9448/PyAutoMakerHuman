@@ -59,9 +59,11 @@ class WorkThread(Thread):
         # 이벤트, 락
         self._exit_event = Event()
         self._mirror_modify_lock = Lock()
+        self._question_modify_lock = Lock()
 
         # 작동 관련 변수
         self._mirror_mode = True
+        self._questions = list()
 
         # 카메라
         self._front_camera = cameras[0]
@@ -80,13 +82,13 @@ class WorkThread(Thread):
     def exit(self) -> None:
         self._exit_event.set()
 
-    def join(self, timeout: float or None = ...) -> None:
+    def join(self, timeout: float or None = None) -> None:
         self.exit()
         return super().join(timeout)
 
     def get_frame(self, target_camera : cv2.VideoCapture) -> np.ndarray:
         start_time = time.time()
-        while time.time() - start_time > self.FRAME_READ_TIMEOUT:
+        while time.time() - start_time < self.FRAME_READ_TIMEOUT:
             success, frame = target_camera.read()
             if success:
                 return frame
@@ -95,11 +97,16 @@ class WorkThread(Thread):
 
     @property
     def front_frame(self) -> np.ndarray:
-        self.get_frame(self._front_camera)
+        frame = self.get_frame(self._front_camera)
+        if self.mirror_mode:
+            frame = cv2.flip(frame, 1)
+
+        return frame
 
     @property
     def side_frame(self) -> np.ndarray:
-        self.get_frame(self._side_camera)
+        #미러모드 체크는 정면 캠에서만 함
+        return self.get_frame(self._side_camera)
 
     @property
     def mirror_mode(self) -> bool:
@@ -113,5 +120,19 @@ class WorkThread(Thread):
         with self._mirror_modify_lock:
             self._mirror_mode = value
 
+    @property
+    def questions(self) -> list:
+        with self._question_modify_lock:
+            questions = self._questions
+
+        return questions
+
+    @questions.setter
+    def questions(self, value : list) -> None:
+        with self._question_modify_lock:
+            self._questions = value
+
     def run(self) -> None:
-        pass
+        while not self._exit_event.is_set():
+            f_frame = self.front_frame
+            self._front_draw_signal.send(f_frame)
