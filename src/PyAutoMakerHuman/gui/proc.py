@@ -2,11 +2,15 @@ import time
 import logging
 from threading import Thread, Event, Lock
 from typing import Callable
+import math
+import asyncio
 
 import cv2
 import numpy as np
 from PySide6.QtCore import QObject, Slot, Signal
 from PySide6.QtGui import QPixmap
+
+from ..image import cv2_putText
 
 from ..hand import HandResult
 
@@ -75,12 +79,23 @@ class WorkThread(Thread):
     RUN_TEST = 2
 
     FRAME_READ_TIMEOUT = 2
-
     PREDICT_TIMEOUT = 2
 
     COLOR_RED = (0, 0, 255)
     COLOR_GREEN = (0, 255, 0)
     COLOR_ORENGE = (0, 127, 255)
+
+    CHAR_DIRECTION_RIGHT = 1
+    CHAR_DIRECTION_DOWN = 2
+    CHAR_DIRECTION_LEFT = 3
+    CHAR_DIRECTION_UP = 4
+
+    CHAR_DIRECTION_DICT = {"ㄱ" : CHAR_DIRECTION_DOWN
+                        , "ㄴ" : CHAR_DIRECTION_LEFT
+                        , "ㄷ" : CHAR_DIRECTION_LEFT
+                        , "ㄹ" : CHAR_DIRECTION_LEFT
+                        , "ㅁ" : CHAR_DIRECTION_UP
+                        , "ㅂ" : CHAR_DIRECTION_UP}
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
                     , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
@@ -135,7 +150,7 @@ class WorkThread(Thread):
 
     @property
     def front_frame(self) -> np.ndarray:
-        return self.get_frame(self._front_camera, True)
+        return self.get_frame(self._front_camera, self.mirror_mode)
 
     @property
     def side_frame(self) -> np.ndarray:
@@ -171,19 +186,8 @@ class WorkThread(Thread):
             self._question_modify_event.set()
             logging.debug(f"[+] question change : {self._questions}")
 
-    def predict(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> tuple[HandResult, tuple]:
-        while self._exit_event.is_set() == False and self._question_modify_event.is_set() == False:
-            frame = self.get_frame(target_camera, mirror_mode)
-            result = self._classifier.predict(frame)
-            if result:
-                return frame, result
-                
-            self._front_draw_signal.send(frame)
-
-        return tuple()
-
     def draw_box(self, img : np.ndarray, box : tuple[int, int, int, int], color : tuple) -> np.ndarray:
-        hand_label, (x, y, w, h) = box
+        x, y, w, h = box
         return cv2.rectangle(img, (x, y), (x + w, y + h), color, 3)
     
     def draw_boxes(self, img : np.ndarray, boxes : list[tuple], color : tuple) -> np.ndarray:
@@ -221,10 +225,110 @@ class WorkThread(Thread):
         return img
 
     def draw_landmarks(self, img : np.ndarray, landmarks_list : list) -> np.ndarray:
-        for hand_label, landmarks in landmarks_list:
+        for landmarks in landmarks_list:
             img = self.draw_landmark(img, landmarks)
 
         return img
+
+    def draw_text(self, img : np.ndarray, text : str, org : tuple, color : tuple) -> np.ndarray:
+        return cv2_putText(img, text, org, 3, color, 2)
+
+    def draw_line(self, img : np.ndarray, start : tuple, end : tuple, color : tuple) -> np.ndarray:
+        return cv2.line(img, start, end, color, 2)
+
+    def predict(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        while self._exit_event.is_set() == False and self._question_modify_event.is_set() == False:
+            frame = self.get_frame(target_camera, mirror_mode)
+            result = self._classifier.predict(frame)
+            if result:
+                return frame, result
+                
+            self._front_draw_signal.send(frame)
+
+        return tuple()
+
+    def front_predict(self, target_char : str) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        def get_direction_(base_degree : int, target_degree : int, error_range : tuple[int, int]) -> bool:
+            range_start, range_end = error_range
+            start = (base_degree - range_start) % 360
+            end = (base_degree + range_end) % 360
+
+            if start <= target_degree and target_degree <= end:
+                return True
+
+            return False
+
+        while (self._exit_event.is_set() == False
+                and self._question_modify_event.is_set() == False):
+
+            result = self.predict(self._front_camera, self.mirror_mode)
+            if not result:
+                continue
+
+            frame, predict_result = result
+            hand_result, predict_result = predict_result
+
+            # 오른손이 아니라면 다시
+            right_info = self.get_right_hand_info(hand_result, predict_result)
+            if not right_info:
+                self._front_draw_signal.send(frame)
+                continue
+
+            idx, name, proba = right_info
+            _, box = hand_result.get_boxes()[idx]
+
+            # 만약 타겟과 추론한 글자가 다르다면
+            if target_char != name:
+                frame = self.draw_box(frame, box, self.COLOR_RED)
+                self._front_draw_signal.send(frame)
+                continue
+            
+            # 각도를 체크
+            start_idx, end_idx = (5, 8) if target_char != "ㅎ" else (5, 17)
+            _, landmark = hand_result.get_abs_landmarks()[idx]
+            start_landmark, end_landmark = landmark[start_idx][:2], landmark[end_idx][:2]
+            target_degree = self.get_degree(start_landmark, end_landmark)
+            logging.debug(f"target_degree : {target_degree}")
+            diff = get_direction_(180, target_degree, 10)
+            logging.debug(f"diff : {diff}")
+
+            # 대상이 되는 라인을 그림
+            frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE)
+
+            # 차이가 0이라면 성공 0이 아니라면 보정
+            color = self.COLOR_ORENGE if not diff else self.COLOR_GREEN
+            frame = self.draw_box(frame, box, color)
+            frame = self.draw_text(frame, name, (box[0], box[1] - 35), color)
+            self._front_draw_signal.send(frame)
+
+            if diff == DIRECTION_NONE:
+                self._direction_signal.stop()
+            elif diff == DIRECTION_LEFT:
+                self._direction_signal.left()
+            else:
+                self._direction_signal.right()
+
+
+        return tuple()
+
+    def get_degree(self, start : tuple[int, int, int], end : tuple[int, int, int]):
+        start_x, start_y = start
+        end_x, end_y = end
+        dx = end_x - start_x
+        dy = end_y - start_y
+        degree = math.atan2(dy, dx) * (180.0 / math.pi) + 90
+        degree = degree + 360 if degree < 0 else degree
+
+        return int(degree)
+
+    def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple) -> tuple:
+        hand_labels = hand_result.get_labels()
+        for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
+            if hand_label == "Right":
+                return idx, name, proba
+
+        return tuple()
+
 
     def study_proc(self):
         break_events = (self._exit_event
@@ -240,29 +344,44 @@ class WorkThread(Thread):
             self._question_modify_event.clear()
 
             questions_len = len(questions)
-            idx = 0
-            while True:
+            question_idx = 0
+            while question_idx < questions_len:
                 results = [e.is_set() for e in break_events]
                 if True in results:
                     break
 
-                predict_result = self.predict(self._front_camera, True)
+                predict_result = self.front_predict(questions[question_idx])
                 if not predict_result:
                     continue
 
                 frame, result = predict_result
                 hand_result, predict_result = result
-
-                #hand_result : HandResult = hand_result
-                boxes = hand_result.get_boxes()
-                hand_labels = hand_result.get_labels()
-                landmarks = hand_result.get_landmarks()
                 
-                # 정답 체크
-            
-                frame = self.draw_boxes(frame, boxes, self.COLOR_GREEN)
-                frame = self.draw_landmarks(frame, landmarks)
+                bDraw = False
+                right_info = self.get_right_hand_info(hand_result, predict_result)
+                
+                # 오른손 정보가 발견되지 않았다면 그냥 화면그림
+                if not right_info:
+                    self._front_draw_signal.send(frame)
+                    continue        
+
+                idx, name, proba = right_info
+                if name == questions[question_idx]:
+                    question_idx += 1
+                    bDraw = True
+
+                hand_result : HandResult = hand_result
+                _, box = hand_result.get_boxes()[idx]
+                _, landmarks = hand_result.get_landmarks()[idx]
+                
+
+                frame = self.draw_box(frame, box, self.COLOR_GREEN if bDraw else self.COLOR_RED)
+                if bDraw:
+                    x, y = box[0], box[1] - 20
+                    frame = self.draw_text(frame, name, (x, y), self.COLOR_GREEN)
+                frame = self.draw_landmark(frame, landmarks)
                 self._front_draw_signal.send(frame)
+                time.sleep(2)
 
 
     def run(self) -> None:
