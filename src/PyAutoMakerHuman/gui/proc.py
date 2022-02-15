@@ -95,7 +95,32 @@ class WorkThread(Thread):
                         , "ㄷ" : CHAR_DIRECTION_LEFT
                         , "ㄹ" : CHAR_DIRECTION_LEFT
                         , "ㅁ" : CHAR_DIRECTION_UP
-                        , "ㅂ" : CHAR_DIRECTION_UP}
+                        , "ㅂ" : CHAR_DIRECTION_UP
+                        , "ㅅ" : CHAR_DIRECTION_DOWN
+                        , "ㅇ" : CHAR_DIRECTION_UP
+                        , "ㅈ" : CHAR_DIRECTION_DOWN
+                        , "ㅊ" : CHAR_DIRECTION_DOWN
+                        , "ㅋ" : CHAR_DIRECTION_DOWN
+                        , "ㅌ" : CHAR_DIRECTION_RIGHT
+                        , "ㅍ" : CHAR_DIRECTION_UP
+                        , "ㅎ" : CHAR_DIRECTION_UP
+                        , "ㅏ" : CHAR_DIRECTION_UP
+                        , "ㅑ" : CHAR_DIRECTION_UP
+                        , "ㅓ" : CHAR_DIRECTION_RIGHT
+                        , "ㅕ" : CHAR_DIRECTION_RIGHT
+                        , "ㅗ" : CHAR_DIRECTION_UP
+                        , "ㅛ" : CHAR_DIRECTION_UP
+                        , "ㅜ" : CHAR_DIRECTION_DOWN
+                        , "ㅠ" : CHAR_DIRECTION_DOWN
+                        , "ㅡ" : CHAR_DIRECTION_RIGHT
+                        , "ㅣ" : CHAR_DIRECTION_UP
+                        , "ㅐ" : CHAR_DIRECTION_UP
+                        , "ㅒ" : CHAR_DIRECTION_UP
+                        , "ㅔ" : CHAR_DIRECTION_RIGHT
+                        , "ㅖ" : CHAR_DIRECTION_RIGHT
+                        , "ㅢ" : CHAR_DIRECTION_RIGHT
+                        , "ㅚ" : CHAR_DIRECTION_UP
+                        , "ㅟ" : CHAR_DIRECTION_DOWN }
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
                     , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
@@ -248,16 +273,26 @@ class WorkThread(Thread):
         return tuple()
 
     def front_predict(self, target_char : str) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
-        def get_direction_(base_degree : int, target_degree : int, error_range : tuple[int, int]) -> bool:
-            range_start, range_end = error_range
-            start = (base_degree - range_start) % 360
-            end = (base_degree + range_end) % 360
+        def get_direction_(base_direction : int, target_degree : int, error_range : tuple[int, int]) -> int:
+            range_left, range_right = error_range
+            base_degree = base_direction * 90
+            left = (base_degree - range_left) % 360
+            right = base_degree + range_right
 
-            if start <= target_degree and target_degree <= end:
-                return True
+            if base_direction == self.CHAR_DIRECTION_UP:
+                if (left <= target_degree or target_degree <= right):
+                    return DIRECTION_NONE
 
-            return False
+            else:
+                if (left <= target_degree and target_degree <= right):
+                    return DIRECTION_NONE
 
+            # (target_degree < left and target_degree > right):
+            left_diff = left - target_degree
+            right_diff = right - target_degree
+
+            return DIRECTION_LEFT if abs(right_diff) > abs(left_diff) else DIRECTION_RIGHT
+        
         while (self._exit_event.is_set() == False
                 and self._question_modify_event.is_set() == False):
 
@@ -289,25 +324,30 @@ class WorkThread(Thread):
             start_landmark, end_landmark = landmark[start_idx][:2], landmark[end_idx][:2]
             target_degree = self.get_degree(start_landmark, end_landmark)
             logging.debug(f"target_degree : {target_degree}")
-            diff = get_direction_(180, target_degree, 10)
-            logging.debug(f"diff : {diff}")
+
+            direction = get_direction_(self.CHAR_DIRECTION_DICT.get(target_char, self.CHAR_DIRECTION_UP)
+                                        , target_degree, (30, 10))
+            logging.debug(f"direction : {direction}")
 
             # 대상이 되는 라인을 그림
             frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE)
 
             # 차이가 0이라면 성공 0이 아니라면 보정
-            color = self.COLOR_ORENGE if not diff else self.COLOR_GREEN
+            color = self.COLOR_ORENGE if not direction else self.COLOR_RED
             frame = self.draw_box(frame, box, color)
             frame = self.draw_text(frame, name, (box[0], box[1] - 35), color)
             self._front_draw_signal.send(frame)
 
-            if diff == DIRECTION_NONE:
+            if direction == DIRECTION_NONE:
                 self._direction_signal.stop()
-            elif diff == DIRECTION_LEFT:
+            elif direction == DIRECTION_LEFT:
                 self._direction_signal.left()
             else:
                 self._direction_signal.right()
 
+            # 방향이 DIRECTION_NONE(0)이 아니라면 다시 시도하도록
+            if direction:
+                continue
 
         return tuple()
 

@@ -123,7 +123,7 @@ class StudyWindow(QFrame, Ui_Frame):
 
     @Slot(int)
     def direction_hander(self, code : int) -> None:
-        shape_dict = {proc.DIRECTION_NONE : "O", proc.DIRECTION_LEFT : "<-", proc.DIRECTION_RIGHT : "->"}
+        shape_dict = {proc.DIRECTION_NONE : "O", proc.DIRECTION_LEFT : "왼", proc.DIRECTION_RIGHT : "오"}
         shape = shape_dict.get(code, "")
         draw_char_img(self.direction_img_label, shape, 10)
 
