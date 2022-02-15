@@ -7,9 +7,9 @@ pip install PyAutoMakerHuman
 
 또는
 
-git clone https://github.com/boa9448/PyAutoMakerHuman.git <br>
-cd PyAutoMakerHuman <br>
-python setup.py install <br>
+git clone https://github.com/boa9448/PyAutoMakerHuman.git  
+cd PyAutoMakerHuman  
+python setup.py install  
 
 
 # 사용
