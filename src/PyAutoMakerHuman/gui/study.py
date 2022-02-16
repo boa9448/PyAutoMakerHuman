@@ -57,8 +57,6 @@ class StudyWindow(QFrame, Ui_Frame):
             for key, value in json_data.items():
                 img_path = os.path.join(shape_img_dir, value)
                 img = cv2_imread(img_path)
-                if self.mirror_mode:
-                    img = cv2.flip(img, 1)
                 img = numpy_to_pixmap(img)
                 result_dict[key] = img
 
