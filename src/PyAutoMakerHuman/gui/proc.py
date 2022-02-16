@@ -281,6 +281,14 @@ class WorkThread(Thread):
 
         return tuple()
 
+    def front_side_predict(self, mirror_mode :bool = False) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        front_result = self.predict(self._front_camera, mirror_mode)
+        side_result = self.predict(self._side_camera, False)
+
+        if (not front_result) or (not side_result):
+            return tuple()
+        
+
     def check_char(self, target_char : str) -> bool:
         def get_direction_(base_direction : int, target_degree : int, error_range : tuple[int, int]) -> int:
             range_left, range_right = error_range
@@ -397,6 +405,8 @@ class WorkThread(Thread):
             self._pre_target_char = name
             self._pre_target_char_box = QRect(*box)
 
+            self.sleep(2)
+
             return True
 
         return False
@@ -414,7 +424,7 @@ class WorkThread(Thread):
     def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple) -> tuple:
         hand_labels = hand_result.get_labels()
         for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
-            if hand_label == "Right":
+            if hand_label == "Right" if self.mirror_mode else "Left":
                 return idx, name, proba
 
         return tuple()
