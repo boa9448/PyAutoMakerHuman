@@ -1,9 +1,9 @@
+import os
 import time
 import logging
 from threading import Thread, Event, Lock
 from typing import Callable
 import math
-import asyncio
 
 import cv2
 import numpy as np
@@ -14,7 +14,7 @@ from ..image import cv2_putText
 
 from ..hand import HandResult
 
-from .. import model_dir
+from .. import models_dir
 from ..hand_train import HandTrainer
 from .exception import FrameException
 from .utils import numpy_to_pixmap
@@ -138,7 +138,9 @@ class WorkThread(Thread):
         self._mirror_mode = True
         self._questions = list()
         self._classifier = HandTrainer()
-        self._classifier.load(model_dir)
+        self._classifier.load(os.path.join(models_dir, "model"))
+        self._mirror_classifier = HandTrainer()
+        self._mirror_classifier.load(os.path.join(models_dir, "mirror_model"))
 
         self._pre_target_char = ""
         self._pre_target_char_box = QRect()
@@ -270,10 +272,14 @@ class WorkThread(Thread):
     def draw_line(self, img : np.ndarray, start : tuple, end : tuple, color : tuple) -> np.ndarray:
         return cv2.line(img, start, end, color, 2)
 
+    @property
+    def classifier(self) -> HandTrainer:
+        return self._mirror_classifier if self.mirror_mode else self._classifier
+
     def predict(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
         while self._exit_event.is_set() == False and self._question_modify_event.is_set() == False:
             frame = self.get_frame(target_camera, mirror_mode)
-            result = self._classifier.predict(frame)
+            result = self.classifier.predict(frame)
             if result:
                 return frame, result
 
@@ -342,6 +348,9 @@ class WorkThread(Thread):
                 self._front_draw_signal.send(frame)
                 continue
 
+            # 여기서부턴 보정의 영역이므로 프로세싱으로 표기
+            self._answer_signal.processing()
+
             # 만약 타겟과 이전 타겟 글자가 같다면 좌표가 달라야함
             if target_char == self._pre_target_char:
                 cur_x, _, cur_w, _ = box
@@ -361,7 +370,6 @@ class WorkThread(Thread):
                     continue
             
             # 각도를 체크
-            self._answer_signal.processing()
             direction_info, (start_idx, end_idx) = self.CHAR_CORRECTION_INFO_DICT.get(target_char)
             _, landmark = hand_result.get_abs_landmarks()[idx]
             start_landmark, end_landmark = landmark[start_idx][:2], landmark[end_idx][:2]
