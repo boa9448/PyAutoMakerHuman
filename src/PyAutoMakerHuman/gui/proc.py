@@ -90,37 +90,37 @@ class WorkThread(Thread):
     CHAR_DIRECTION_LEFT = 3
     CHAR_DIRECTION_UP = 4
 
-    CHAR_CORRECTION_INFO_DICT = {"ㄱ" : (CHAR_DIRECTION_DOWN, (5, 8))
-                                , "ㄴ" : (CHAR_DIRECTION_LEFT, (17, 5))
-                                , "ㄷ" : (CHAR_DIRECTION_LEFT, (17, 5))
-                                , "ㄹ" : (CHAR_DIRECTION_LEFT, (17, 5))
+    CHAR_CORRECTION_INFO_DICT = {"ㄱ" : (CHAR_DIRECTION_UP, (8, 5))
+                                , "ㄴ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㄷ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㄹ" : (CHAR_DIRECTION_LEFT, (0, 9))
                                 , "ㅁ" : (CHAR_DIRECTION_UP, (0, 9))
                                 , "ㅂ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅅ" : (CHAR_DIRECTION_DOWN, (9, 0))
+                                , "ㅅ" : (CHAR_DIRECTION_UP, (9, 0))
                                 , "ㅇ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅈ" : (CHAR_DIRECTION_DOWN, (9, 0))
-                                , "ㅊ" : (CHAR_DIRECTION_DOWN, (9, 0))
-                                , "ㅋ" : (CHAR_DIRECTION_DOWN, (9, 0))
-                                , "ㅌ" : (CHAR_DIRECTION_RIGHT, (17, 5))
+                                , "ㅈ" : (CHAR_DIRECTION_UP, (9, 0))
+                                , "ㅊ" : (CHAR_DIRECTION_UP, (9, 0))
+                                , "ㅋ" : (CHAR_DIRECTION_UP, (9, 0))
+                                , "ㅌ" : (CHAR_DIRECTION_LEFT, (0, 9))
                                 , "ㅍ" : (CHAR_DIRECTION_UP, (0, 9))
                                 , "ㅎ" : (CHAR_DIRECTION_UP, (17, 5))
                                 , "ㅏ" : (CHAR_DIRECTION_UP, (0, 9))
                                 , "ㅑ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅓ" : (CHAR_DIRECTION_RIGHT, (17, 5))
-                                , "ㅕ" : (CHAR_DIRECTION_RIGHT, (17, 5))
+                                , "ㅓ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅕ" : (CHAR_DIRECTION_LEFT, (0, 9))
                                 , "ㅗ" : (CHAR_DIRECTION_UP, (0, 9))
                                 , "ㅛ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅜ" : (CHAR_DIRECTION_DOWN, (5, 8))
-                                , "ㅠ" : (CHAR_DIRECTION_DOWN, (5, 8))
-                                , "ㅡ" : (CHAR_DIRECTION_RIGHT, (17, 5))
+                                , "ㅜ" : (CHAR_DIRECTION_UP, (8, 5))
+                                , "ㅠ" : (CHAR_DIRECTION_UP, (8, 5))
+                                , "ㅡ" : (CHAR_DIRECTION_LEFT, (0, 9))
                                 , "ㅣ" : (CHAR_DIRECTION_UP, (0, 9))
                                 , "ㅐ" : (CHAR_DIRECTION_UP, (0, 9))
                                 , "ㅒ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅔ" : (CHAR_DIRECTION_RIGHT, (17, 5))
-                                , "ㅖ" : (CHAR_DIRECTION_RIGHT, (17, 5))
-                                , "ㅢ" : (CHAR_DIRECTION_RIGHT, (17, 5))
+                                , "ㅔ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅖ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅢ" : (CHAR_DIRECTION_LEFT, (0, 9))
                                 , "ㅚ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅟ" : (CHAR_DIRECTION_DOWN, (5, 8)) }
+                                , "ㅟ" : (CHAR_DIRECTION_UP, (8, 5)) }
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
                     , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
@@ -218,6 +218,8 @@ class WorkThread(Thread):
             self._pre_target_char = ""
             self._pre_target_char_box = QRect()
 
+            self._stop_event.clear()
+
     def draw_box(self, img : np.ndarray, box : tuple[int, int, int, int], color : tuple) -> np.ndarray:
         x, y, w, h = box
         return cv2.rectangle(img, (x, y), (x + w, y + h), color, 3)
@@ -284,7 +286,7 @@ class WorkThread(Thread):
             range_left, range_right = error_range
             base_degree = base_direction * 90
             left = (base_degree - range_left) % 360
-            right = base_degree + range_right
+            right = (base_degree + range_right) % 360
 
             if base_direction == self.CHAR_DIRECTION_UP:
                 if (left <= target_degree or target_degree <= right):
@@ -298,16 +300,17 @@ class WorkThread(Thread):
             left_diff = left - target_degree
             right_diff = right - target_degree
 
-            return DIRECTION_LEFT if abs(right_diff) > abs(left_diff) else DIRECTION_RIGHT
+            return DIRECTION_RIGHT if abs(right_diff) > abs(left_diff) else DIRECTION_LEFT
 
         start_time = time.time()
-        DURATION_TIME = 3
+        DURATION_TIME = 1.5
         self._answer_signal.fail()
         while (self._exit_event.is_set() == False
                 and self._question_modify_event.is_set() == False):
             
             result = self.predict(self._front_camera, self.mirror_mode)
             if not result:
+                start_time = time.time()
                 continue
 
             frame, predict_result = result
@@ -316,6 +319,7 @@ class WorkThread(Thread):
             # 오른손이 아니라면 다시
             right_info = self.get_right_hand_info(hand_result, predict_result)
             if not right_info:
+                start_time = time.time()
                 self._front_draw_signal.send(frame)
                 continue
 
@@ -324,6 +328,7 @@ class WorkThread(Thread):
 
             # 만약 타겟과 추론한 글자가 다르다면
             if target_char != name:
+                start_time = time.time()
                 self._answer_signal.fail()
                 frame = self.draw_box(frame, box, self.COLOR_RED)
                 self._front_draw_signal.send(frame)
@@ -332,11 +337,18 @@ class WorkThread(Thread):
             # 만약 타겟과 이전 타겟 글자가 같다면 좌표가 달라야함
             if target_char == self._pre_target_char:
                 cur_x, _, cur_w, _ = box
-                x_range= int(cur_w * 0.5)
+                cur_x = cur_x + int(cur_w / 2)
+                x_range= int(cur_w * 0.3)
 
                 pre_x, pre_y = self._pre_target_char_box.center().toTuple()
                 diff_x = abs(cur_x - pre_x)
+                
+                # 만약 이동 반경이 너무 적다면 선 표시
                 if diff_x < x_range:
+                    start_time = time.time()
+                    frame = self.draw_line(frame, (pre_x - x_range, pre_y), (pre_x + x_range, pre_y)
+                                            , self.COLOR_ORENGE)
+
                     self._front_draw_signal.send(frame)
                     continue
             
@@ -369,6 +381,7 @@ class WorkThread(Thread):
 
             # 방향이 DIRECTION_NONE(0)이 아니라면 다시 시도하도록
             if direction:
+                start_time = time.time()
                 continue
 
             # 정답 유지시간이 일정 시간 미만이라면 통과시키지 않음
@@ -445,7 +458,8 @@ class WorkThread(Thread):
                 
                 question_idx += 1
 
-            self._stop_event.set()
+            if not self._question_modify_event.is_set():
+                self._stop_event.set()
 
     def run(self) -> None:
         if self._run_mode == self.RUN_STUDY:
