@@ -71,16 +71,16 @@ class StudyWindow(QFrame, Ui_Frame):
     def load_arrow_imgs(self) -> tuple[QPixmap, QPixmap]:
         cur_dir = os.path.dirname(__file__)
         img_dir = os.path.join(cur_dir, "imgs")
-        left_path = os.path.join(img_dir, "CCW.png")
-        right_path = os.path.join(img_dir, "CW.png")
+        ccw_path = os.path.join(img_dir, "CCW.png")
+        cw_path = os.path.join(img_dir, "CW.png")
 
-        left_img = cv2.cvtColor(cv2_imread(left_path), cv2.COLOR_BGRA2BGR)
-        right_img = cv2.cvtColor(cv2_imread(right_path), cv2.COLOR_BGRA2BGR)
+        ccw_img = cv2.cvtColor(cv2_imread(ccw_path), cv2.COLOR_BGRA2BGR)
+        cw_img = cv2.cvtColor(cv2_imread(cw_path), cv2.COLOR_BGRA2BGR)
 
-        left_pixmap = numpy_to_pixmap(left_img)
-        right_pixmap = numpy_to_pixmap(right_img)
+        ccw_pixmap = numpy_to_pixmap(ccw_img)
+        cw_pixmap = numpy_to_pixmap(cw_img)
 
-        return left_pixmap, right_pixmap
+        return ccw_pixmap, cw_pixmap
 
     def init_display(self) -> None:            
         child, parent = self.load_shape_img_info()
@@ -88,8 +88,8 @@ class StudyWindow(QFrame, Ui_Frame):
         self.CHAR_PARENT_COMBO_DICT : dict = parent
 
         pixmaps = self.load_arrow_imgs()
-        self.left_pixmap = pixmaps[0]
-        self.right_pixmap = pixmaps[1]
+        self.ccw_pixmap = pixmaps[0]
+        self.cw_pixmap = pixmaps[1]
 
         self.char_child_combo.addItems(list(self.CHAR_CHILD_COMBO_DICT.keys()))
         self.char_parent_combo.addItems(list(self.CHAR_PARENT_COMBO_DICT.keys()))
@@ -148,9 +148,9 @@ class StudyWindow(QFrame, Ui_Frame):
         if code == proc.DIRECTION_NONE:
             draw_char_img(self.direction_img_label, "O", 10)
         elif code == proc.DIRECTION_LEFT:
-            draw_pixmap(self.direction_img_label, self.left_pixmap)
+            draw_pixmap(self.direction_img_label, self.ccw_pixmap)
         elif code == proc.DIRECTION_RIGHT:
-            draw_pixmap(self.direction_img_label, self.right_pixmap)
+            draw_pixmap(self.direction_img_label, self.cw_pixmap)
         
 
     @Slot(int)
