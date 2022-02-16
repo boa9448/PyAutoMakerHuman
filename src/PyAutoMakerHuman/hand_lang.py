@@ -7,7 +7,6 @@ import numpy as np
 
 from . import hand_train
 from . import image
-from . import model_dir
 
 class HandLang:
     char_list = []
