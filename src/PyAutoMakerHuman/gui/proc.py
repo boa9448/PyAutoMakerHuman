@@ -1,20 +1,20 @@
+import os
 import time
 import logging
 from threading import Thread, Event, Lock
 from typing import Callable
 import math
-import asyncio
 
 import cv2
 import numpy as np
-from PySide6.QtCore import QObject, Slot, Signal
+from PySide6.QtCore import QObject, Slot, Signal, QRect, QPoint
 from PySide6.QtGui import QPixmap
 
 from ..image import cv2_putText
 
 from ..hand import HandResult
 
-from .. import model_dir
+from .. import models_dir
 from ..hand_train import HandTrainer
 from .exception import FrameException
 from .utils import numpy_to_pixmap
@@ -90,37 +90,37 @@ class WorkThread(Thread):
     CHAR_DIRECTION_LEFT = 3
     CHAR_DIRECTION_UP = 4
 
-    CHAR_DIRECTION_DICT = {"ㄱ" : CHAR_DIRECTION_DOWN
-                        , "ㄴ" : CHAR_DIRECTION_LEFT
-                        , "ㄷ" : CHAR_DIRECTION_LEFT
-                        , "ㄹ" : CHAR_DIRECTION_LEFT
-                        , "ㅁ" : CHAR_DIRECTION_UP
-                        , "ㅂ" : CHAR_DIRECTION_UP
-                        , "ㅅ" : CHAR_DIRECTION_DOWN
-                        , "ㅇ" : CHAR_DIRECTION_UP
-                        , "ㅈ" : CHAR_DIRECTION_DOWN
-                        , "ㅊ" : CHAR_DIRECTION_DOWN
-                        , "ㅋ" : CHAR_DIRECTION_DOWN
-                        , "ㅌ" : CHAR_DIRECTION_RIGHT
-                        , "ㅍ" : CHAR_DIRECTION_UP
-                        , "ㅎ" : CHAR_DIRECTION_UP
-                        , "ㅏ" : CHAR_DIRECTION_UP
-                        , "ㅑ" : CHAR_DIRECTION_UP
-                        , "ㅓ" : CHAR_DIRECTION_RIGHT
-                        , "ㅕ" : CHAR_DIRECTION_RIGHT
-                        , "ㅗ" : CHAR_DIRECTION_UP
-                        , "ㅛ" : CHAR_DIRECTION_UP
-                        , "ㅜ" : CHAR_DIRECTION_DOWN
-                        , "ㅠ" : CHAR_DIRECTION_DOWN
-                        , "ㅡ" : CHAR_DIRECTION_RIGHT
-                        , "ㅣ" : CHAR_DIRECTION_UP
-                        , "ㅐ" : CHAR_DIRECTION_UP
-                        , "ㅒ" : CHAR_DIRECTION_UP
-                        , "ㅔ" : CHAR_DIRECTION_RIGHT
-                        , "ㅖ" : CHAR_DIRECTION_RIGHT
-                        , "ㅢ" : CHAR_DIRECTION_RIGHT
-                        , "ㅚ" : CHAR_DIRECTION_UP
-                        , "ㅟ" : CHAR_DIRECTION_DOWN }
+    CHAR_CORRECTION_INFO_DICT = {"ㄱ" : (CHAR_DIRECTION_UP, (8, 5))
+                                , "ㄴ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㄷ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㄹ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅁ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅂ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅅ" : (CHAR_DIRECTION_UP, (9, 0))
+                                , "ㅇ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅈ" : (CHAR_DIRECTION_UP, (9, 0))
+                                , "ㅊ" : (CHAR_DIRECTION_UP, (9, 0))
+                                , "ㅋ" : (CHAR_DIRECTION_UP, (9, 0))
+                                , "ㅌ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅍ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅎ" : (CHAR_DIRECTION_UP, (17, 5))
+                                , "ㅏ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅑ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅓ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅕ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅗ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅛ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅜ" : (CHAR_DIRECTION_UP, (8, 5))
+                                , "ㅠ" : (CHAR_DIRECTION_UP, (8, 5))
+                                , "ㅡ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅣ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅐ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅒ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅔ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅖ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅢ" : (CHAR_DIRECTION_LEFT, (0, 9))
+                                , "ㅚ" : (CHAR_DIRECTION_UP, (0, 9))
+                                , "ㅟ" : (CHAR_DIRECTION_UP, (8, 5)) }
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
                     , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
@@ -138,7 +138,12 @@ class WorkThread(Thread):
         self._mirror_mode = True
         self._questions = list()
         self._classifier = HandTrainer()
-        self._classifier.load(model_dir)
+        self._classifier.load(os.path.join(models_dir, "model"))
+        self._mirror_classifier = HandTrainer()
+        self._mirror_classifier.load(os.path.join(models_dir, "mirror_model"))
+
+        self._pre_target_char = ""
+        self._pre_target_char_box = QRect()
 
         # 카메라
         self._front_camera = cameras[0]
@@ -169,7 +174,7 @@ class WorkThread(Thread):
         while time.time() - start_time < self.FRAME_READ_TIMEOUT:
             success, frame = target_camera.read()
             if success:
-                return cv2.flip(frame, 1) if mirror_mode else frame
+                return cv2.flip(frame, 1) if self.mirror_mode else frame
         
         raise FrameException("프레임을 가져오는데 실패했습니다")
 
@@ -210,6 +215,12 @@ class WorkThread(Thread):
             self._questions = list(value)
             self._question_modify_event.set()
             logging.debug(f"[+] question change : {self._questions}")
+
+            #이전 정보 지움
+            self._pre_target_char = ""
+            self._pre_target_char_box = QRect()
+
+            self._stop_event.clear()
 
     def draw_box(self, img : np.ndarray, box : tuple[int, int, int, int], color : tuple) -> np.ndarray:
         x, y, w, h = box
@@ -261,23 +272,35 @@ class WorkThread(Thread):
     def draw_line(self, img : np.ndarray, start : tuple, end : tuple, color : tuple) -> np.ndarray:
         return cv2.line(img, start, end, color, 2)
 
+    @property
+    def classifier(self) -> HandTrainer:
+        return self._mirror_classifier if self.mirror_mode else self._classifier
+
     def predict(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
         while self._exit_event.is_set() == False and self._question_modify_event.is_set() == False:
             frame = self.get_frame(target_camera, mirror_mode)
-            result = self._classifier.predict(frame)
+            result = self.classifier.predict(frame)
             if result:
                 return frame, result
-                
+
             self._front_draw_signal.send(frame)
 
         return tuple()
 
-    def front_predict(self, target_char : str) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+    def front_side_predict(self, mirror_mode :bool = False) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        front_result = self.predict(self._front_camera, mirror_mode)
+        side_result = self.predict(self._side_camera, False)
+
+        if (not front_result) or (not side_result):
+            return tuple()
+        
+
+    def check_char(self, target_char : str) -> bool:
         def get_direction_(base_direction : int, target_degree : int, error_range : tuple[int, int]) -> int:
             range_left, range_right = error_range
             base_degree = base_direction * 90
             left = (base_degree - range_left) % 360
-            right = base_degree + range_right
+            right = (base_degree + range_right) % 360
 
             if base_direction == self.CHAR_DIRECTION_UP:
                 if (left <= target_degree or target_degree <= right):
@@ -291,21 +314,26 @@ class WorkThread(Thread):
             left_diff = left - target_degree
             right_diff = right - target_degree
 
-            return DIRECTION_LEFT if abs(right_diff) > abs(left_diff) else DIRECTION_RIGHT
-        
+            return DIRECTION_RIGHT if abs(right_diff) > abs(left_diff) else DIRECTION_LEFT
+
+        start_time = time.time()
+        DURATION_TIME = 1.5
+        self._answer_signal.fail()
         while (self._exit_event.is_set() == False
                 and self._question_modify_event.is_set() == False):
-
+            
             result = self.predict(self._front_camera, self.mirror_mode)
             if not result:
+                start_time = time.time()
                 continue
 
             frame, predict_result = result
+            org_frame = frame.copy()
             hand_result, predict_result = predict_result
-
             # 오른손이 아니라면 다시
             right_info = self.get_right_hand_info(hand_result, predict_result)
             if not right_info:
+                start_time = time.time()
                 self._front_draw_signal.send(frame)
                 continue
 
@@ -314,19 +342,41 @@ class WorkThread(Thread):
 
             # 만약 타겟과 추론한 글자가 다르다면
             if target_char != name:
+                start_time = time.time()
+                self._answer_signal.fail()
                 frame = self.draw_box(frame, box, self.COLOR_RED)
                 self._front_draw_signal.send(frame)
                 continue
+
+            # 여기서부턴 보정의 영역이므로 프로세싱으로 표기
+            self._answer_signal.processing()
+
+            # 만약 타겟과 이전 타겟 글자가 같다면 좌표가 달라야함
+            if target_char == self._pre_target_char:
+                cur_x, _, cur_w, _ = box
+                cur_x = cur_x + int(cur_w / 2)
+                x_range= int(cur_w * 0.3)
+
+                pre_x, pre_y = self._pre_target_char_box.center().toTuple()
+                diff_x = abs(cur_x - pre_x)
+                
+                # 만약 이동 반경이 너무 적다면 선 표시
+                if diff_x < x_range:
+                    start_time = time.time()
+                    frame = self.draw_line(frame, (pre_x - x_range, pre_y), (pre_x + x_range, pre_y)
+                                            , self.COLOR_ORENGE)
+
+                    self._front_draw_signal.send(frame)
+                    continue
             
             # 각도를 체크
-            start_idx, end_idx = (5, 8) if target_char != "ㅎ" else (5, 17)
+            direction_info, (start_idx, end_idx) = self.CHAR_CORRECTION_INFO_DICT.get(target_char)
             _, landmark = hand_result.get_abs_landmarks()[idx]
             start_landmark, end_landmark = landmark[start_idx][:2], landmark[end_idx][:2]
             target_degree = self.get_degree(start_landmark, end_landmark)
             logging.debug(f"target_degree : {target_degree}")
 
-            direction = get_direction_(self.CHAR_DIRECTION_DICT.get(target_char, self.CHAR_DIRECTION_UP)
-                                        , target_degree, (30, 10))
+            direction = get_direction_(direction_info, target_degree, (10, 10))
             logging.debug(f"direction : {direction}")
 
             # 대상이 되는 라인을 그림
@@ -347,9 +397,27 @@ class WorkThread(Thread):
 
             # 방향이 DIRECTION_NONE(0)이 아니라면 다시 시도하도록
             if direction:
+                start_time = time.time()
                 continue
 
-        return tuple()
+            # 정답 유지시간이 일정 시간 미만이라면 통과시키지 않음
+            if time.time() - start_time < DURATION_TIME:
+                continue
+
+            frame = self.draw_box(org_frame, box, self.COLOR_GREEN)
+            frame = self.draw_text(frame, name, (box[0], box[1] - 35), self.COLOR_GREEN)
+            self._front_draw_signal.send(frame)
+            self._answer_signal.success()
+
+            # 이전 정보를 기억
+            self._pre_target_char = name
+            self._pre_target_char_box = QRect(*box)
+
+            self.sleep(2)
+
+            return True
+
+        return False
 
     def get_degree(self, start : tuple[int, int, int], end : tuple[int, int, int]):
         start_x, start_y = start
@@ -364,11 +432,22 @@ class WorkThread(Thread):
     def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple) -> tuple:
         hand_labels = hand_result.get_labels()
         for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
-            if hand_label == "Right":
+            if hand_label == "Right" if self.mirror_mode else "Left":
                 return idx, name, proba
 
         return tuple()
 
+    def sleep(self, timeout : float) -> None:
+        break_events = (self._exit_event
+                        , self._stop_event)
+
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            results = [event.is_set() for event in break_events]
+            if True in results:
+                return
+
+        return
 
     def study_proc(self):
         break_events = (self._exit_event
@@ -379,7 +458,7 @@ class WorkThread(Thread):
             if self._stop_event.is_set():
                 time.sleep(0.3)
                 continue
-
+            
             questions = self.questions
             self._question_modify_event.clear()
 
@@ -390,39 +469,15 @@ class WorkThread(Thread):
                 if True in results:
                     break
 
-                predict_result = self.front_predict(questions[question_idx])
+                target_char = questions[question_idx]
+                predict_result = self.check_char(target_char)
                 if not predict_result:
                     continue
-
-                frame, result = predict_result
-                hand_result, predict_result = result
                 
-                bDraw = False
-                right_info = self.get_right_hand_info(hand_result, predict_result)
-                
-                # 오른손 정보가 발견되지 않았다면 그냥 화면그림
-                if not right_info:
-                    self._front_draw_signal.send(frame)
-                    continue        
+                question_idx += 1
 
-                idx, name, proba = right_info
-                if name == questions[question_idx]:
-                    question_idx += 1
-                    bDraw = True
-
-                hand_result : HandResult = hand_result
-                _, box = hand_result.get_boxes()[idx]
-                _, landmarks = hand_result.get_landmarks()[idx]
-                
-
-                frame = self.draw_box(frame, box, self.COLOR_GREEN if bDraw else self.COLOR_RED)
-                if bDraw:
-                    x, y = box[0], box[1] - 20
-                    frame = self.draw_text(frame, name, (x, y), self.COLOR_GREEN)
-                frame = self.draw_landmark(frame, landmarks)
-                self._front_draw_signal.send(frame)
-                time.sleep(2)
-
+            if not self._question_modify_event.is_set():
+                self._stop_event.set()
 
     def run(self) -> None:
         if self._run_mode == self.RUN_STUDY:
