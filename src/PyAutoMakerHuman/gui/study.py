@@ -12,7 +12,7 @@ from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
 from . import proc
 from .form.study_form import Ui_Frame
-from .utils import numpy_to_pixmap, draw_char_img
+from .utils import draw_pixmap, numpy_to_pixmap, draw_char_img
 from .. import hand_lang
 from ..image import cv2_imread
 
@@ -40,10 +40,10 @@ class StudyWindow(QFrame, Ui_Frame):
         self.init_display()
         self.init_handler()
 
-    def load_img_info(self) -> tuple:
+    def load_shape_img_info(self) -> tuple:
         cur_dir = os.path.dirname(__file__)
-        img_dir = os.path.join(cur_dir, "imgs")
-        file_path = os.path.join(img_dir, "desc.json")
+        shape_img_dir = os.path.join(cur_dir, "imgs", "shape_imgs")
+        file_path = os.path.join(shape_img_dir, "desc.json")
         with open(file_path, "rb") as f:
             file_data = f.read()
 
@@ -55,8 +55,10 @@ class StudyWindow(QFrame, Ui_Frame):
         def load_helper(json_data : dict) -> dict:
             result_dict = dict()
             for key, value in json_data.items():
-                img_path = os.path.join(img_dir, value)
+                img_path = os.path.join(shape_img_dir, value)
                 img = cv2_imread(img_path)
+                if self.mirror_mode:
+                    img = cv2.flip(img, 1)
                 img = numpy_to_pixmap(img)
                 result_dict[key] = img
 
@@ -66,10 +68,28 @@ class StudyWindow(QFrame, Ui_Frame):
         parent_img_dict = load_helper(parents)
         return child_img_dict, parent_img_dict
 
+    def load_arrow_imgs(self) -> tuple[QPixmap, QPixmap]:
+        cur_dir = os.path.dirname(__file__)
+        img_dir = os.path.join(cur_dir, "imgs")
+        left_path = os.path.join(img_dir, "CCW.png")
+        right_path = os.path.join(img_dir, "CW.png")
+
+        left_img = cv2.cvtColor(cv2_imread(left_path), cv2.COLOR_BGRA2BGR)
+        right_img = cv2.cvtColor(cv2_imread(right_path), cv2.COLOR_BGRA2BGR)
+
+        left_pixmap = numpy_to_pixmap(left_img)
+        right_pixmap = numpy_to_pixmap(right_img)
+
+        return left_pixmap, right_pixmap
+
     def init_display(self) -> None:            
-        child, parent = self.load_img_info()
+        child, parent = self.load_shape_img_info()
         self.CHAR_CHILD_COMBO_DICT : dict = child
         self.CHAR_PARENT_COMBO_DICT : dict = parent
+
+        pixmaps = self.load_arrow_imgs()
+        self.left_pixmap = pixmaps[0]
+        self.right_pixmap = pixmaps[1]
 
         self.char_child_combo.addItems(list(self.CHAR_CHILD_COMBO_DICT.keys()))
         self.char_parent_combo.addItems(list(self.CHAR_PARENT_COMBO_DICT.keys()))
@@ -125,7 +145,13 @@ class StudyWindow(QFrame, Ui_Frame):
     def direction_hander(self, code : int) -> None:
         shape_dict = {proc.DIRECTION_NONE : "O", proc.DIRECTION_LEFT : "왼", proc.DIRECTION_RIGHT : "오"}
         shape = shape_dict.get(code, "")
-        draw_char_img(self.direction_img_label, shape, 10)
+        if code == proc.DIRECTION_NONE:
+            draw_char_img(self.direction_img_label, "O", 10)
+        elif code == proc.DIRECTION_LEFT:
+            draw_pixmap(self.direction_img_label, self.left_pixmap)
+        elif code == proc.DIRECTION_RIGHT:
+            draw_pixmap(self.direction_img_label, self.right_pixmap)
+        
 
     @Slot(int)
     def char_combo_change_handler(self, idx : int) -> None:
