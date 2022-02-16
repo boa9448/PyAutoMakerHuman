@@ -8,6 +8,11 @@ from PySide6.QtGui import QPixmap, QImage
 
 from ..image import cv2_imread, cv2_putText
 
+def draw_pixmap(target_img_label : QLabel, pixmap : QPixmap) -> None:
+    size = target_img_label.size()
+    pixmap = pixmap.scaled(size)
+    target_img_label.setPixmap(pixmap)
+
 def draw_char_img(target_img_label : QLabel, char : str, font_scale = 20) -> None:
     label_size = target_img_label.size().toTuple()
     img = np.ndarray((*label_size[::-1], 3), np.uint8)
