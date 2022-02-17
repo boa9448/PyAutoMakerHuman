@@ -11,12 +11,10 @@ from PySide6.QtCore import QObject, Slot, Signal, QRect, QPoint
 from PySide6.QtGui import QPixmap
 
 from ..image import cv2_putText
-
 from ..hand import HandResult
-
 from .. import models_dir
 from ..hand_train import HandTrainer
-from .exception import FrameException
+from .exception import FrameException, ExitException, StopException, DataModifyExecption
 from .utils import numpy_to_pixmap
 
 
@@ -169,18 +167,18 @@ class WorkThread(Thread):
     def reset(self) -> None:
         self._stop_event.clear()
 
-    def get_frame(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> np.ndarray:
+    def get_frame(self, target_camera : cv2.VideoCapture, mirror_mode_check : bool = False) -> np.ndarray:
         start_time = time.time()
         while time.time() - start_time < self.FRAME_READ_TIMEOUT:
             success, frame = target_camera.read()
             if success:
-                return cv2.flip(frame, 1) if self.mirror_mode else frame
+                return cv2.flip(frame, 1) if mirror_mode_check and self.mirror_mode else frame
         
         raise FrameException("프레임을 가져오는데 실패했습니다")
 
     @property
     def front_frame(self) -> np.ndarray:
-        return self.get_frame(self._front_camera, self.mirror_mode)
+        return self.get_frame(self._front_camera, True)
 
     @property
     def side_frame(self) -> np.ndarray:
@@ -272,30 +270,101 @@ class WorkThread(Thread):
     def draw_line(self, img : np.ndarray, start : tuple, end : tuple, color : tuple) -> np.ndarray:
         return cv2.line(img, start, end, color, 2)
 
+    def front_draw(self, img : np.ndarray) -> None:
+        self._front_draw_signal.send(img)
+
+    def is_events_set(self) -> bool:
+        events = [self._exit_event, self._question_modify_event, self._stop_event]
+        exceptions = [ExitException, DataModifyExecption, StopException]
+
+        for event, exception in zip(events, exceptions):
+            if event.is_set():
+                raise exception()
+
+        return False
+
     @property
-    def classifier(self) -> HandTrainer:
+    def front_classifier(self) -> HandTrainer:
         return self._mirror_classifier if self.mirror_mode else self._classifier
 
-    def predict(self, target_camera : cv2.VideoCapture, mirror_mode : bool = False) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
-        while self._exit_event.is_set() == False and self._question_modify_event.is_set() == False:
-            frame = self.get_frame(target_camera, mirror_mode)
-            result = self.classifier.predict(frame)
+    @property
+    def side_classifier(self) -> HandTrainer:
+        return self._classifier
+
+    def front_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        while self.is_events_set() == False:
+            frame = self.front_frame
+            result = self.front_classifier.predict(frame)
             if result:
                 return frame, result
 
-            self._front_draw_signal.send(frame)
+            self.front_draw(frame)
 
         return tuple()
 
-    def front_side_predict(self, mirror_mode :bool = False) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
-        front_result = self.predict(self._front_camera, mirror_mode)
-        side_result = self.predict(self._side_camera, False)
+    def side_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        while self.is_events_set() == False:
+            frame = self.side_frame
+            result = self.side_classifier.predict(frame)
+            if result:
+                return frame, result
+
+        return tuple()
+
+    def until_predict(self, target_char : str, is_front : bool) -> tuple[np.ndarray, tuple[HandResult, tuple, tuple]]:
+        while self.is_events_set() == False:
+            result = self.front_predict()
+            if not result:
+                continue
+
+            frame, predict_result = result
+            org_frame = frame.copy()
+            hand_result, predict_result = predict_result
+            # 오른손이 아니라면 다시
+            right_info = self.get_right_hand_info(hand_result, predict_result, is_front)
+            if not right_info:
+                self.front_draw(frame)
+                continue
+
+            idx, name, proba = right_info
+            _, box = hand_result.get_boxes()[idx]
+
+            # 만약 타겟과 추론한 글자가 다르다면
+            if target_char != name:
+                self._answer_signal.fail()
+                frame = self.draw_box(frame, box, self.COLOR_RED)
+                self.front_draw(frame)
+                continue
+
+            return org_frame, (hand_result, predict_result, right_info)
+
+    def front_side_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        front_result = self.front_predict()
+        side_result = self.side_predict()
 
         if (not front_result) or (not side_result):
             return tuple()
         
+    def check_char_pt(self, target_char : str, box : tuple[int, int, int, int]) -> bool:
+        if target_char == self._pre_target_char:
+            cur_x, _, cur_w, _ = box
+            cur_x = cur_x + int(cur_w / 2)
+            x_range= int(cur_w * 0.3)
 
-    def check_char(self, target_char : str) -> bool:
+            pre_x, pre_y = self._pre_target_char_box.center().toTuple()
+            diff_x = abs(cur_x - pre_x)
+            
+            # 만약 이동 반경이 너무 적다면 선 표시
+            if diff_x < x_range:
+                frame = self.draw_line(frame, (pre_x - x_range, pre_y), (pre_x + x_range, pre_y)
+                                        , self.COLOR_ORENGE)
+
+                self.front_draw(frame)
+                return False
+
+        return True
+
+    def check_direction(self, target_char : str, frame : np.ndarray, hand_result : HandResult, right_info : tuple[int, str, float]) -> bool:
         def get_direction_(base_direction : int, target_degree : int, error_range : tuple[int, int]) -> int:
             range_left, range_right = error_range
             base_degree = base_direction * 90
@@ -316,87 +385,60 @@ class WorkThread(Thread):
 
             return DIRECTION_RIGHT if abs(right_diff) > abs(left_diff) else DIRECTION_LEFT
 
+        frame = frame.copy()
+        idx, name, proba = right_info
+        _, box = hand_result.get_boxes()[idx]
+
+        direction_info, (start_idx, end_idx) = self.CHAR_CORRECTION_INFO_DICT.get(target_char)
+        _, landmark = hand_result.get_abs_landmarks()[idx]
+        start_landmark, end_landmark = landmark[start_idx][:2], landmark[end_idx][:2]
+        target_degree = self.get_degree(start_landmark, end_landmark)
+        logging.debug(f"target_degree : {target_degree}")
+
+        direction = get_direction_(direction_info, target_degree, (10, 10))
+        logging.debug(f"direction : {direction}")
+
+        # 대상이 되는 라인을 그림
+        frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE)
+
+        # 차이가 0이라면 성공 0이 아니라면 보정
+        color = self.COLOR_ORENGE if not direction else self.COLOR_RED
+        frame = self.draw_box(frame, box, color)
+        frame = self.draw_text(frame, name, (box[0], box[1] - 35), color)
+        self.front_draw(frame)
+
+        if direction == DIRECTION_NONE:
+            self._direction_signal.stop()
+        elif direction == DIRECTION_LEFT:
+            self._direction_signal.left()
+        else:
+            self._direction_signal.right()
+
+        return False if direction else True
+
+    def check_char(self, target_char : str) -> bool:
         start_time = time.time()
         DURATION_TIME = 1.5
         self._answer_signal.fail()
-        while (self._exit_event.is_set() == False
-                and self._question_modify_event.is_set() == False):
+        while self.is_events_set() == False:
             
-            result = self.predict(self._front_camera, self.mirror_mode)
-            if not result:
-                start_time = time.time()
-                continue
-
-            frame, predict_result = result
-            org_frame = frame.copy()
-            hand_result, predict_result = predict_result
-            # 오른손이 아니라면 다시
-            right_info = self.get_right_hand_info(hand_result, predict_result)
-            if not right_info:
-                start_time = time.time()
-                self._front_draw_signal.send(frame)
-                continue
-
+            result = self.until_predict(target_char, True)
+            frame, (hand_result, predict_result, right_info) = result
             idx, name, proba = right_info
             _, box = hand_result.get_boxes()[idx]
-
-            # 만약 타겟과 추론한 글자가 다르다면
-            if target_char != name:
-                start_time = time.time()
-                self._answer_signal.fail()
-                frame = self.draw_box(frame, box, self.COLOR_RED)
-                self._front_draw_signal.send(frame)
-                continue
 
             # 여기서부턴 보정의 영역이므로 프로세싱으로 표기
             self._answer_signal.processing()
 
-            # 만약 타겟과 이전 타겟 글자가 같다면 좌표가 달라야함
-            if target_char == self._pre_target_char:
-                cur_x, _, cur_w, _ = box
-                cur_x = cur_x + int(cur_w / 2)
-                x_range= int(cur_w * 0.3)
-
-                pre_x, pre_y = self._pre_target_char_box.center().toTuple()
-                diff_x = abs(cur_x - pre_x)
-                
-                # 만약 이동 반경이 너무 적다면 선 표시
-                if diff_x < x_range:
-                    start_time = time.time()
-                    frame = self.draw_line(frame, (pre_x - x_range, pre_y), (pre_x + x_range, pre_y)
-                                            , self.COLOR_ORENGE)
-
-                    self._front_draw_signal.send(frame)
-                    continue
+            if self.check_char_pt(target_char, box) == False:
+                start_time = time.time()
+                continue
             
             # 각도를 체크
-            direction_info, (start_idx, end_idx) = self.CHAR_CORRECTION_INFO_DICT.get(target_char)
-            _, landmark = hand_result.get_abs_landmarks()[idx]
-            start_landmark, end_landmark = landmark[start_idx][:2], landmark[end_idx][:2]
-            target_degree = self.get_degree(start_landmark, end_landmark)
-            logging.debug(f"target_degree : {target_degree}")
+            direction = self.check_direction(target_char, frame, hand_result, right_info)
 
-            direction = get_direction_(direction_info, target_degree, (10, 10))
-            logging.debug(f"direction : {direction}")
-
-            # 대상이 되는 라인을 그림
-            frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE)
-
-            # 차이가 0이라면 성공 0이 아니라면 보정
-            color = self.COLOR_ORENGE if not direction else self.COLOR_RED
-            frame = self.draw_box(frame, box, color)
-            frame = self.draw_text(frame, name, (box[0], box[1] - 35), color)
-            self._front_draw_signal.send(frame)
-
-            if direction == DIRECTION_NONE:
-                self._direction_signal.stop()
-            elif direction == DIRECTION_LEFT:
-                self._direction_signal.left()
-            else:
-                self._direction_signal.right()
-
-            # 방향이 DIRECTION_NONE(0)이 아니라면 다시 시도하도록
-            if direction:
+            # 방향이 방향을 수정해야한다면...
+            if direction == False:
                 start_time = time.time()
                 continue
 
@@ -404,9 +446,9 @@ class WorkThread(Thread):
             if time.time() - start_time < DURATION_TIME:
                 continue
 
-            frame = self.draw_box(org_frame, box, self.COLOR_GREEN)
+            frame = self.draw_box(frame, box, self.COLOR_GREEN)
             frame = self.draw_text(frame, name, (box[0], box[1] - 35), self.COLOR_GREEN)
-            self._front_draw_signal.send(frame)
+            self.front_draw(frame)
             self._answer_signal.success()
 
             # 이전 정보를 기억
@@ -414,7 +456,6 @@ class WorkThread(Thread):
             self._pre_target_char_box = QRect(*box)
 
             self.sleep(2)
-
             return True
 
         return False
@@ -429,10 +470,10 @@ class WorkThread(Thread):
 
         return int(degree)
 
-    def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple) -> tuple:
+    def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple, mirror_mode : bool) -> tuple:
         hand_labels = hand_result.get_labels()
         for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
-            if hand_label == "Right" if self.mirror_mode else "Left":
+            if hand_label == "Right" if mirror_mode else "Left":
                 return idx, name, proba
 
         return tuple()
@@ -449,12 +490,9 @@ class WorkThread(Thread):
 
         return
 
-    def study_proc(self):
-        break_events = (self._exit_event
-                        , self._stop_event
-                        , self._question_modify_event)
-
+    def study_proc(self) -> None:
         while not self._exit_event.is_set():
+            
             if self._stop_event.is_set():
                 time.sleep(0.3)
                 continue
@@ -464,11 +502,8 @@ class WorkThread(Thread):
 
             questions_len = len(questions)
             question_idx = 0
-            while question_idx < questions_len:
-                results = [e.is_set() for e in break_events]
-                if True in results:
-                    break
 
+            while question_idx < questions_len and self.is_events_set() == False:
                 target_char = questions[question_idx]
                 predict_result = self.check_char(target_char)
                 if not predict_result:
@@ -476,11 +511,21 @@ class WorkThread(Thread):
                 
                 question_idx += 1
 
-            if not self._question_modify_event.is_set():
-                self._stop_event.set()
+            self._pre_target_char = ""
+            self._pre_target_char_box = QRect()
 
     def run(self) -> None:
-        if self._run_mode == self.RUN_STUDY:
-            self.study_proc()
-        elif self._run_mode == self.RUN_TEST:
-            pass
+        while True:
+            try:
+
+                if self._run_mode == self.RUN_STUDY:
+                    self.study_proc()
+                elif self._run_mode == self.RUN_TEST:
+                    pass
+
+            except ExitException:
+                break
+            except StopException:
+                pass
+            except DataModifyExecption:
+                pass
