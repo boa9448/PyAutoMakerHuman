@@ -286,7 +286,7 @@ class WorkThread(Thread):
         return False
 
     def events_clear(self) -> None:
-        events = [self._exit_event, self._question_modify_event, self._stop_event]
+        events = [self._question_modify_event, self._stop_event]
         for event in events:
             event.clear()
 
@@ -338,11 +338,13 @@ class WorkThread(Thread):
 
             idx, name, proba = right_info
             _, box = hand_result.get_boxes()[idx]
+            _, landmarks = hand_result.get_landmarks()[idx]
 
             # 만약 타겟과 추론한 글자가 다르다면
             if target_char != name:
                 self._answer_signal.fail()
                 frame = self.draw_box(frame, box, self.COLOR_RED)
+                frame = self.draw_landmark(frame, landmarks)
                 self.front_draw(frame)
                 continue
 
@@ -393,20 +395,22 @@ class WorkThread(Thread):
         _, box = hand_result.get_boxes()[idx]
 
         direction_info, (start_idx, end_idx) = self.CHAR_CORRECTION_INFO_DICT.get(target_char)
-        _, landmark = hand_result.get_abs_landmarks()[idx]
-        start_landmark, end_landmark = landmark[start_idx][:2], landmark[end_idx][:2]
+        _, abs_landmarks = hand_result.get_abs_landmarks()[idx]
+        _, landmarks = hand_result.get_landmarks()[idx]
+        start_landmark, end_landmark = abs_landmarks[start_idx][:2], abs_landmarks[end_idx][:2]
         target_degree = self.get_degree(start_landmark, end_landmark)
         logging.debug(f"target_degree : {target_degree}")
 
         direction = get_direction_(direction_info, target_degree, (10, 10))
         logging.debug(f"direction : {direction}")
 
-        # 대상이 되는 라인을 그림
-        frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE)
 
         # 차이가 0이라면 성공 0이 아니라면 보정
         color = self.COLOR_ORENGE if not direction else self.COLOR_RED
         frame = self.draw_box(frame, box, color)
+        frame = self.draw_landmark(frame, landmarks)
+        # 대상이 되는 라인을 그림
+        frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE)
         frame = self.draw_text(frame, name, (box[0], box[1] - 35), color)
         self.front_draw(frame)
 
@@ -431,6 +435,7 @@ class WorkThread(Thread):
             frame, (hand_result, predict_result, right_info) = result
             idx, name, proba = right_info
             _, box = hand_result.get_boxes()[idx]
+            _, landmarks = hand_result.get_landmarks()[idx]
 
             # 여기서부턴 보정의 영역이므로 프로세싱으로 표기
             self._answer_signal.processing()
@@ -452,6 +457,7 @@ class WorkThread(Thread):
                 continue
 
             frame = self.draw_box(frame, box, self.COLOR_GREEN)
+            frame = self.draw_landmark(frame, landmarks)
             frame = self.draw_text(frame, name, (box[0], box[1] - 35), self.COLOR_GREEN)
             self.front_draw(frame)
             self._answer_signal.success()
@@ -518,7 +524,7 @@ class WorkThread(Thread):
             self._stop_event.set()
 
     def run(self) -> None:
-        while True:
+        while self._exit_event.is_set() == False:
             self.events_clear()
             try:
 
