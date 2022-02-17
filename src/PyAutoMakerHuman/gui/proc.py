@@ -135,10 +135,10 @@ class WorkThread(Thread):
         self._run_mode = run_mode
         self._mirror_mode = True
         self._questions = list()
+        #self._mirror_classifier = HandTrainer()
+        #self._mirror_classifier.load(os.path.join(models_dir, "mirror_model"))
         self._classifier = HandTrainer()
         self._classifier.load(os.path.join(models_dir, "model"))
-        self._mirror_classifier = HandTrainer()
-        self._mirror_classifier.load(os.path.join(models_dir, "mirror_model"))
 
         self._pre_target_char = ""
         self._pre_target_char_box = QRect()
@@ -196,6 +196,7 @@ class WorkThread(Thread):
     def mirror_mode(self, value : bool) -> None:
         with self._mirror_modify_lock:
             self._mirror_mode = value
+            self._classifier.load(os.path.join(models_dir, "mirror_model" if value else "model"))
             logging.debug(f"[+] mirror mode change : {self._mirror_mode}")
 
     @property
@@ -218,7 +219,8 @@ class WorkThread(Thread):
             self._pre_target_char = ""
             self._pre_target_char_box = QRect()
 
-            self._stop_event.clear()
+            self.events_clear()
+            self._question_modify_event.set()
 
     def draw_box(self, img : np.ndarray, box : tuple[int, int, int, int], color : tuple) -> np.ndarray:
         x, y, w, h = box
@@ -283,9 +285,14 @@ class WorkThread(Thread):
 
         return False
 
+    def events_clear(self) -> None:
+        events = [self._exit_event, self._question_modify_event, self._stop_event]
+        for event in events:
+            event.clear()
+
     @property
     def front_classifier(self) -> HandTrainer:
-        return self._mirror_classifier if self.mirror_mode else self._classifier
+        return self._classifier
 
     @property
     def side_classifier(self) -> HandTrainer:
@@ -300,8 +307,6 @@ class WorkThread(Thread):
 
             self.front_draw(frame)
 
-        return tuple()
-
     def side_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
         while self.is_events_set() == False:
             frame = self.side_frame
@@ -309,7 +314,12 @@ class WorkThread(Thread):
             if result:
                 return frame, result
 
-        return tuple()
+    def front_side_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        front_result = self.front_predict()
+        side_result = self.side_predict()
+
+        if (not front_result) or (not side_result):
+            return tuple()
 
     def until_predict(self, target_char : str, is_front : bool) -> tuple[np.ndarray, tuple[HandResult, tuple, tuple]]:
         while self.is_events_set() == False:
@@ -321,7 +331,7 @@ class WorkThread(Thread):
             org_frame = frame.copy()
             hand_result, predict_result = predict_result
             # 오른손이 아니라면 다시
-            right_info = self.get_right_hand_info(hand_result, predict_result, is_front)
+            right_info = self.get_right_hand_info(hand_result, predict_result, self.mirror_mode)
             if not right_info:
                 self.front_draw(frame)
                 continue
@@ -337,15 +347,8 @@ class WorkThread(Thread):
                 continue
 
             return org_frame, (hand_result, predict_result, right_info)
-
-    def front_side_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
-        front_result = self.front_predict()
-        side_result = self.side_predict()
-
-        if (not front_result) or (not side_result):
-            return tuple()
         
-    def check_char_pt(self, target_char : str, box : tuple[int, int, int, int]) -> bool:
+    def check_char_pt(self, target_char : str, frame : np.ndarray, box : tuple[int, int, int, int]) -> bool:
         if target_char == self._pre_target_char:
             cur_x, _, cur_w, _ = box
             cur_x = cur_x + int(cur_w / 2)
@@ -417,12 +420,14 @@ class WorkThread(Thread):
         return False if direction else True
 
     def check_char(self, target_char : str) -> bool:
-        start_time = time.time()
+        start_time = float()
         DURATION_TIME = 1.5
         self._answer_signal.fail()
         while self.is_events_set() == False:
-            
             result = self.until_predict(target_char, True)
+            if not start_time:
+                start_time = time.time()
+
             frame, (hand_result, predict_result, right_info) = result
             idx, name, proba = right_info
             _, box = hand_result.get_boxes()[idx]
@@ -430,7 +435,7 @@ class WorkThread(Thread):
             # 여기서부턴 보정의 영역이므로 프로세싱으로 표기
             self._answer_signal.processing()
 
-            if self.check_char_pt(target_char, box) == False:
+            if self.check_char_pt(target_char, frame, box) == False:
                 start_time = time.time()
                 continue
             
@@ -455,7 +460,6 @@ class WorkThread(Thread):
             self._pre_target_char = name
             self._pre_target_char_box = QRect(*box)
 
-            self.sleep(2)
             return True
 
         return False
@@ -471,22 +475,19 @@ class WorkThread(Thread):
         return int(degree)
 
     def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple, mirror_mode : bool) -> tuple:
+        target_hand_label = "Right" if mirror_mode else "Left"
         hand_labels = hand_result.get_labels()
         for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
-            if hand_label == "Right" if mirror_mode else "Left":
+            if hand_label == target_hand_label:
                 return idx, name, proba
 
         return tuple()
 
     def sleep(self, timeout : float) -> None:
-        break_events = (self._exit_event
-                        , self._stop_event)
-
         start_time = time.time()
         while time.time() - start_time < timeout:
-            results = [event.is_set() for event in break_events]
-            if True in results:
-                return
+            self.is_events_set()
+            time.sleep(0.02)
 
         return
 
@@ -510,19 +511,21 @@ class WorkThread(Thread):
                     continue
                 
                 question_idx += 1
+                self.sleep(1)
 
             self._pre_target_char = ""
             self._pre_target_char_box = QRect()
+            self._stop_event.set()
 
     def run(self) -> None:
         while True:
+            self.events_clear()
             try:
 
                 if self._run_mode == self.RUN_STUDY:
                     self.study_proc()
                 elif self._run_mode == self.RUN_TEST:
                     pass
-
             except ExitException:
                 break
             except StopException:
