@@ -151,7 +151,7 @@ class CameraDialog(QDialog, Ui_Dialog):
         return self.front_camera
 
     def side(self) -> cv2.VideoCapture:
-        return self.side_camera
+        return self.side_camera if self.side_camera.isOpened() else self.front_camera
 
     def cameras(self) -> tuple:
         return self.front(), self.side()
