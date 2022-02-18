@@ -79,6 +79,7 @@ class WorkThread(Thread):
 
     FRAME_READ_TIMEOUT = 2
     PREDICT_TIMEOUT = 2
+    PREDICT_THRESH = 0.8
 
     COLOR_RED = (0, 0, 255)
     COLOR_GREEN = (0, 255, 0)
@@ -284,11 +285,24 @@ class WorkThread(Thread):
         return self._classifier
 
     def front_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        def filter_proc(predict_result):
+            name, proba = predict_result
+            if proba >= self.PREDICT_THRESH:
+                return True
+            else:
+                return False
+
         while self.is_events_set() == False:
             frame = self.front_frame
             result = self.front_classifier.predict(frame)
             if result:
-                return frame, result
+                hand_result, predict_result = result
+                predict_result = tuple(filter(filter_proc, predict_result))
+                if not predict_result:
+                    self.front_draw(frame)
+                    continue
+
+                return frame, (hand_result, predict_result)
 
             self.front_draw(frame)
 
@@ -513,6 +527,10 @@ class WorkThread(Thread):
             self._pre_target_char_box = QRect()
             self._stop_event.set()
 
+    def test_proc(self) -> None:
+        while not self.is_events_set():
+            pass
+
     def run(self) -> None:
         while self._exit_event.is_set() == False:
             self.events_clear()
@@ -521,7 +539,8 @@ class WorkThread(Thread):
                 if self._run_mode == self.RUN_STUDY:
                     self.study_proc()
                 elif self._run_mode == self.RUN_TEST:
-                    pass
+                    self.test_proc()
+
             except ExitException:
                 break
             except StopException:
