@@ -1,3 +1,9 @@
+import time
+import functools
+import logging
+from typing import Any, Callable
+
+
 import cv2
 import numpy as np
 
@@ -7,6 +13,9 @@ from PySide6.QtGui import QPixmap, QImage
 
 
 from ..image import cv2_imread, cv2_putText
+
+
+logging.basicConfig(level = logging.DEBUG)
 
 def draw_pixmap(target_img_label : QLabel, pixmap : QPixmap) -> None:
     size = target_img_label.size()
@@ -29,3 +38,12 @@ def numpy_to_pixmap(img : np.ndarray) -> QPixmap:
     qimg = QImage(img.data, w, h, 3 * w, QImage.Format_BGR888)
     pixmap = QPixmap(qimg)
     return pixmap
+
+def time_check(func) -> Callable:
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs) -> Any:
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        logging.debug(f"{func.__name__} : {time.perf_counter() - start_time:.3f}")
+
+    return wrapper
