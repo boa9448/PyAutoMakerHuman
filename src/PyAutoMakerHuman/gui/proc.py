@@ -269,8 +269,8 @@ class WorkThread(Thread):
     def draw_text(self, img : np.ndarray, text : str, org : tuple, color : tuple) -> np.ndarray:
         return cv2_putText(img, text, org, 3, color, 2)
 
-    def draw_line(self, img : np.ndarray, start : tuple, end : tuple, color : tuple) -> np.ndarray:
-        return cv2.line(img, start, end, color, 2)
+    def draw_line(self, img : np.ndarray, start : tuple, end : tuple, color : tuple, thickness : int = 2) -> np.ndarray:
+        return cv2.line(img, start, end, color, thickness)
 
     def front_draw(self, img : np.ndarray) -> None:
         self._front_draw_signal.send(img)
@@ -368,7 +368,7 @@ class WorkThread(Thread):
             # 만약 이동 반경이 너무 적다면 선 표시
             if diff_x < x_range:
                 frame = self.draw_line(frame, (pre_x - x_range, pre_y), (pre_x + x_range, pre_y)
-                                        , self.COLOR_ORENGE)
+                                        , self.COLOR_ORENGE, 4)
 
                 self.front_draw(frame)
                 return False
@@ -422,10 +422,15 @@ class WorkThread(Thread):
 
         if direction == DIRECTION_NONE:
             self._direction_signal.stop()
-        elif direction == DIRECTION_LEFT:
-            self._direction_signal.left()
+
         else:
-            self._direction_signal.right()
+            if self.mirror_mode == False:
+                direction = DIRECTION_LEFT if direction == DIRECTION_RIGHT else DIRECTION_RIGHT
+
+            if direction == DIRECTION_LEFT:
+                self._direction_signal.left()
+            else:
+                self._direction_signal.right()
 
         return False if direction else True
 
