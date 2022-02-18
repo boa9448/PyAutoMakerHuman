@@ -4,6 +4,7 @@ import logging
 from threading import Thread, Event, Lock
 from typing import Callable
 import math
+import json
 
 import cv2
 import numpy as np
@@ -88,37 +89,7 @@ class WorkThread(Thread):
     CHAR_DIRECTION_LEFT = 3
     CHAR_DIRECTION_UP = 4
 
-    CHAR_CORRECTION_INFO_DICT = {"ㄱ" : (CHAR_DIRECTION_UP, (8, 5))
-                                , "ㄴ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㄷ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㄹ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅁ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅂ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅅ" : (CHAR_DIRECTION_UP, (9, 0))
-                                , "ㅇ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅈ" : (CHAR_DIRECTION_UP, (9, 0))
-                                , "ㅊ" : (CHAR_DIRECTION_UP, (9, 0))
-                                , "ㅋ" : (CHAR_DIRECTION_UP, (9, 0))
-                                , "ㅌ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅍ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅎ" : (CHAR_DIRECTION_UP, (17, 5))
-                                , "ㅏ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅑ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅓ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅕ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅗ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅛ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅜ" : (CHAR_DIRECTION_UP, (8, 5))
-                                , "ㅠ" : (CHAR_DIRECTION_UP, (8, 5))
-                                , "ㅡ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅣ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅐ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅒ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅔ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅖ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅢ" : (CHAR_DIRECTION_LEFT, (0, 9))
-                                , "ㅚ" : (CHAR_DIRECTION_UP, (0, 9))
-                                , "ㅟ" : (CHAR_DIRECTION_UP, (8, 5)) }
+    CHAR_CORRECTION_INFO_DICT = dict()
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
                     , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
@@ -132,6 +103,7 @@ class WorkThread(Thread):
         self._question_modify_lock = Lock()
 
         # 작동 관련 변수
+        self.CHAR_CORRECTION_INFO_DICT = self.load_json()
         self._run_mode = run_mode
         self._mirror_mode = True
         self._questions = list()
@@ -156,6 +128,13 @@ class WorkThread(Thread):
 
         self._direction_signal = DirectionSignal()
         self._direction_signal.sig.connect(direction_handler)
+
+    @staticmethod
+    def load_json() -> dict:
+        cur_dir = os.path.dirname(__file__)
+        with open(os.path.join(cur_dir, "proc_data.json"), "rb") as f:
+            data = f.read()
+            return json.loads(data)
 
     def exit(self) -> None:
         self._exit_event.set()
@@ -368,7 +347,7 @@ class WorkThread(Thread):
             # 만약 이동 반경이 너무 적다면 선 표시
             if diff_x < x_range:
                 frame = self.draw_line(frame, (pre_x - x_range, pre_y), (pre_x + x_range, pre_y)
-                                        , self.COLOR_ORENGE, 4)
+                                        , self.COLOR_ORENGE, 6)
 
                 self.front_draw(frame)
                 return False
@@ -416,7 +395,7 @@ class WorkThread(Thread):
         frame = self.draw_box(frame, box, color)
         frame = self.draw_landmark(frame, landmarks)
         # 대상이 되는 라인을 그림
-        frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE)
+        frame = self.draw_line(frame, start_landmark, end_landmark, self.COLOR_ORENGE, 6)
         frame = self.draw_text(frame, name, (box[0], box[1] - 35), color)
         self.front_draw(frame)
 
