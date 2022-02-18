@@ -275,6 +275,12 @@ class WorkThread(Thread):
     def front_draw(self, img : np.ndarray) -> None:
         self._front_draw_signal.send(img)
 
+    def is_exit_set(self) -> bool:
+        if self._exit_event.is_set():
+            raise ExitException()
+        
+        return False
+
     def is_events_set(self) -> bool:
         events = [self._exit_event, self._question_modify_event, self._stop_event]
         exceptions = [ExitException, DataModifyExecption, StopException]
@@ -498,7 +504,7 @@ class WorkThread(Thread):
         return
 
     def study_proc(self) -> None:
-        while not self._exit_event.is_set():
+        while not self.is_exit_set():
             
             if self._stop_event.is_set():
                 time.sleep(0.3)
