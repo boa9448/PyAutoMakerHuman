@@ -16,7 +16,7 @@ from ..hand import HandResult
 from .. import models_dir
 from ..hand_train import HandTrainer
 from .exception import FrameException, ExitException, StopException, DataModifyExecption
-from .utils import numpy_to_pixmap
+from .utils import numpy_to_pixmap, time_check
 
 
 logging.basicConfig(level = logging.DEBUG)
@@ -284,7 +284,7 @@ class WorkThread(Thread):
     def side_classifier(self) -> HandTrainer:
         return self._classifier
 
-    def front_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+    def predict_filter(self, predict_result : tuple) -> tuple:
         def filter_proc(predict_result):
             name, proba = predict_result
             if proba >= self.PREDICT_THRESH:
@@ -292,17 +292,14 @@ class WorkThread(Thread):
             else:
                 return False
 
+        return tuple(filter(filter_proc, predict_result))
+
+    def front_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
         while self.is_events_set() == False:
             frame = self.front_frame
             result = self.front_classifier.predict(frame)
             if result:
-                hand_result, predict_result = result
-                predict_result = tuple(filter(filter_proc, predict_result))
-                if not predict_result:
-                    self.front_draw(frame)
-                    continue
-
-                return frame, (hand_result, predict_result)
+                return frame, result
 
             self.front_draw(frame)
 
@@ -313,16 +310,27 @@ class WorkThread(Thread):
             if result:
                 return frame, result
 
-    def front_side_predict(self) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+    @time_check
+    def front_side_predict(self, target_char : str) -> tuple[np.ndarray, tuple[HandResult, tuple]]:
+        # 정면에서 판단 불가능한 수형
+        except_char_list = ["ㅓ", "ㅕ", "ㅔ", "ㅖ"]
+
         front_result = self.front_predict()
+        if not target_char in except_char_list:
+            return front_result
+
         side_result = self.side_predict()
+        # 사이드 추론 결과가 이상하거나 비어있다면, 정면캠의 결과를 리턴
+        _, (side_hand_result, side_predict_result) = side_result
+        for name, proba in side_predict_result:
+            if name in except_char_list:
+                return front_result[0], (side_hand_result, side_predict_result)
+        
+        return front_result
 
-        if (not front_result) or (not side_result):
-            return tuple()
-
-    def until_predict(self, target_char : str, is_front : bool) -> tuple[np.ndarray, tuple[HandResult, tuple, tuple]]:
+    def until_predict(self, target_char : str) -> tuple[np.ndarray, tuple[HandResult, tuple, tuple]]:
         while self.is_events_set() == False:
-            result = self.front_predict()
+            result = self.front_side_predict(target_char)
             if not result:
                 continue
 
@@ -432,7 +440,7 @@ class WorkThread(Thread):
         DURATION_TIME = 1.5
         self._answer_signal.fail()
         while self.is_events_set() == False:
-            result = self.until_predict(target_char, True)
+            result = self.until_predict(target_char)
             if not start_time:
                 start_time = time.time()
 
