@@ -8,6 +8,7 @@ from qt_material import apply_stylesheet
 
 from .form.main_form import Ui_MainWindow
 from .study import StudyWindow
+from .test import TestWindow
 from .camera import CameraDialog
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -27,11 +28,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def init_display(self) -> None:
         self.camera_dialog = CameraDialog()
         self.study_frame = StudyWindow(self, self.camera_dialog.cameras())
+        self.test_frame = TestWindow(self, self.camera_dialog.cameras())
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.study_frame)
 
-        self.stack_layout.addWidget(QFrame())
+        self.stack_layout.addWidget(self.test_frame)
         self.frame.setLayout(self.stack_layout)
 
         self.study_frame.init()
