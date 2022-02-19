@@ -91,6 +91,8 @@ class WorkThread(Thread):
     CHAR_DIRECTION_UP = 4
 
     CHAR_CORRECTION_INFO_DICT = dict()
+    
+    CHAR_EXCEPTION_LIST = tuple()
 
     def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
                     , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
@@ -321,10 +323,11 @@ class WorkThread(Thread):
 
         side_result = self.side_predict()
         # 사이드 추론 결과가 이상하거나 비어있다면, 정면캠의 결과를 리턴
-        _, (side_hand_result, side_predict_result) = side_result
+        side_frame, (side_hand_result, side_predict_result) = side_result
         for name, proba in side_predict_result:
             if name in except_char_list:
-                return front_result[0], (side_hand_result, side_predict_result)
+                return side_result
+                #return front_result[0], (side_hand_result, side_predict_result)
         
         return front_result
 
@@ -338,7 +341,7 @@ class WorkThread(Thread):
             org_frame = frame.copy()
             hand_result, predict_result = predict_result
             # 오른손이 아니라면 다시
-            right_info = self.get_right_hand_info(hand_result, predict_result, self.mirror_mode)
+            right_info = self.get_right_hand_info(hand_result, predict_result, target_char)
             if not right_info:
                 self.front_draw(frame)
                 continue
@@ -492,11 +495,13 @@ class WorkThread(Thread):
 
         return int(degree)
 
-    def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple, mirror_mode : bool) -> tuple:
-        target_hand_label = "Right" if mirror_mode else "Left"
+    def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple, target_char : str) -> tuple:
+        is_always_enter = False if target_char in self.CHAR_EXCEPTION_LIST else True
+
+        target_hand_label = "Right" if self.mirror_mode else "Left"
         hand_labels = hand_result.get_labels()
         for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
-            if hand_label == target_hand_label:
+            if is_always_enter or hand_label == target_hand_label:
                 return idx, name, proba
 
         return tuple()
