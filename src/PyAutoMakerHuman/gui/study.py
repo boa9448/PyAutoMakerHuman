@@ -21,8 +21,8 @@ logging.basicConfig(level=logging.DEBUG)
 class StudyWindow(QFrame, Ui_Frame):
     QUESTION_DEFAUL = "ㄱ"
 
-    def __init__(self, parernt, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]):
-        super(StudyWindow, self).__init__(parernt)
+    def __init__(self, parent, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]):
+        super(StudyWindow, self).__init__(parent)
         self.setupUi(self)
         self._img_label_list = [self.screen_img_label, self.answer_img_label, self.example_img_label
                                 , self.study_img_label, self.direction_img_label]
