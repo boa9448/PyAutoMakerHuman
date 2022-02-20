@@ -73,9 +73,9 @@ class DirectionSignal(QObject):
         self.sig.emit(DIRECTION_RIGHT)
 
 
+RUN_STUDY = 1
+RUN_TEST = 2
 class WorkThread(Thread):
-    RUN_STUDY = 1
-    RUN_TEST = 2
 
     FRAME_READ_TIMEOUT = 2
     PREDICT_TIMEOUT = 2
@@ -94,9 +94,7 @@ class WorkThread(Thread):
     
     CHAR_EXCEPTION_LIST = tuple()
 
-    def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture]
-                    , front_draw_handler : Callable, answer_handler : Callable, direction_handler : Callable
-                    , run_mode : int = RUN_STUDY):
+    def __init__(self, cameras : tuple[cv2.VideoCapture, cv2.VideoCapture], run_mode : int, **kwargs):
         super().__init__()
         # 이벤트, 락
         self._exit_event = Event()
@@ -122,15 +120,23 @@ class WorkThread(Thread):
         self._front_camera = cameras[0]
         self._side_camera = cameras[1]
 
-        #시그널
-        self._front_draw_signal = FrontDrawSignal()
-        self._front_draw_signal.sig.connect(front_draw_handler)
+        if self._run_mode == RUN_STUDY:
+            front_draw_handler = kwargs.get("front_draw_handler")
+            answer_handler = kwargs.get("answer_handler")
+            direction_handler = kwargs.get("direction_handler")
 
-        self._answer_signal = AnswerSignal()
-        self._answer_signal.sig.connect(answer_handler)
+            #시그널
+            self._front_draw_signal = FrontDrawSignal()
+            self._front_draw_signal.sig.connect(front_draw_handler)
 
-        self._direction_signal = DirectionSignal()
-        self._direction_signal.sig.connect(direction_handler)
+            self._answer_signal = AnswerSignal()
+            self._answer_signal.sig.connect(answer_handler)
+
+            self._direction_signal = DirectionSignal()
+            self._direction_signal.sig.connect(direction_handler)
+
+        elif self._run_mode == RUN_TEST:
+            pass
 
     @staticmethod
     def load_json() -> dict:
@@ -191,7 +197,7 @@ class WorkThread(Thread):
     @questions.setter
     def questions(self, value : list) -> None:
         with self._question_modify_lock:
-            if self._run_mode == self.RUN_STUDY:
+            if self._run_mode == RUN_STUDY:
                 value = list(STUDY_COMBINATION_CHAR_DICT.get(value, value))
             self._questions = list(value)
             self._question_modify_event.set()
@@ -549,9 +555,9 @@ class WorkThread(Thread):
             self.events_clear()
             try:
 
-                if self._run_mode == self.RUN_STUDY:
+                if self._run_mode == RUN_STUDY:
                     self.study_proc()
-                elif self._run_mode == self.RUN_TEST:
+                elif self._run_mode == RUN_TEST:
                     self.test_proc()
 
             except ExitException:

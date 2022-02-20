@@ -109,10 +109,11 @@ class StudyWindow(QFrame, Ui_Frame):
         self.reset_button.click()
 
     def init_data(self) -> None:
-        self.study_thread = proc.WorkThread(self._cameras
-                                            , self.front_draw_handler
-                                            , self.answer_handler
-                                            , self.direction_hander)
+        self.study_thread = proc.WorkThread(self._cameras, proc.RUN_STUDY
+                                            , front_draw_handler = self.front_draw_handler
+                                            , answer_handler = self.answer_handler
+                                            , direction_hander = self.direction_hander)
+                                            
         self.study_thread.mirror_mode = self.mirror_mode
         self.study_thread.questions = self._questions
         self.study_thread.start()
