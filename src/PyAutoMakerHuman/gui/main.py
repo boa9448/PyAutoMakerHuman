@@ -37,6 +37,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.frame.setLayout(self.stack_layout)
 
         self.study_frame.init()
+        self.test_frame.init()
         text = "거울모드 {}".format("On" if self.study_frame.mirror_mode else "Off")
         self.mirror_mode_button.setText(text)
 
@@ -53,9 +54,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @Slot()
     def mirror_mode_button_handler(self) -> None:
-        mode = self.study_frame.mirror_mode
-        self.study_frame.mirror_mode = not mode
-        text = "거울모드 {}".format("On" if self.study_frame.mirror_mode else "Off")
+        target_frame = self.stack_layout.currentWidget()
+        mode = target_frame.mirror_mode
+        target_frame.mirror_mode = not mode
+        text = "거울모드 {}".format("On" if target_frame.mirror_mode else "Off")
         self.mirror_mode_button.setText(text)
 
 def start_main():
