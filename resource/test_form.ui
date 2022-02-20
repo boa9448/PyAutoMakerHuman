@@ -14,7 +14,33 @@
    <string>Frame</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="0" column="1" rowspan="2">
+   <item row="3" column="0">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="3" rowspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>132</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="3" rowspan="2">
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <property name="sizeConstraint">
       <enum>QLayout::SetDefaultConstraint</enum>
@@ -46,7 +72,7 @@
          </property>
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>9</pointsize>
           </font>
          </property>
          <property name="text">
@@ -85,7 +111,7 @@
          </property>
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>9</pointsize>
           </font>
          </property>
          <property name="text">
@@ -97,7 +123,7 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QSpinBox" name="spinBox">
+        <widget class="QSpinBox" name="remaining_spin">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
            <horstretch>0</horstretch>
@@ -122,7 +148,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLabel" name="label_3">
+        <widget class="QLabel" name="level_img_label">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
            <horstretch>0</horstretch>
@@ -189,7 +215,7 @@
        </property>
        <property name="font">
         <font>
-         <pointsize>12</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -204,7 +230,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="study_img_label">
+      <widget class="QLabel" name="question_img_label">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
          <horstretch>0</horstretch>
@@ -225,7 +251,7 @@
        </property>
        <property name="font">
         <font>
-         <pointsize>30</pointsize>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="text">
@@ -239,10 +265,10 @@
      <item>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
-        <widget class="QLabel" name="label_5">
+        <widget class="QLabel" name="success_img_label">
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>9</pointsize>
           </font>
          </property>
          <property name="text">
@@ -254,7 +280,7 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="label_7">
+        <widget class="QLabel" name="success_count_img_label">
          <property name="text">
           <string>5개</string>
          </property>
@@ -264,7 +290,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLabel" name="label_8">
+        <widget class="QLabel" name="fail_count_img_label">
          <property name="text">
           <string>3개</string>
          </property>
@@ -274,10 +300,10 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="label_6">
+        <widget class="QLabel" name="fail_img_label">
          <property name="font">
           <font>
-           <pointsize>12</pointsize>
+           <pointsize>9</pointsize>
           </font>
          </property>
          <property name="text">
@@ -292,20 +318,45 @@
      </item>
     </layout>
    </item>
-   <item row="2" column="1">
-    <spacer name="verticalSpacer">
+   <item row="3" column="1">
+    <widget class="QPushButton" name="start_button">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>300</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>300</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>시작</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2">
+    <spacer name="horizontalSpacer_2">
      <property name="orientation">
-      <enum>Qt::Vertical</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>20</width>
-       <height>132</height>
+       <width>40</width>
+       <height>20</height>
       </size>
      </property>
     </spacer>
    </item>
-   <item row="0" column="0" rowspan="3">
+   <item row="0" column="0" rowspan="3" colspan="3">
     <widget class="QLabel" name="screen_img_label">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
