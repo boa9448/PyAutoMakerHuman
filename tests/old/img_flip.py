@@ -6,7 +6,7 @@ import numpy as np
 import imutils
 
 cur_dir = os.path.dirname(__file__)
-parent_dir = os.path.abspath(os.path.join(cur_dir, ".."))
+parent_dir = os.path.abspath(os.path.join(cur_dir, "..", ".."))
 dataset_dir = os.path.join(parent_dir, "dataset", "not_mirror")
 folder_list = glob(os.path.join(dataset_dir, "*"))
 
