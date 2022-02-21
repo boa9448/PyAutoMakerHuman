@@ -501,7 +501,7 @@ class WorkThread(Thread):
 
         return False
 
-    def get_degree(self, start : tuple[int, int, int], end : tuple[int, int, int]):
+    def get_degree(self, start : tuple[int, int], end : tuple[int, int]):
         start_x, start_y = start
         end_x, end_y = end
         dx = end_x - start_x
