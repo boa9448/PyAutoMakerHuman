@@ -20,7 +20,7 @@ class TestWindow(QFrame, Ui_Frame):
 
     def init_data(self) -> None:
         self.test_thread = proc.WorkThread(self._cameras, proc.RUN_TEST
-                                            , font_draw_handler = self.font_draw_handler
+                                            , front_draw_handler = self.front_draw_handler
                                             , process_handler = self.process_handler)
 
         self.test_thread.mirror_mode = self.mirror_mode
@@ -30,6 +30,7 @@ class TestWindow(QFrame, Ui_Frame):
     def dispose_data(self) -> None:
         if self.test_thread:
             self.test_thread.join()
+            self.test_thread = None
 
     def init_handler(self) -> None:
         self.start_button.clicked.connect(self.start_button_handler)
@@ -53,7 +54,7 @@ class TestWindow(QFrame, Ui_Frame):
         self.start_button.setText(button_text)
 
     @Slot(QPixmap)
-    def font_draw_handler(self, pixmap : QPixmap) -> None:
+    def front_draw_handler(self, pixmap : QPixmap) -> None:
         self.screen_img_label.setPixmap(pixmap)
 
     @Slot(int)
