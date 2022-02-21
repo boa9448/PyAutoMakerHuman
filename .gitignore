@@ -140,6 +140,7 @@ cython_debug/
 
 # DataSet
 dataset/
+dataset_old/
 
 # Temp
 temp/
