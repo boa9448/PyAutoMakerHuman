@@ -8,8 +8,12 @@ from PyAutoMakerHuman.image import cv2_putText
 
 util = HandTrainer()
 #util.train(env.train_dataset_dir)
-#util.save("test_model")
-util.load("test_model")
+#util.save("model_new")
+#util.load("model_new")
+util.train(env.train_mirror_dataset_dir)
+util.save("mirror_model_new")
+util.load("mirror_model_new")
+
 
 cap = cv2.VideoCapture(0)
 while cap.isOpened():
