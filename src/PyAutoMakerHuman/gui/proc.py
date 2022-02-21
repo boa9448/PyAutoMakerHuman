@@ -73,6 +73,10 @@ class DirectionSignal(QObject):
         self.sig.emit(DIRECTION_RIGHT)
 
 
+class ProcessSignal(QObject):
+    sig = Signal(int, dict)
+
+
 RUN_STUDY = 1
 RUN_TEST = 2
 class WorkThread(Thread):
@@ -136,7 +140,13 @@ class WorkThread(Thread):
             self._direction_signal.sig.connect(direction_handler)
 
         elif self._run_mode == RUN_TEST:
-            pass
+            front_draw_handler = kwargs.get("front_draw_handler")
+            process_handler = kwargs.get("process_handler")
+
+            self._front_draw_signal = FrontDrawSignal()
+            self._front_draw_signal.sig.connect(front_draw_handler)
+            self._process_signal = ProcessSignal()
+            self._process_signal.sig.connect(process_handler)
 
     @staticmethod
     def load_json() -> dict:
@@ -548,7 +558,8 @@ class WorkThread(Thread):
 
     def test_proc(self) -> None:
         while not self.is_events_set():
-            pass
+            frame = self.front_frame
+            self.front_draw(frame)
 
     def run(self) -> None:
         while self._exit_event.is_set() == False:
