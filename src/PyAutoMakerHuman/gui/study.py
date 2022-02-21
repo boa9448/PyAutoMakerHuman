@@ -112,7 +112,7 @@ class StudyWindow(QFrame, Ui_Frame):
         self.study_thread = proc.WorkThread(self._cameras, proc.RUN_STUDY
                                             , front_draw_handler = self.front_draw_handler
                                             , answer_handler = self.answer_handler
-                                            , direction_hander = self.direction_hander)
+                                            , direction_handler = self.direction_hander)
                                             
         self.study_thread.mirror_mode = self.mirror_mode
         self.study_thread.questions = self._questions
