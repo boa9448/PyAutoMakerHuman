@@ -1,3 +1,5 @@
+import os
+import json
 import time
 import functools
 import logging
@@ -48,3 +50,40 @@ def time_check(func) -> Callable:
         return result
 
     return wrapper
+
+
+def load_shape_img_info() -> tuple:
+    cur_dir = os.path.dirname(__file__)
+    shape_img_dir = os.path.join(cur_dir, "imgs", "shape_imgs")
+    file_path = os.path.join(shape_img_dir, "desc.json")
+    with open(file_path, "rb") as f:
+        file_data = f.read()
+
+    json_data = json.loads(file_data)
+
+    childs = json_data["child"]
+    parents = json_data["parent"]
+
+    def load_helper(json_data : dict) -> dict:
+        result_dict = dict()
+        for key, value in json_data.items():
+            img_path = os.path.join(shape_img_dir, value)
+            img = cv2_imread(img_path)
+            img = numpy_to_pixmap(img)
+            result_dict[key] = img
+
+        return result_dict
+
+    child_img_dict = load_helper(childs)
+    parent_img_dict = load_helper(parents)
+    return child_img_dict, parent_img_dict
+
+
+def load_question_info() -> list[dict]:
+    cur_dir = os.path.dirname(__file__)
+    question_info_path = os.path.join(cur_dir, "question_data.json")
+    with open(question_info_path, "rb") as f:
+        data = f.read()
+        question_list = json.loads(data)
+
+    return question_list
