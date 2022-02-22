@@ -121,6 +121,16 @@ class Ui_Frame(object):
 
         self.verticalLayout_2.addWidget(self.question_img_label)
 
+        self.char_img_label = QLabel(Frame)
+        self.char_img_label.setObjectName(u"char_img_label")
+        sizePolicy1.setHeightForWidth(self.char_img_label.sizePolicy().hasHeightForWidth())
+        self.char_img_label.setSizePolicy(sizePolicy1)
+        self.char_img_label.setMinimumSize(QSize(208, 208))
+        self.char_img_label.setMaximumSize(QSize(208, 208))
+        self.char_img_label.setAlignment(Qt.AlignCenter)
+
+        self.verticalLayout_2.addWidget(self.char_img_label)
+
         self.gridLayout_3 = QGridLayout()
         self.gridLayout_3.setObjectName(u"gridLayout_3")
         self.success_img_label = QLabel(Frame)
@@ -195,6 +205,7 @@ class Ui_Frame(object):
         self.level_img_label.setText(QCoreApplication.translate("Frame", u"\u2606\u2606\u2606", None))
         self.label_4.setText(QCoreApplication.translate("Frame", u"\ub2e8\uc5b4", None))
         self.question_img_label.setText(QCoreApplication.translate("Frame", u"\ucf54\ub85c\ub098", None))
+        self.char_img_label.setText(QCoreApplication.translate("Frame", u"\u314b \uc218\ud615", None))
         self.success_img_label.setText(QCoreApplication.translate("Frame", u"O", None))
         self.success_count_img_label.setText(QCoreApplication.translate("Frame", u"5\uac1c", None))
         self.fail_count_img_label.setText(QCoreApplication.translate("Frame", u"3\uac1c", None))
