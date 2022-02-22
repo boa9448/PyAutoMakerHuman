@@ -28,7 +28,7 @@ class StudyWindow(QFrame, Ui_Frame):
                                 , self.study_img_label, self.direction_img_label]
 
         self.last_changed_combobox = self.char_child_combo
-        self.study_thread = None
+        self._study_thread = None
         self._mirror_mode = True
         self._questions = self.QUESTION_DEFAUL
         self._cameras = cameras
@@ -109,18 +109,18 @@ class StudyWindow(QFrame, Ui_Frame):
         self.reset_button.click()
 
     def init_data(self) -> None:
-        self.study_thread = proc.WorkThread(self._cameras, proc.RUN_STUDY
+        self._study_thread = proc.WorkThread(self._cameras, proc.RUN_STUDY
                                             , front_draw_handler = self.front_draw_handler
                                             , answer_handler = self.answer_handler
                                             , direction_handler = self.direction_hander)
                                             
-        self.study_thread.mirror_mode = self.mirror_mode
-        self.study_thread.questions = self._questions
-        self.study_thread.start()
+        self._study_thread.mirror_mode = self.mirror_mode
+        self._study_thread.questions = self._questions
+        self._study_thread.start()
 
     def dispose_data(self) -> None:
-        if self.study_thread:
-            self.study_thread.join()
+        if self._study_thread:
+            self._study_thread.join()
 
     def showEvent(self, event: QShowEvent) -> None:
         self.init_data()
@@ -172,8 +172,8 @@ class StudyWindow(QFrame, Ui_Frame):
         if img:
             self.example_img_label.setPixmap(img)
 
-        if self.study_thread:
-            self.study_thread.questions = char
+        if self._study_thread:
+            self._study_thread.questions = char
             
         self._questions = char
 
@@ -181,8 +181,8 @@ class StudyWindow(QFrame, Ui_Frame):
     def reset_button_clicked_handler(self) -> None:
         cur_idx = self.last_changed_combobox.currentIndex()
         self.char_combo_change_handler(cur_idx)
-        if self.study_thread:
-            self.study_thread.reset()
+        if self._study_thread:
+            self._study_thread.start_work()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         width = self.study_img_label.width()
@@ -200,7 +200,7 @@ class StudyWindow(QFrame, Ui_Frame):
     @mirror_mode.setter
     def mirror_mode(self, value : bool) -> None:
         self._mirror_mode = value
-        if self.study_thread:
-            self.study_thread.mirror_mode = value
+        if self._study_thread:
+            self._study_thread.mirror_mode = value
 
     
