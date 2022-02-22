@@ -2,7 +2,7 @@ import os
 import time
 import logging
 from threading import Thread, Event, Lock
-from typing import Callable
+from typing import Any, Callable
 import math
 import json
 
@@ -16,7 +16,7 @@ from ..hand import HandResult
 from .. import models_dir
 from ..hand_train import HandTrainer
 from .exception import FrameException, ExitException, StopException, DataModifyExecption
-from .utils import numpy_to_pixmap, time_check
+from .utils import numpy_to_pixmap, time_check, get_degree
 
 
 logging.basicConfig(level = logging.DEBUG)
@@ -73,12 +73,55 @@ class DirectionSignal(QObject):
         self.sig.emit(DIRECTION_RIGHT)
 
 
+PROCESS_DATA = 1
+PROCESS_SUCCESS = 2
+PROCESS_FAIL = 3
+PROCESS_NEXT_CHAR = 4
+PROCESS_TIME = 5
+PROCESS_LEVEL = 6
+PROCESS_QUESTION = 7
 class ProcessSignal(QObject):
     sig = Signal(int, dict)
+
+    def send_data(self, data : dict) -> None:
+        self.sign.emit(PROCESS_DATA, data)
+
+    def success(self) -> None:
+        self.sig.emit(PROCESS_SUCCESS, dict())
+
+    def fail(self) -> None:
+        self.sig.emit(PROCESS_FAIL, dict())
+
+    def char(self, char : str) -> None:
+        data = {"next_char" : char}
+        self.sig.emit(PROCESS_NEXT_CHAR, data)
+
+    def time(self, remaining_time : int) -> None:
+        data = {"time" : remaining_time}
+        self.sig.emit(PROCESS_TIME, data)
+
+    def level(self, level : int) -> None:
+        data = {"level" : level}
+        self.sig.emit(PROCESS_LEVEL, data)
+
+    def question(self, question : str) -> None:
+        data = {"question" : question}
+        self.sig.emit(PROCESS_QUESTION, data)
 
 
 RUN_STUDY = 1
 RUN_TEST = 2
+
+def run_mode_check(func, ret_val : Any = None):
+    def wrapper(*args, **kwargs):
+        self = args[0]
+        if self._run_mode == RUN_TEST:
+            return ret_val
+        
+        return func(*args, **kwargs)
+
+    return wrapper
+
 class WorkThread(Thread):
 
     FRAME_READ_TIMEOUT = 2
@@ -162,8 +205,11 @@ class WorkThread(Thread):
         self.exit()
         return super().join(timeout)
 
-    def reset(self) -> None:
+    def start_work(self) -> None:
         self._stop_event.clear()
+
+    def stop_work(self) -> None:
+        self._stop_event.set()
 
     def get_frame(self, target_camera : cv2.VideoCapture, mirror_mode_check : bool = False) -> np.ndarray:
         start_time = time.time()
@@ -198,18 +244,21 @@ class WorkThread(Thread):
             logging.debug(f"[+] mirror mode change : {self._mirror_mode}")
 
     @property
-    def questions(self) -> list:
+    def questions(self) -> list or dict:
         with self._question_modify_lock:
             questions = self._questions
 
         return questions
 
     @questions.setter
-    def questions(self, value : list) -> None:
+    def questions(self, value : str or dict) -> None:
         with self._question_modify_lock:
             if self._run_mode == RUN_STUDY:
                 value = list(STUDY_COMBINATION_CHAR_DICT.get(value, value))
-            self._questions = list(value)
+                self._questions = list(value)
+            elif self._run_mode == RUN_TEST:
+                self._questions = value
+
             self._question_modify_event.set()
             logging.debug(f"[+] question change : {self._questions}")
 
@@ -272,6 +321,18 @@ class WorkThread(Thread):
 
     def front_draw(self, img : np.ndarray) -> None:
         self._front_draw_signal.send(img)
+
+    @run_mode_check
+    def answer_fail(self) -> None:
+        self._answer_signal.fail()
+    
+    @run_mode_check
+    def answer_processing(self) -> None:
+        self._answer_signal.processing()
+
+    @run_mode_check
+    def answer_success(self) -> None:
+        self._answer_signal.success()
 
     def is_exit_set(self) -> bool:
         if self._exit_event.is_set():
@@ -368,7 +429,7 @@ class WorkThread(Thread):
 
             # 만약 타겟과 추론한 글자가 다르다면
             if target_char != name:
-                self._answer_signal.fail()
+                self.answer_fail()
                 frame = self.draw_box(frame, box, self.COLOR_RED)
                 frame = self.draw_landmark(frame, landmarks)
                 self.front_draw(frame)
@@ -395,6 +456,7 @@ class WorkThread(Thread):
 
         return True
 
+    @run_mode_check(True)
     def check_direction(self, target_char : str, frame : np.ndarray, hand_result : HandResult, right_info : tuple[int, str, float]) -> bool:
         def get_direction_(base_direction : int, target_degree : int, error_range : tuple[int, int]) -> int:
             range_left, range_right = error_range
@@ -424,7 +486,7 @@ class WorkThread(Thread):
         _, abs_landmarks = hand_result.get_abs_landmarks()[idx]
         _, landmarks = hand_result.get_landmarks()[idx]
         start_landmark, end_landmark = abs_landmarks[start_idx][:2], abs_landmarks[end_idx][:2]
-        target_degree = self.get_degree(start_landmark, end_landmark)
+        target_degree = get_degree(start_landmark, end_landmark)
         logging.debug(f"target_degree : {target_degree}")
 
         direction = get_direction_(direction_info, target_degree, (10, 10))
@@ -454,10 +516,27 @@ class WorkThread(Thread):
 
         return False if direction else True
 
+    def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple, target_char : str) -> tuple:
+        is_always_enter = False if target_char in self.CHAR_EXCEPTION_LIST else True
+
+        target_hand_label = "Right" if self.mirror_mode else "Left"
+        hand_labels = hand_result.get_labels()
+        for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
+            if is_always_enter or hand_label == target_hand_label:
+                return idx, name, proba
+
+        return tuple()
+
+    def display_draw_wrapper(self, frame : np.ndarray, box : tuple, landmarks : list, name : str, color : tuple):
+        frame = self.draw_box(frame, box, color)
+        frame = self.draw_landmark(frame, landmarks)
+        frame = self.draw_text(frame, name, (box[0], box[1] - 35), color)
+        self.front_draw(frame)
+
     def check_char(self, target_char : str) -> bool:
         start_time = float()
         DURATION_TIME = 1.5
-        self._answer_signal.fail()
+        self.answer_fail()
         while self.is_events_set() == False:
             result = self.until_predict(target_char)
             if not start_time:
@@ -469,7 +548,7 @@ class WorkThread(Thread):
             _, landmarks = hand_result.get_landmarks()[idx]
 
             # 여기서부턴 보정의 영역이므로 프로세싱으로 표기
-            self._answer_signal.processing()
+            self.answer_processing()
 
             if self.check_char_pt(target_char, frame, box) == False:
                 start_time = time.time()
@@ -479,19 +558,17 @@ class WorkThread(Thread):
             direction = self.check_direction(target_char, frame, hand_result, right_info)
 
             # 방향이 방향을 수정해야한다면...
-            if direction == False:
+            if not direction:
                 start_time = time.time()
                 continue
 
             # 정답 유지시간이 일정 시간 미만이라면 통과시키지 않음
             if time.time() - start_time < DURATION_TIME:
+                self.display_draw_wrapper(frame, box, landmarks, name, self.COLOR_ORENGE)
                 continue
 
-            frame = self.draw_box(frame, box, self.COLOR_GREEN)
-            frame = self.draw_landmark(frame, landmarks)
-            frame = self.draw_text(frame, name, (box[0], box[1] - 35), self.COLOR_GREEN)
-            self.front_draw(frame)
-            self._answer_signal.success()
+            self.display_draw_wrapper(frame, box, landmarks, name, self.COLOR_GREEN)
+            self.answer_success()
 
             # 이전 정보를 기억
             self._pre_target_char = name
@@ -501,26 +578,29 @@ class WorkThread(Thread):
 
         return False
 
-    def get_degree(self, start : tuple[int, int], end : tuple[int, int]):
-        start_x, start_y = start
-        end_x, end_y = end
-        dx = end_x - start_x
-        dy = end_y - start_y
-        degree = math.atan2(dy, dx) * (180.0 / math.pi) + 90
-        degree = degree + 360 if degree < 0 else degree
+    def check_question(self, question_info : dict) -> bool:
+        question = question_info["question"]
+        answer = question_info["answer"]
+        remaining_time = question_info["time"]
+        level = question_info["level"]
 
-        return int(degree)
+        self._process_signal.question(question)
+        self._process_signal.time(remaining_time)
+        self._process_signal.level(level)
 
-    def get_right_hand_info(self, hand_result : HandResult, predict_result : tuple, target_char : str) -> tuple:
-        is_always_enter = False if target_char in self.CHAR_EXCEPTION_LIST else True
+        answer_idx = 0
+        answer_len = len(answer)
+        
+        while answer_idx < answer_len and self.is_events_set() == False:
+            target_char = answer[answer_idx]
+            result = self.until_predict(target_char)
+            if not start_time:
+                start_time = time.time()
 
-        target_hand_label = "Right" if self.mirror_mode else "Left"
-        hand_labels = hand_result.get_labels()
-        for idx, (hand_label, (name, proba)) in enumerate(zip(hand_labels, predict_result)):
-            if is_always_enter or hand_label == target_hand_label:
-                return idx, name, proba
-
-        return tuple()
+            frame, (hand_result, predict_result, right_info) = result
+            idx, name, proba = right_info
+            _, box = hand_result.get_boxes()[idx]
+            _, landmarks = hand_result.get_landmarks()[idx]
 
     def sleep(self, timeout : float) -> None:
         start_time = time.time()
@@ -554,12 +634,38 @@ class WorkThread(Thread):
 
             self._pre_target_char = ""
             self._pre_target_char_box = QRect()
-            self._stop_event.set()
+            self.stop_work()
 
     def test_proc(self) -> None:
         while not self.is_events_set():
             frame = self.front_frame
             self.front_draw(frame)
+
+            if self._stop_event.is_set():
+                time.sleep(0.3)
+                continue
+
+            questions = self.questions
+            if not questions:
+                self.stop_work()
+                continue
+
+            self._question_modify_event.clear()
+
+            questions_len = len(questions)
+            questions_idx = 0
+
+            while questions_idx < questions_len and self.is_events_set() == False:
+                question_info = questions[questions_idx]
+                is_success = self.check_question(question_info)
+                if is_success:
+                    self._process_signal.success()
+                else:
+                    self._process_signal.fail()
+
+                questions_idx += 1
+
+            self.stop_work()
 
     def run(self) -> None:
         while self._exit_event.is_set() == False:
