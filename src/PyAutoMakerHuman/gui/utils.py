@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import math
 import functools
 import logging
 from typing import Any, Callable
@@ -87,3 +88,14 @@ def load_question_info() -> list[dict]:
         question_list = json.loads(data)
 
     return question_list
+
+
+def get_degree(start : tuple[int, int], end : tuple[int, int]):
+    start_x, start_y = start
+    end_x, end_y = end
+    dx = end_x - start_x
+    dy = end_y - start_y
+    degree = math.atan2(dy, dx) * (180.0 / math.pi) + 90
+    degree = degree + 360 if degree < 0 else degree
+
+    return int(degree)
