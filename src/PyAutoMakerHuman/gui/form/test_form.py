@@ -173,7 +173,7 @@ class Ui_Frame(object):
 
         self.screen_img_label = QLabel(Frame)
         self.screen_img_label.setObjectName(u"screen_img_label")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.screen_img_label.sizePolicy().hasHeightForWidth())
