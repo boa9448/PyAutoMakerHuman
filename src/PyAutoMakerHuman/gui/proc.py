@@ -15,7 +15,7 @@ from ..image import cv2_putText
 from ..hand import HandResult
 from .. import models_dir
 from ..hand_train import HandTrainer
-from .exception import FrameException, ExitException, StopException, DataModifyExecption
+from .exception import FrameException, ExitException, StopException, DataModifyExecption, NextExecption
 from .utils import numpy_to_pixmap, time_check, get_degree
 
 
@@ -92,19 +92,19 @@ class ProcessSignal(QObject):
     def fail(self) -> None:
         self.sig.emit(PROCESS_FAIL, dict())
 
-    def char(self, char : str) -> None:
+    def set_char(self, char : str) -> None:
         data = {"next_char" : char}
         self.sig.emit(PROCESS_NEXT_CHAR, data)
 
-    def time(self, remaining_time : int) -> None:
+    def set_time(self, remaining_time : int) -> None:
         data = {"time" : remaining_time}
         self.sig.emit(PROCESS_TIME, data)
 
-    def level(self, level : int) -> None:
+    def set_level(self, level : int) -> None:
         data = {"level" : level}
         self.sig.emit(PROCESS_LEVEL, data)
 
-    def question(self, question : str) -> None:
+    def set_question(self, question : str) -> None:
         data = {"question" : question}
         self.sig.emit(PROCESS_QUESTION, data)
 
@@ -112,15 +112,18 @@ class ProcessSignal(QObject):
 RUN_STUDY = 1
 RUN_TEST = 2
 
-def run_mode_check(func, ret_val : Any = None):
-    def wrapper(*args, **kwargs):
-        self = args[0]
-        if self._run_mode == RUN_TEST:
-            return ret_val
-        
-        return func(*args, **kwargs)
+def run_mode_check(ret_val : Any = None):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            self = args[0]
+            if self._run_mode == RUN_TEST:
+                return ret_val
+            
+            return func(*args, **kwargs)
 
-    return wrapper
+        return wrapper
+
+    return decorator
 
 class WorkThread(Thread):
 
@@ -146,6 +149,7 @@ class WorkThread(Thread):
         # 이벤트, 락
         self._exit_event = Event()
         self._stop_event = Event()
+        self._next_event = Event()
         self._question_modify_event = Event()
         self._mirror_modify_lock = Lock()
         self._question_modify_lock = Lock()
@@ -211,6 +215,9 @@ class WorkThread(Thread):
     def stop_work(self) -> None:
         self._stop_event.set()
 
+    def next_work(self) -> None:
+        self._next_event.set()
+
     def get_frame(self, target_camera : cv2.VideoCapture, mirror_mode_check : bool = False) -> np.ndarray:
         start_time = time.time()
         while time.time() - start_time < self.FRAME_READ_TIMEOUT:
@@ -266,7 +273,6 @@ class WorkThread(Thread):
             self._pre_target_char = ""
             self._pre_target_char_box = QRect()
 
-            self.events_clear()
             self._question_modify_event.set()
 
     def draw_box(self, img : np.ndarray, box : tuple[int, int, int, int], color : tuple) -> np.ndarray:
@@ -341,17 +347,18 @@ class WorkThread(Thread):
         return False
 
     def is_events_set(self) -> bool:
-        events = [self._exit_event, self._question_modify_event, self._stop_event]
-        exceptions = [ExitException, DataModifyExecption, StopException]
+        events = [self._exit_event, self._question_modify_event, self._stop_event, self._next_event]
+        exceptions = [ExitException, DataModifyExecption, StopException, NextExecption]
 
         for event, exception in zip(events, exceptions):
             if event.is_set():
+                event.clear()
                 raise exception()
 
         return False
 
     def events_clear(self) -> None:
-        events = [self._question_modify_event, self._stop_event]
+        events = [self._question_modify_event, self._stop_event, self._next_event]
         for event in events:
             event.clear()
 
@@ -584,15 +591,18 @@ class WorkThread(Thread):
         remaining_time = question_info["time"]
         level = question_info["level"]
 
-        self._process_signal.question(question)
-        self._process_signal.time(remaining_time)
-        self._process_signal.level(level)
+        self._process_signal.set_question(question)
+        self._process_signal.set_time(remaining_time)
+        self._process_signal.set_level(level)
 
         answer_idx = 0
         answer_len = len(answer)
         
+        start_time = float()
+        DURATION_TIME = 1.5
         while answer_idx < answer_len and self.is_events_set() == False:
             target_char = answer[answer_idx]
+            self._process_signal.set_char(target_char)
             result = self.until_predict(target_char)
             if not start_time:
                 start_time = time.time()
@@ -601,6 +611,27 @@ class WorkThread(Thread):
             idx, name, proba = right_info
             _, box = hand_result.get_boxes()[idx]
             _, landmarks = hand_result.get_landmarks()[idx]
+
+            if self.check_char_pt(target_char, frame, box) == False:
+                start_time = time.time()
+                continue
+            
+            # 정답 유지시간이 일정 시간 미만이라면 통과시키지 않음
+            if time.time() - start_time < DURATION_TIME:
+                self.display_draw_wrapper(frame, box, landmarks, name, self.COLOR_ORENGE)
+                continue
+
+            self.display_draw_wrapper(frame, box, landmarks, name, self.COLOR_GREEN)
+
+            # 이전 정보를 기억
+            self._pre_target_char = name
+            self._pre_target_char_box = QRect(*box)
+
+            answer_idx += 1
+            start_time = float()
+
+        return True
+
 
     def sleep(self, timeout : float) -> None:
         start_time = time.time()
@@ -657,7 +688,12 @@ class WorkThread(Thread):
 
             while questions_idx < questions_len and self.is_events_set() == False:
                 question_info = questions[questions_idx]
-                is_success = self.check_question(question_info)
+                try:
+                    is_success = self.check_question(question_info)
+                except NextExecption:
+                    self._next_event.clear()
+                    is_success = False
+
                 if is_success:
                     self._process_signal.success()
                 else:
@@ -669,7 +705,6 @@ class WorkThread(Thread):
 
     def run(self) -> None:
         while self._exit_event.is_set() == False:
-            self.events_clear()
             try:
 
                 if self._run_mode == RUN_STUDY:

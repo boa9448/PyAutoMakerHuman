@@ -4,12 +4,12 @@ import json
 import cv2
 import numpy as np
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Slot, QTimer
 from PySide6.QtWidgets import QFrame
-from PySide6.QtGui import QHideEvent, QShowEvent, QPixmap
+from PySide6.QtGui import QHideEvent, QShowEvent, QPixmap, QColor
 
 from . import proc
-from .utils import load_shape_img_info, load_question_info, numpy_to_pixmap, draw_char_img
+from .utils import draw_pixmap, load_shape_img_info, load_question_info, numpy_to_pixmap, draw_char_img
 from .form.test_form import Ui_Frame
 
 class TestWindow(QFrame, Ui_Frame):
@@ -28,6 +28,7 @@ class TestWindow(QFrame, Ui_Frame):
         self.CHAR_COMBO_DICT : dict = child
 
     def init_data(self) -> None:
+        self._timer = QTimer()
         self._question_success_count = 0
         self._question_fail_count = 0
         self._test_thread = proc.WorkThread(self._cameras, proc.RUN_TEST
@@ -39,6 +40,7 @@ class TestWindow(QFrame, Ui_Frame):
         self._test_thread.start()
 
     def dispose_data(self) -> None:
+        self._timer.stop()
         if self._test_thread:
             self._test_thread.join()
             self._test_thread = None
@@ -49,6 +51,9 @@ class TestWindow(QFrame, Ui_Frame):
     def init_display(self) -> None:
         self.screen_img_label.setScaledContents(True)
         self.char_img_label.setScaledContents(True)
+        pixmap = QPixmap()
+        pixmap.fill(QColor(255, 255, 255))
+        draw_pixmap(self.char_img_label, pixmap)
 
     def init(self) -> None:
         self.init_handler()
@@ -70,23 +75,41 @@ class TestWindow(QFrame, Ui_Frame):
     def front_draw_handler(self, pixmap : QPixmap) -> None:
         self.screen_img_label.setPixmap(pixmap)
 
+    @Slot()
+    def timer_handler(self) -> None:
+        remaining_time = self.remaining_spin.value()
+        remaining_time -= 1
+        if remaining_time < 0:
+            remaining_time = 0
+            self._test_thread.next_work()
+            self._timer.stop()
+
+        self.remaining_spin.setValue(remaining_time)
+
     @Slot(int, dict)
     def process_handler(self, code : int, data : dict) -> None:
         if code == proc.PROCESS_TIME:
             remaining_time = data["time"]
             self.remaining_spin.setValue(remaining_time)
+            self._timer.stop()
+            self._timer = QTimer(self)
+            self._timer.setInterval(1000)
+            self._timer.timeout.connect(self.timer_handler)
+            self._timer.start()
         elif code == proc.PROCESS_NEXT_CHAR:
             next_char = data["next_char"]
             self.char_img_label.setPixmap(self.CHAR_COMBO_DICT.get(next_char))
+            #draw_char_img(self.char_img_label, next_char)
         elif code == proc.PROCESS_SUCCESS:
             count = self._question_success_count + 1
-            self.success_img_label.setText(count)
+            self.success_count_img_label.setText(f"{count}개")
         elif code == proc.PROCESS_FAIL:
             count = self._question_fail_count + 1
-            self.fail_count_img_label.setText(count)
+            self.fail_count_img_label.setText(f"{count}개")
         elif code == proc.PROCESS_LEVEL:
             level = data["level"]
-            self.level_img_label.setText(level)
+            level_text = "★" * level
+            self.level_img_label.setText(level_text)
         elif code == proc.PROCESS_QUESTION:
             question = data["question"]
             self.question_img_label.setText(question)
