@@ -16,3 +16,7 @@ class StopException(Exception):
 class DataModifyExecption(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+class NextExecption(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
