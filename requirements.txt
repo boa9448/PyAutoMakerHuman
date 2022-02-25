@@ -1,10 +1,7 @@
+opencv-contrib-python
 imutils
 scikit-learn
-waitress
-flask
 requests
-mediapipe; platform_system == 'Windows'
-mediapipe-rpi4; platform_system == 'Linux'
-tensorflow; platform_system == 'Windows'
+mediapipe
 PySide6
 qt-material

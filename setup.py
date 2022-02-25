@@ -23,11 +23,10 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
-    package_data={"PyAutoMakerHuman": ["models/*"]},
+    package_data={"PyAutoMakerHuman": ["models/*", "src/PyAutoMakerHuman/gui/*"]},
 
-    install_requires = ["imutils", "scikit-learn"
-    , "mediapipe; platform_system == 'Windows'", "mediapipe-rpi4; platform_system == 'Linux'"
-    , "tensorflow; platform_system == 'Windows'", "PySide6"],
+    install_requires = ["opencv-contrib-python", "imutils", "scikit-learn"
+                        ,"requests", "mediapipe", "PySide6", "qt-material"],
     python_requires=">=3.6",
 )
 
