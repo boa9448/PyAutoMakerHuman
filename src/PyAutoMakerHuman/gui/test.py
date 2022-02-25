@@ -51,9 +51,14 @@ class TestWindow(QFrame, Ui_Frame):
     def init_display(self) -> None:
         self.screen_img_label.setScaledContents(True)
         self.char_img_label.setScaledContents(True)
-        pixmap = QPixmap()
+        pixmap = QPixmap(200, 200)
         pixmap.fill(QColor(255, 255, 255))
+        draw_pixmap(self.screen_img_label, pixmap)
+        draw_pixmap(self.question_img_label, pixmap)
         draw_pixmap(self.char_img_label, pixmap)
+
+        self.success_count_img_label.setText("0개")
+        self.fail_count_img_label.setText("0개")
 
     def init(self) -> None:
         self.init_handler()
@@ -62,6 +67,7 @@ class TestWindow(QFrame, Ui_Frame):
     @Slot()
     def start_button_handler(self) -> None:
         if self._run_status:
+            self._timer.stop()
             self._test_thread.stop_work()
         else:
             self._test_thread.questions = self._question_list
@@ -101,18 +107,23 @@ class TestWindow(QFrame, Ui_Frame):
             self.char_img_label.setPixmap(self.CHAR_COMBO_DICT.get(next_char))
             #draw_char_img(self.char_img_label, next_char)
         elif code == proc.PROCESS_SUCCESS:
-            count = self._question_success_count + 1
-            self.success_count_img_label.setText(f"{count}개")
+            self._question_success_count += 1
+            self.success_count_img_label.setText(f"{self._question_success_count}개")
         elif code == proc.PROCESS_FAIL:
-            count = self._question_fail_count + 1
-            self.fail_count_img_label.setText(f"{count}개")
+            self._question_fail_count += 1
+            self.fail_count_img_label.setText(f"{self._question_fail_count}개")
         elif code == proc.PROCESS_LEVEL:
             level = data["level"]
             level_text = "★" * level
             self.level_img_label.setText(level_text)
         elif code == proc.PROCESS_QUESTION:
             question = data["question"]
-            self.question_img_label.setText(question)
+            #self.question_img_label.setText(question)
+            draw_char_img(self.question_img_label, question, 4)
+        elif code == proc.PROCESS_DATA:
+            draw_char_img(self.question_img_label, "")
+            self.success_count_img_label.setText("0개")
+            self.fail_count_img_label.setText("0개")
 
     def showEvent(self, event: QShowEvent) -> None:
         self.init_data()

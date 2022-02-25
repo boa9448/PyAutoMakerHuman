@@ -3,12 +3,12 @@ import time
 import logging
 from threading import Thread, Event, Lock
 from typing import Any, Callable
-import math
+import random
 import json
 
 import cv2
 import numpy as np
-from PySide6.QtCore import QObject, Slot, Signal, QRect, QPoint
+from PySide6.QtCore import QObject, Slot, Signal, QRect, QPoint, QThread
 from PySide6.QtGui import QPixmap
 
 from ..image import cv2_putText
@@ -84,7 +84,7 @@ class ProcessSignal(QObject):
     sig = Signal(int, dict)
 
     def send_data(self, data : dict) -> None:
-        self.sign.emit(PROCESS_DATA, data)
+        self.sig.emit(PROCESS_DATA, data)
 
     def success(self) -> None:
         self.sig.emit(PROCESS_SUCCESS, dict())
@@ -352,15 +352,9 @@ class WorkThread(Thread):
 
         for event, exception in zip(events, exceptions):
             if event.is_set():
-                event.clear()
                 raise exception()
 
         return False
-
-    def events_clear(self) -> None:
-        events = [self._question_modify_event, self._stop_event, self._next_event]
-        for event in events:
-            event.clear()
 
     @property
     def front_classifier(self) -> HandTrainer:
@@ -649,8 +643,6 @@ class WorkThread(Thread):
                 continue
             
             questions = self.questions
-            self._question_modify_event.clear()
-
             questions_len = len(questions)
             question_idx = 0
 
@@ -672,19 +664,15 @@ class WorkThread(Thread):
             frame = self.front_frame
             self.front_draw(frame)
 
-            if self._stop_event.is_set():
-                time.sleep(0.3)
-                continue
-
             questions = self.questions
             if not questions:
-                self.stop_work()
                 continue
-
-            self._question_modify_event.clear()
-
+            
+            random.shuffle(questions)
             questions_len = len(questions)
             questions_idx = 0
+
+            self._process_signal.send_data({"questions" : questions})
 
             while questions_idx < questions_len and self.is_events_set() == False:
                 question_info = questions[questions_idx]
@@ -717,4 +705,4 @@ class WorkThread(Thread):
             except StopException:
                 pass
             except DataModifyExecption:
-                pass
+                self._question_modify_event.clear()
