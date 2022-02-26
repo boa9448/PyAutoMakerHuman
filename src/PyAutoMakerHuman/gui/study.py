@@ -8,6 +8,7 @@ from PySide6.QtCore import QSize, Slot, QObject, Signal
 from PySide6.QtWidgets import QFrame, QComboBox, QLabel
 from PySide6.QtGui import QPixmap, QColor, QResizeEvent, QShowEvent, QHideEvent
 
+from . import datas_dir
 from . import proc
 from .form.study_form import Ui_Frame
 from .utils import draw_pixmap, numpy_to_pixmap, draw_char_img, load_shape_img_info
@@ -39,8 +40,7 @@ class StudyWindow(QFrame, Ui_Frame):
         self.init_handler()
 
     def load_arrow_imgs(self) -> tuple[QPixmap, QPixmap]:
-        cur_dir = os.path.dirname(__file__)
-        img_dir = os.path.join(cur_dir, "imgs")
+        img_dir = os.path.join(datas_dir, "imgs")
         ccw_path = os.path.join(img_dir, "CCW.png")
         cw_path = os.path.join(img_dir, "CW.png")
 
