@@ -14,8 +14,6 @@ CAMERA_SIGNAL_FAIL = 0
 CAMERA_SIGNAL_FRONT = 1
 CAMERA_SIGNAL_SIDE = 2
 
-logging.basicConfig(level=logging.DEBUG)
-
 class CameraSignal(QObject):
     pixmap_signal = Signal(int, QPixmap)
 

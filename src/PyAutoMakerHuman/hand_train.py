@@ -10,8 +10,6 @@ from . import hand
 from . import train
 from . import image
 
-logging.basicConfig(level = logging.DEBUG)
-
 class HandTrainer:
     def __init__(self, trainer : train.SvmUtil = train.SvmUtil()):
         self.detector = hand.HandUtil()

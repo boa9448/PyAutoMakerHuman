@@ -20,8 +20,6 @@ from .exception import FrameException, ExitException, StopException, DataModifyE
 from .utils import numpy_to_pixmap, time_check, get_degree
 
 
-logging.basicConfig(level = logging.DEBUG)
-
 STUDY_COMBINATION_CHAR_DICT = {
     "ㄲ" : "ㄱㄱ"
     , "ㄸ" : "ㄷㄷ"

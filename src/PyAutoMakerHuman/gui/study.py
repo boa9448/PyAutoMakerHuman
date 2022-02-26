@@ -15,8 +15,6 @@ from .utils import draw_pixmap, numpy_to_pixmap, draw_char_img, load_shape_img_i
 from .. import hand_lang
 from ..image import cv2_imread
 
-logging.basicConfig(level=logging.DEBUG)
-
 class StudyWindow(QFrame, Ui_Frame):
     QUESTION_DEFAUL = "ㄱ"
 

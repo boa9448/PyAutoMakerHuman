@@ -18,8 +18,6 @@ from . import datas_dir
 from ..image import cv2_imread, cv2_putText
 
 
-logging.basicConfig(level = logging.DEBUG)
-
 def draw_pixmap(target_img_label : QLabel, pixmap : QPixmap) -> None:
     size = target_img_label.size()
     pixmap = pixmap.scaled(size)
