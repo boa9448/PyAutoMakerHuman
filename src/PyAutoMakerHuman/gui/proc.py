@@ -442,7 +442,10 @@ class WorkThread(Thread):
         if target_char == self._pre_target_char:
             cur_x, _, cur_w, _ = box
             cur_x = cur_x + int(cur_w / 2)
+            _, w, _ = frame.shape
+            frame_x_ragne = int(w * 0.3)
             x_range= int(cur_w * 0.3)
+            x_range = x_range if x_range < frame_x_ragne else frame_x_ragne
 
             pre_x, pre_y = self._pre_target_char_box.center().toTuple()
             diff_x = abs(cur_x - pre_x)
@@ -593,6 +596,10 @@ class WorkThread(Thread):
         answer_len = len(answer)
         
         start_time = float()
+
+        # 이전 입력 정보 지움
+        self._pre_target_char = ""
+        self._pre_target_char_box = QRect()
         DURATION_TIME = 1.5
         while answer_idx < answer_len and self.is_events_set() == False:
             target_char = answer[answer_idx]
@@ -616,6 +623,7 @@ class WorkThread(Thread):
                 continue
 
             self.display_draw_wrapper(frame, box, landmarks, name, self.COLOR_GREEN)
+            self.sleep(1.5)
 
             # 이전 정보를 기억
             self._pre_target_char = name
