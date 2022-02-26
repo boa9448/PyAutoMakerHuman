@@ -67,6 +67,8 @@ class TestWindow(QFrame, Ui_Frame):
             self._timer.stop()
             self._test_thread.stop_work()
         else:
+            self._question_success_count = 0
+            self._question_fail_count = 0
             self._test_thread.questions = self._question_list
             self._test_thread.start_work()
 
