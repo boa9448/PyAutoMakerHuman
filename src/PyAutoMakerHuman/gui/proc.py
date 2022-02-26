@@ -14,6 +14,7 @@ from PySide6.QtGui import QPixmap
 from ..image import cv2_putText
 from ..hand import HandResult
 from .. import models_dir
+from . import datas_dir
 from ..hand_train import HandTrainer
 from .exception import FrameException, ExitException, StopException, DataModifyExecption, NextExecption
 from .utils import numpy_to_pixmap, time_check, get_degree
@@ -197,8 +198,7 @@ class WorkThread(Thread):
 
     @staticmethod
     def load_json() -> dict:
-        cur_dir = os.path.dirname(__file__)
-        with open(os.path.join(cur_dir, "proc_data.json"), "rb") as f:
+        with open(os.path.join(datas_dir, "proc_data.json"), "rb") as f:
             data = f.read()
             return json.loads(data)
 

@@ -1,7 +1,5 @@
 import os
 import logging
-import time
-import json
 from threading import Thread, Event, Lock
 
 import cv2

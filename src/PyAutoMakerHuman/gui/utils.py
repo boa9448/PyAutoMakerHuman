@@ -14,7 +14,7 @@ import numpy as np
 from PySide6.QtWidgets import QLabel
 from PySide6.QtGui import QPixmap, QImage
 
-
+from . import datas_dir
 from ..image import cv2_imread, cv2_putText
 
 
@@ -54,8 +54,7 @@ def time_check(func) -> Callable:
 
 
 def load_shape_img_info() -> tuple:
-    cur_dir = os.path.dirname(__file__)
-    shape_img_dir = os.path.join(cur_dir, "imgs", "shape_imgs")
+    shape_img_dir = os.path.join(datas_dir, "imgs", "shape_imgs")
     file_path = os.path.join(shape_img_dir, "desc.json")
     with open(file_path, "rb") as f:
         file_data = f.read()
@@ -81,8 +80,7 @@ def load_shape_img_info() -> tuple:
 
 
 def load_question_info() -> list[dict]:
-    cur_dir = os.path.dirname(__file__)
-    question_info_path = os.path.join(cur_dir, "question_data.json")
+    question_info_path = os.path.join(datas_dir, "question_data.json")
     with open(question_info_path, "rb") as f:
         data = f.read()
         question_list = json.loads(data)
