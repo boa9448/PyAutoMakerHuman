@@ -27,6 +27,6 @@ setuptools.setup(
 
     install_requires = ["opencv-contrib-python", "imutils", "scikit-learn"
                         ,"requests", "mediapipe", "PySide6", "qt-material"],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
 )
 
