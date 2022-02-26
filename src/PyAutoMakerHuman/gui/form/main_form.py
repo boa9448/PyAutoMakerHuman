@@ -45,6 +45,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.lang_mode_button)
 
+        self.conversation_mode_button = QPushButton(self.centralwidget)
+        self.conversation_mode_button.setObjectName(u"conversation_mode_button")
+
+        self.horizontalLayout.addWidget(self.conversation_mode_button)
+
         self.mirror_mode_button = QPushButton(self.centralwidget)
         self.mirror_mode_button.setObjectName(u"mirror_mode_button")
 
@@ -52,10 +57,6 @@ class Ui_MainWindow(object):
 
 
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
-
-        self.horizontalSpacer = QSpacerItem(694, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-        self.gridLayout.addItem(self.horizontalSpacer, 0, 1, 1, 1)
 
         self.frame = QFrame(self.centralwidget)
         self.frame.setObjectName(u"frame")
@@ -68,6 +69,10 @@ class Ui_MainWindow(object):
         self.frame.setFrameShadow(QFrame.Raised)
 
         self.gridLayout.addWidget(self.frame, 1, 0, 1, 2)
+
+        self.horizontalSpacer = QSpacerItem(694, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.gridLayout.addItem(self.horizontalSpacer, 0, 1, 1, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
@@ -96,6 +101,7 @@ class Ui_MainWindow(object):
         self.actionexit.setText(QCoreApplication.translate("MainWindow", u"\uc885\ub8cc", None))
         self.study_mode_button.setText(QCoreApplication.translate("MainWindow", u"\ud559\uc2b5\ubaa8\ub4dc", None))
         self.lang_mode_button.setText(QCoreApplication.translate("MainWindow", u"\uc9c0\ud654\ubaa8\ub4dc", None))
+        self.conversation_mode_button.setText(QCoreApplication.translate("MainWindow", u"\ud68c\ud654\ubaa8\ub4dc", None))
         self.mirror_mode_button.setText(QCoreApplication.translate("MainWindow", u"\uac70\uc6b8\ubaa8\ub4dc On/Off", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"\ud30c\uc77c", None))
     # retranslateUi

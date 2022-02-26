@@ -32,6 +32,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="conversation_mode_button">
+        <property name="text">
+         <string>회화모드</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="mirror_mode_button">
         <property name="text">
          <string>거울모드 On/Off</string>

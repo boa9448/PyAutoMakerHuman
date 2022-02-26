@@ -10,6 +10,7 @@ from .form.main_form import Ui_MainWindow
 from .study import StudyWindow
 from .test import TestWindow
 from .camera import CameraDialog
+from .conversation import ConversationWindow
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -22,18 +23,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_handler(self):
         self.study_mode_button.clicked.connect(self.study_mode_button_handler)
-        self.lang_mode_button.clicked.connect(self.lang_mode_button_handler)
+        self.lang_mode_button.clicked.connect(self.test_mode_button_handler)
+        self.conversation_mode_button.clicked.connect(self.conversation_mode_button_handler)
         self.mirror_mode_button.clicked.connect(self.mirror_mode_button_handler)
 
     def init_display(self) -> None:
         self.camera_dialog = CameraDialog()
         self.study_frame = StudyWindow(self, self.camera_dialog.cameras())
         self.test_frame = TestWindow(self, self.camera_dialog.cameras())
+        self.conversation_frame = ConversationWindow(self, self.camera_dialog.cameras())
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.study_frame)
-
         self.stack_layout.addWidget(self.test_frame)
+        self.stack_layout.addWidget(self.conversation_frame)
+
         self.frame.setLayout(self.stack_layout)
 
         self.study_frame.init()
@@ -49,8 +53,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.stack_layout.setCurrentIndex(0)
 
     @Slot()
-    def lang_mode_button_handler(self) -> None:
+    def test_mode_button_handler(self) -> None:
         self.stack_layout.setCurrentIndex(1)
+
+    @Slot()
+    def conversation_mode_button_handler(self) -> None:
+        self.stack_layout.setCurrentIndex(2)
 
     @Slot()
     def mirror_mode_button_handler(self) -> None:
