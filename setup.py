@@ -23,7 +23,7 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
-    package_data={"PyAutoMakerHuman": ["models/*", "src/PyAutoMakerHuman/gui/*"]},
+    package_data={"PyAutoMakerHuman": ["models/*", "gui/datas/*"]},
 
     install_requires = ["opencv-contrib-python", "imutils", "scikit-learn"
                         ,"requests", "mediapipe", "PySide6", "qt-material"],
