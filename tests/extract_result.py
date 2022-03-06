@@ -2,6 +2,7 @@ import os
 import sys
 import json
 from glob import glob
+from typing import Any
 
 import cv2
 import numpy as np
@@ -59,6 +60,28 @@ def get_working_dir() -> str:
     if window.exec():
         return window.selectedFiles()[0]
 
+def get_key(target_item : str) -> str or None:
+    for key, value in file_rename_dict.items():
+        if target_item == value:
+            return key
+
+    return None
+
+class ResultFile:
+    def __init__(self, file_path : str) -> None:
+        self._file = open(file_path, "wt")
+        if self._file.closed:
+            raise RuntimeError("파일을 열 수 없습니다")
+    
+    def __del__(self) -> None:
+        print(f"{self._file.name} done")
+        self._file.close()
+
+    def __call__(self, file_name :str, frame_idx : int, label : str, proba : float, box : tuple[int, int, int, int]) -> Any:
+        line = f"{file_name}, {frame_idx}, {label}, {proba}, {box}\n"
+        print(line)
+        self._file.write(line)
+
 
 def main():
 
@@ -74,10 +97,13 @@ def main():
     for target_dir in target_dirs:
         print("=" * 50)
         vidios = glob(os.path.join(target_dir, "*.mp4"))
+        result_file = ResultFile(os.path.join(target_dir, "result.csv"))
         for vidio in vidios:
             paths = vidio.split(os.path.sep)
-            name, ext = paths[-1].split(".")
+            file_full_name = paths[-1]
+            name, ext = file_full_name.split(".")
             new_name = file_rename_dict.get(name)
+            unicode_name = get_key(file_full_name)
             if new_name:
                 new_name = os.path.join(*paths[:-1], new_name)
                 os.rename(vidio, new_name)
@@ -85,6 +111,28 @@ def main():
             cap = cv2.VideoCapture(vidio)
             if not cap.isOpened():
                 raise RuntimeError(f"[{vidio}]를 여는데 실패했습니다")
+
+            frame_idx = 0
+            while True:
+                success, frame = cap.read()
+                if not success:
+                    break
+
+                result = util.predict(frame)
+                if result:
+                    hand_result : HandResult = result[0]
+                    predict_result = result[1]
+                    
+                    boxes = hand_result.get_boxes()
+                    for (hand_label, box), (name, proba) in zip(boxes, predict_result):
+                        x, y, w, h = box
+                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                        frame =cv2_putText(frame, f"{hand_label}_{name} __ {proba:0.2f}", (x, y - 15), 3, (0, 0, 255), 2)
+                        result_file(unicode_name, frame_idx, name, proba, box)
+
+                frame_idx += 1
+
+            
             cap.release()
 
 if __name__ == "__main__":
