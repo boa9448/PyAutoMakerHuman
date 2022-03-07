@@ -69,7 +69,7 @@ def get_key(target_item : str) -> str or None:
 
 class ResultFile:
     def __init__(self, file_path : str) -> None:
-        self._file = open(file_path, "wt")
+        self._file = open(file_path, "wt", encoding="utf-8")
         if self._file.closed:
             raise RuntimeError("파일을 열 수 없습니다")
     
@@ -77,8 +77,8 @@ class ResultFile:
         print(f"{self._file.name} done")
         self._file.close()
 
-    def __call__(self, file_name :str, frame_idx : int, label : str, proba : float, box : tuple[int, int, int, int]) -> Any:
-        line = f"{file_name}, {frame_idx}, {label}, {proba}, {box}\n"
+    def __call__(self, file_name :str, frame_idx : int, label : str, proba : float) -> Any:
+        line = f"{file_name}, {frame_idx}, {label}, {proba}\n"
         print(line)
         self._file.write(line)
 
@@ -128,11 +128,11 @@ def main():
                         x, y, w, h = box
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                         frame =cv2_putText(frame, f"{hand_label}_{name} __ {proba:0.2f}", (x, y - 15), 3, (0, 0, 255), 2)
-                        result_file(unicode_name, frame_idx, name, proba, box)
+                        result_file(unicode_name, frame_idx, name, proba)
 
                 frame_idx += 1
 
-            
+            result_file._file.flush()
             cap.release()
 
 if __name__ == "__main__":
