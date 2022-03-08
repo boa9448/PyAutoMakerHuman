@@ -65,7 +65,7 @@ def get_key(target_item : str) -> str or None:
         if target_item == value:
             return key
 
-    return None
+    return target_item
 
 class ResultFile:
     def __init__(self, file_path : str) -> None:
@@ -108,6 +108,8 @@ def main():
                 new_name = os.path.join(*paths[:-1], new_name)
                 os.rename(vidio, new_name)
 
+
+            vidio = new_name or vidio
             cap = cv2.VideoCapture(vidio)
             if not cap.isOpened():
                 raise RuntimeError(f"[{vidio}]를 여는데 실패했습니다")
