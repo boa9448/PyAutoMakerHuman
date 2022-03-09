@@ -5,7 +5,7 @@ from PyAutoMakerHuman.hand import HandResult
 from PyAutoMakerHuman.hand_train import HandTrainer
 from PyAutoMakerHuman.image import cv2_putText
 
-USE_MIRROR = True
+USE_MIRROR = False
 
 util = HandTrainer()
 util.load("mirror_model" if USE_MIRROR else "model")

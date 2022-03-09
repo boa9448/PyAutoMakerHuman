@@ -80,7 +80,7 @@ def main():
     mirror_dir = os.path.join(target_dir, "mirror")
     os.path.isdir(mirror_dir) or os.mkdir(mirror_dir)
 
-    """for video in videos:
+    for video in videos:
         org_name = video.split(os.path.sep)[-1]
         han_name = get_key(org_name)
         if not han_name:
@@ -113,7 +113,7 @@ def main():
 
         cap.release()
 
-    print("프레임을 모두 저장했습니다")"""
+    print("프레임을 모두 저장했습니다")
 
     train_dict = [(original_dir, "model"), (mirror_dir, "mirror_model")]
     for dataset, save_path in train_dict:
