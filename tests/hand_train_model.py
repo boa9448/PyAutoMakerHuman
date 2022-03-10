@@ -69,10 +69,23 @@ def get_key(target_item : str) -> str or None:
 
     return None
 
+def change_eng_name(file_path : str) -> str:
+    paths = file_path.split(os.path.sep)
+    name, ext = paths[-1].split(os.path.extsep)
+
+    new_name = file_rename_dict.get(name)
+    if new_name:
+        new_path = os.path.join(*paths[:-1], new_name)
+        os.rename(file_path, new_path)
+        return new_path
+
+    return file_path
+    
 
 def main():
     target_dir = get_working_dir()
     videos = glob(os.path.join(target_dir, "*.mp4"))
+    videos = [change_eng_name(path) for path in videos]
 
     original_dir = os.path.join(target_dir, "origianl")
     os.path.isdir(original_dir) or os.mkdir(original_dir)

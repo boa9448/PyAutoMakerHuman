@@ -65,7 +65,19 @@ def get_key(target_item : str) -> str or None:
         if target_item == value:
             return key
 
-    return target_item
+    return None
+
+def change_eng_name(file_path : str) -> str:
+    paths = file_path.split(os.path.sep)
+    name, ext = paths[-1].split(os.path.extsep)
+
+    new_name = file_rename_dict.get(name)
+    if new_name:
+        new_path = os.path.join(*paths[:-1], new_name)
+        os.rename(file_path, new_path)
+        return new_path
+
+    return file_path
 
 class ResultFile:
     def __init__(self, file_path : str) -> None:
@@ -96,23 +108,18 @@ def main():
     target_dirs = glob(os.path.join(working_dir, "*"))
     for target_dir in target_dirs:
         print("=" * 50)
-        vidios = glob(os.path.join(target_dir, "*.mp4"))
+        videos = glob(os.path.join(target_dir, "*.mp4"))
+        videos = [change_eng_name(path) for path in videos]
+
         result_file = ResultFile(os.path.join(target_dir, "result.csv"))
-        for vidio in vidios:
-            paths = vidio.split(os.path.sep)
-            file_full_name = paths[-1]
-            name, ext = file_full_name.split(".")
-            new_name = file_rename_dict.get(name)
-            unicode_name = get_key(file_full_name)
-            if new_name:
-                new_name = os.path.join(*paths[:-1], new_name)
-                os.rename(vidio, new_name)
-
-
-            vidio = new_name or vidio
-            cap = cv2.VideoCapture(vidio)
+        for video in videos:
+            org_name = video.split(os.path.sep)[-1]
+            han_name = get_key(org_name)
+            if not han_name:
+                raise RuntimeError(f"{org_name} 비디오 이름 확인하셈")
+            cap = cv2.VideoCapture(video)
             if not cap.isOpened():
-                raise RuntimeError(f"[{vidio}]를 여는데 실패했습니다")
+                raise RuntimeError(f"[{video}]를 여는데 실패했습니다")
 
             frame_idx = 0
             while True:
@@ -130,7 +137,7 @@ def main():
                         x, y, w, h = box
                         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                         frame =cv2_putText(frame, f"{hand_label}_{name} __ {proba:0.2f}", (x, y - 15), 3, (0, 0, 255), 2)
-                        result_file(unicode_name, frame_idx, name, proba)
+                        result_file(han_name, frame_idx, name, proba)
 
                 frame_idx += 1
 
