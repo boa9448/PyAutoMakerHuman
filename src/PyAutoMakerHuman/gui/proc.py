@@ -326,15 +326,12 @@ class WorkThread(Thread):
     def front_draw(self, img : np.ndarray) -> None:
         self._front_draw_signal.send(img)
 
-    @run_mode_check
     def answer_fail(self) -> None:
         self._answer_signal.fail()
     
-    @run_mode_check
     def answer_processing(self) -> None:
         self._answer_signal.processing()
 
-    @run_mode_check
     def answer_success(self) -> None:
         self._answer_signal.success()
 
@@ -458,7 +455,6 @@ class WorkThread(Thread):
 
         return True
 
-    @run_mode_check(True)
     def check_direction(self, target_char : str, frame : np.ndarray, hand_result : HandResult, right_info : tuple[int, str, float]) -> bool:
         def get_direction_(base_direction : int, target_degree : int, error_range : tuple[int, int]) -> int:
             range_left, range_right = error_range

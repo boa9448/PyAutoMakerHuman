@@ -31,12 +31,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.camera_dialog = CameraDialog()
         self.study_frame = StudyWindow(self, self.camera_dialog.cameras())
         self.test_frame = TestWindow(self, self.camera_dialog.cameras())
-        self.conversation_frame = ConversationWindow(self, self.camera_dialog.cameras())
+        #self.conversation_frame = ConversationWindow(self, self.camera_dialog.cameras())
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.study_frame)
         self.stack_layout.addWidget(self.test_frame)
-        self.stack_layout.addWidget(self.conversation_frame)
+        #self.stack_layout.addWidget(self.conversation_frame)
 
         self.frame.setLayout(self.stack_layout)
 
