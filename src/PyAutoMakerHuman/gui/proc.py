@@ -326,12 +326,15 @@ class WorkThread(Thread):
     def front_draw(self, img : np.ndarray) -> None:
         self._front_draw_signal.send(img)
 
+    @run_mode_check(True)
     def answer_fail(self) -> None:
         self._answer_signal.fail()
     
+    @run_mode_check(True)
     def answer_processing(self) -> None:
         self._answer_signal.processing()
 
+    @run_mode_check(True)
     def answer_success(self) -> None:
         self._answer_signal.success()
 
