@@ -5,7 +5,7 @@ from PyAutoMakerHuman.hand import HandResult
 from PyAutoMakerHuman.hand_train import HandTrainer
 from PyAutoMakerHuman.image import cv2_putText
 
-USE_MIRROR = False
+USE_MIRROR = True
 
 util = HandTrainer()
 util.load("mirror_model" if USE_MIRROR else "model")
@@ -30,7 +30,7 @@ while cap.isOpened():
             for (hand_label, box), (name, proba) in zip(boxes, predict_result):
                 x, y, w, h = box
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                frame =cv2_putText(frame, f"{hand_label}_{name} __ {proba:0.2f}", (x, y - 15), 3, (0, 0, 255), 2)
+                frame =cv2_putText(frame, f"{hand_label}_{name} __ {proba:0.2f}", (x, y - 50), 5, (0, 0, 255), 2)
 
         cv2.imshow("view", frame)
         key = cv2.waitKey(1)
